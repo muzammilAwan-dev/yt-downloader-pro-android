@@ -1,0 +1,217 @@
+# Android CI for yt-downloader-pro-android
+#
+# Behaviour (as requested):
+#   * push to main / pull request  -> run the tests only (no APK is published)
+#   * manual run (workflow_dispatch) -> run the tests (unless skipped), then BUILD and UPLOAD the APK as an artifact
+#
+# Assumptions the Android project must satisfy (see CLAUDE_PROMPT.md):
+#   * Gradle wrapper committed; module named `app`
+#   * Tasks exist: testDebugUnitTest, lintDebug, assembleDebug, assembleRelease
+#   * Release signing reads ANDROID_KEYSTORE_FILE / ANDROID_KEYSTORE_PASSWORD /
+#     ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD from the environment
+#   * Optional: detekt / ktlintCheck tasks (run automatically if present)
+#
+# Action versions are pinned to majors that exist as of this writing; Dependabot
+# (.github/dependabot.yml) will propose bumps. Re-check them before the first run.
+
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "contracts/**"
+      - "LICENSE*"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "contracts/**"
+      - "LICENSE*"
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Which APK to build and upload"
+        type: choice
+        options: [debug, release]
+        default: debug
+      skip_tests:
+        description: "Skip the test jobs (fast artifact build)"
+        type: boolean
+        default: false
+      retention_days:
+        description: "Days to keep the uploaded artifact (1-90)"
+        type: number
+        default: 14
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx3g"
+
+jobs:
+  unit-tests:
+    name: Unit tests and lint
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle (also validates the wrapper)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests and Android lint
+        run: ./gradlew --no-daemon testDebugUnitTest lintDebug --stacktrace
+
+      - name: Static analysis (only if detekt or ktlint is configured)
+        run: |
+          ./gradlew --no-daemon -q tasks --all > "$RUNNER_TEMP/tasks.txt"
+          if grep -qE '^detekt( |$)' "$RUNNER_TEMP/tasks.txt"; then ./gradlew --no-daemon detekt; fi
+          if grep -qE '^ktlintCheck( |$)' "$RUNNER_TEMP/tasks.txt"; then ./gradlew --no-daemon ktlintCheck; fi
+
+      - name: Upload diagnostic reports (failures only)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-reports-unit-tests
+          path: |
+            **/build/reports/tests/
+            **/build/reports/lint-results-*.html
+          retention-days: 7
+
+  instrumented-tests:
+    name: Instrumented tests (emulator)
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # The emulator is slow, so every later step is skipped until androidTest sources exist.
+      - name: Detect instrumented tests
+        id: detect
+        run: |
+          if [ -n "$(find . -path '*/src/androidTest/*' -type f \( -name '*.kt' -o -name '*.java' \) -print -quit)" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No androidTest sources found; skipping emulator run."
+          fi
+
+      - name: Set up JDK 17
+        if: steps.detect.outputs.present == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        if: steps.detect.outputs.present == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Enable KVM for the emulator
+        if: steps.detect.outputs.present == 'true'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run connected tests
+        if: steps.detect.outputs.present == 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          script: ./gradlew --no-daemon connectedDebugAndroidTest --stacktrace
+
+      - name: Upload diagnostic reports (failures only)
+        if: failure() && steps.detect.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-reports-instrumented
+          path: "**/build/reports/androidTests/"
+          retention-days: 7
+
+  build-artifact:
+    name: Build and upload APK
+    # Runs ONLY for manual runs, and only if the test jobs passed or were skipped on purpose.
+    if: ${{ github.event_name == 'workflow_dispatch' && !cancelled() && (needs.unit-tests.result == 'success' || needs.unit-tests.result == 'skipped') && (needs.instrumented-tests.result == 'success' || needs.instrumented-tests.result == 'skipped') }}
+    needs: [unit-tests, instrumented-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode signing key (release only)
+        if: ${{ inputs.variant == 'release' }}
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::A release build needs the repository secret ANDROID_KEYSTORE_BASE64 (plus ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD)."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build APK
+        env:
+          VARIANT: ${{ inputs.variant }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ "$VARIANT" = "release" ]; then
+            ./gradlew --no-daemon assembleRelease --stacktrace
+          else
+            ./gradlew --no-daemon assembleDebug --stacktrace
+          fi
+
+      - name: Write SHA-256 checksums
+        env:
+          VARIANT: ${{ inputs.variant }}
+        run: |
+          cd "app/build/outputs/apk/$VARIANT"
+          sha256sum ./*.apk | tee SHA256SUMS.txt
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-downloader-pro-android-${{ inputs.variant }}-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/${{ inputs.variant }}/*.apk
+            app/build/outputs/apk/${{ inputs.variant }}/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
+
+      - name: Remove signing key from the runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"

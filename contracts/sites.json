@@ -1,0 +1,15 @@
+{
+  "_comment": "Site catalog skeleton mirroring the desktop README's supported-sites table (muzammilAwan-dev/yt-downloader-pro, main branch). Status strings are the desktop README's own wording. Android status is UNKNOWN until tested on a device.",
+  "version": 1,
+  "sites": [
+    {"id": "youtube",    "name": "YouTube",     "desktop_status": "stable, most tested", "needs_login": false, "android_status": "unknown", "notes": "Needs JS runtime + EJS; PO token/SABR may cap quality."},
+    {"id": "instagram",  "name": "Instagram",   "desktop_status": "works; log in for best results", "needs_login": "recommended", "android_status": "unknown"},
+    {"id": "facebook",   "name": "Facebook",    "desktop_status": "works; login recommended; less reliable", "needs_login": "recommended", "android_status": "unknown"},
+    {"id": "x",          "name": "X (Twitter)", "desktop_status": "experimental", "needs_login": false, "android_status": "unknown"},
+    {"id": "tiktok",     "name": "TikTok",      "desktop_status": "experimental", "needs_login": false, "android_status": "unknown"},
+    {"id": "reddit",     "name": "Reddit",      "desktop_status": "experimental", "needs_login": false, "android_status": "unknown"},
+    {"id": "twitch",     "name": "Twitch",      "desktop_status": "basic support (VODs, clips)", "needs_login": false, "android_status": "unknown"},
+    {"id": "vimeo",      "name": "Vimeo",       "desktop_status": "basic; login required (yt-dlp cannot fetch anonymously)", "needs_login": true, "android_status": "unknown"},
+    {"id": "soundcloud", "name": "SoundCloud",  "desktop_status": "basic support (audio)", "needs_login": false, "android_status": "unknown"}
+  ]
+}

@@ -1,0 +1,30 @@
+# Gradle / Android build
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+# Local outputs
+dist/
+*.log
+logs/
+# Signing material: never commit
+*.jks
+*.keystore
+keystore.properties
+# IDEs
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+# Python tooling
+__pycache__/
+*.pyc
+# opencode local state (keep AGENTS.md)
+.opencode/

@@ -1,0 +1,24 @@
+{
+  "_comment": "Error taxonomy for the Android app. Each error maps to ONE recovery action the UI offers. Derived from the pattern in Snaptube's named failure reasons (REA export) and from failures documented in the desktop app's README/releases. PROPOSED, not copied from any source.",
+  "version": 1,
+  "stages": ["RESOLVING", "DOWNLOADING", "MERGING", "POST_PROCESSING", "PUBLISHING"],
+  "errors": [
+    {"code": "ENGINE_OUTDATED", "stage": "RESOLVING", "recovery": "UPDATE_ENGINE_AND_RETRY_ONCE", "retryable": true, "note": "Extraction failed in a way a newer yt-dlp usually fixes."},
+    {"code": "JS_RUNTIME_MISSING", "stage": "RESOLVING", "recovery": "REPAIR_ENGINE", "retryable": false, "note": "yt-dlp reports no supported JavaScript runtime; YouTube formats may be missing or requests return 403."},
+    {"code": "FORMATS_WITHHELD", "stage": "RESOLVING", "recovery": "RETRY_WITH_OTHER_PLAYER_CLIENTS_OR_SIGN_IN", "retryable": true, "note": "PO token / SABR enforcement: HD formats skipped, only low quality offered. Desktop v6.4.9 hit this as a 360p cap."},
+    {"code": "LOGIN_REQUIRED", "stage": "RESOLVING", "recovery": "OPEN_SIGN_IN", "retryable": true},
+    {"code": "AGE_OR_BOT_GATE", "stage": "RESOLVING", "recovery": "OPEN_SIGN_IN", "retryable": true},
+    {"code": "GEO_BLOCKED", "stage": "RESOLVING", "recovery": "EXPLAIN_NO_RETRY", "retryable": false},
+    {"code": "UNAVAILABLE", "stage": "RESOLVING", "recovery": "EXPLAIN_NO_RETRY", "retryable": false, "note": "Private, deleted or DRM-protected content."},
+    {"code": "RESOLVE_TIMEOUT", "stage": "RESOLVING", "recovery": "RETRY", "retryable": true, "note": "Snaptube has an explicit extract-timeout reason; keep one."},
+    {"code": "HTTP_403_ON_MEDIA", "stage": "DOWNLOADING", "recovery": "RE_RESOLVE_AND_RETRY", "retryable": true, "note": "Media URLs expire; re-extract before retrying instead of re-using the old URL."},
+    {"code": "NETWORK_OFFLINE", "stage": "DOWNLOADING", "recovery": "AUTO_RESUME_ON_CONNECTIVITY", "retryable": true},
+    {"code": "NETWORK_TIMEOUT", "stage": "DOWNLOADING", "recovery": "RETRY_WITH_BACKOFF", "retryable": true},
+    {"code": "NO_SPACE", "stage": "DOWNLOADING", "recovery": "SHOW_FREE_SPACE_AND_PICK_FOLDER", "retryable": true},
+    {"code": "STORAGE_PERMISSION_LOST", "stage": "PUBLISHING", "recovery": "REPICK_FOLDER", "retryable": true, "note": "SAF tree permission revoked."},
+    {"code": "MERGE_FAILED", "stage": "MERGING", "recovery": "KEEP_PARTS_OFFER_SAVE_SEPARATELY", "retryable": true},
+    {"code": "POST_PROCESS_FAILED", "stage": "POST_PROCESSING", "recovery": "KEEP_RAW_FILE_OFFER_SAVE_WITHOUT_CONVERSION", "retryable": true},
+    {"code": "FGS_TIMEOUT", "stage": "DOWNLOADING", "recovery": "PAUSE_AND_RESCHEDULE", "retryable": true, "note": "Android 15 dataSync foreground-service time limit reached; not a user-visible failure."},
+    {"code": "CANCELED", "stage": "ANY", "recovery": "NONE", "retryable": false}
+  ]
+}

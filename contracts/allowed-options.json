@@ -1,0 +1,29 @@
+{
+  "_comment": "PROPOSED allowlist of yt-dlp options the Android app may pass. The desktop host's real CommandValidator allowlist was NOT visible during research (only its behaviour is documented in the README), so reconcile this file with host/YTDLPHost/Services/CommandValidator.cs before shipping. Principle copied from the desktop README: accept only options the UI actually produces; every other argument must be an http(s) link; output paths must be inside app-controlled or user-picked folders.",
+  "version": 1,
+  "allowed_options": [
+    "-f", "--format", "-S", "--format-sort",
+    "-o", "--output", "--paths",
+    "--merge-output-format", "--remux-video",
+    "-x", "--extract-audio", "--audio-format", "--audio-quality",
+    "--embed-metadata", "--embed-thumbnail", "--embed-subs", "--write-subs", "--write-auto-subs", "--sub-langs",
+    "--download-sections", "--no-playlist", "--yes-playlist", "--playlist-items",
+    "-N", "--concurrent-fragments", "--limit-rate", "-r",
+    "--retries", "--fragment-retries", "--socket-timeout",
+    "--cookies", "--user-agent",
+    "--js-runtimes", "--extractor-args",
+    "--downloader", "--external-downloader-args",
+    "--no-mtime", "--newline", "--progress", "--no-warnings"
+  ],
+  "blocked_always": [
+    "--exec", "--exec-before-download", "--batch-file", "--config-locations", "--plugin-dirs",
+    "--load-info-json", "--ffmpeg-location", "--cache-dir"
+  ],
+  "rules": [
+    "Non-option arguments must be http(s) URLs.",
+    "Reject any option not in allowed_options (default deny).",
+    "--cookies must point to the app's own temp cookie file; delete it when the task ends.",
+    "--output / --paths must resolve inside the app-private download dir; publishing to MediaStore/SAF is done by the app, not by yt-dlp.",
+    "Incoming share intents and deep links are untrusted input."
+  ]
+}
