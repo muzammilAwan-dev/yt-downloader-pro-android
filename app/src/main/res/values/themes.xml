@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Minimal platform theme so the Compose-only activity has a valid window background/theme.
+         Material 3 styling is done in Compose; a full theme (splash, dynamic color) lands in Phase 1. -->
+    <style name="Theme.YtdlpAndroid" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

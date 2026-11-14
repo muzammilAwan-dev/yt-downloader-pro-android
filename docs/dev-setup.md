@@ -53,6 +53,9 @@ Build output without `tools\build-debug.ps1` is `app\build\outputs\apk\debug\app
 
 ## Notes and gotchas
 
+- **PowerShell script execution is disabled on this PC** (`running scripts is disabled on this system`). Run the helpers as
+  `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\check-env.ps1` (process-scoped, nothing changed system-wide),
+  or once set `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. `gradlew.bat` is a batch file and is not affected.
 - **AGP 9 built-in Kotlin**: do not add `org.jetbrains.kotlin.android`; it fails with
   "Cannot add extension with name 'kotlin'". Use `kotlin { compilerOptions { } }` instead of `android.kotlinOptions { }`.
 - **`sdkmanager` is deprecated** in command-line tools 23.0. It still works for `--list`, but it splits package names at

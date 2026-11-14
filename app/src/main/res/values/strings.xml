@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">yt-dlp for Android</string>
+    <string name="hello_title">yt-dlp for Android</string>
+    <string name="hello_subtitle">Unofficial. Free and open source (GPL-3.0). Powered by yt-dlp.</string>
+    <string name="hello_build">Toolchain check build 0.0.1</string>
+</resources>

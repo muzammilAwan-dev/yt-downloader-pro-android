@@ -11,10 +11,10 @@ Re-read `AGENTS.md` and this file after any context reset. Every claim below is 
 - [x] 4. Installed JDK 17.0.21+9, cmdline-tools 23.0.0 (16111833), platform-tools 37.0.1,
       platforms;android-37.0, build-tools;37.0.0; set `JAVA_HOME`/`ANDROID_HOME`/`ANDROID_SDK_ROOT`/PATH at user scope
 - [x] 5. `git init -b main` in this folder (no remote), local identity, commit `chore: import hand-off package` (35 files)
-- [ ] 6. Repo hygiene files (LICENSE GPL-3.0, CHANGELOG, SECURITY, THIRD_PARTY_NOTICES, ADR 0001)
-- [ ] 7. Gradle project + wrapper, hello-world Compose app
-- [ ] 8. Prove toolchain: `tools/check-env.ps1`, `gradlew testDebugUnitTest lintDebug assembleDebug`, APK in `dist/`
-- [ ] 9. `docs/dev-setup.md`
+- [x] 6. Repo hygiene files (LICENSE GPL-3.0, CHANGELOG, SECURITY, THIRD_PARTY_NOTICES, ADR 0001)
+- [x] 7. Gradle project + wrapper, hello-world Compose app
+- [x] 8. Proved toolchain: `tools/check-env.ps1`, `gradlew testDebugUnitTest lintDebug assembleDebug`, APK in `dist/`
+- [x] 9. `docs/dev-setup.md`
 - [ ] 10. Conventional commits, tag `setup-complete`, stop and report
 
 ### Step 1 output (14 Nov 2026)
@@ -107,3 +107,65 @@ BUILD SUCCESSFUL in 6m 51s
 ```
 
 This proves AGP 9.5.1 + built-in Kotlin + Compose BOM 2026.09.00 + compileSdk 37 work together on this machine.
+
+## Step 8 output (gate, 14 Nov 2026)
+
+```
+.\gradlew.bat testDebugUnitTest lintDebug assembleDebug
+
+> Task :app:testDebugUnitTest
+> Task :app:lintReportDebug
+> Task :app:lintDebug
+
+BUILD SUCCESSFUL in 23s
+52 actionable tasks: 27 executed, 25 up-to-date
+```
+
+Unit tests (from `app/build/test-results/testDebugUnitTest/TEST-io.github.ytdlpforandroid.AppInfoTest.xml`):
+
+```
+tests=4 failures=0 errors=0 skipped=0
+PASS displayNameUsesNoForbiddenBrand
+PASS appStaysExplicitlyUnofficial
+PASS displayNameIsNotEmpty
+PASS forbiddenBrandCheckIsCaseInsensitiveAndCatchesRealNames
+```
+
+Lint (`lintDebug`) warnings: **2**, both deliberate version-availability notices:
+`AndroidGradlePluginVersion` (Gradle 9.9.1 available; we pin 9.6.0 for AGP 9.5.1) and `NewerVersionAvailable`
+(Compose compiler plugin 2.4.21 available; must match AGP's bundled Kotlin 2.2.10). Errors: 0.
+
+`tools/check-env.ps1`:
+
+```
+[ OK ] git            git version 2.55.0.windows.4
+[ OK ] java           openjdk version "17.0.21" 2026-10-20
+[ OK ] JAVA_HOME      C:\Users\Malku\dev\tools\jdk-17
+[ OK ] ANDROID_HOME   C:\Users\Malku\AppData\Local\Android\Sdk
+[ OK ] sdkmanager     1.1.16919734 (Android CLI)
+[ OK ] adb            Android Debug Bridge version 1.0.41
+[ OK ] SDK platform   android-37.0 installed
+[ OK ] build-tools    37.0.0 installed
+[ OK ] gradle wrapper Gradle 9.6.0
+
+Environment OK
+```
+
+`tools/build-debug.ps1` (tests + build + copy to `dist/`):
+
+```
+BUILD SUCCESSFUL in 2s
+FEB196A0A83B5CD2C7A1A8948F4299FCCD9CD486C014C1EBEC0354365FAA1474  app-debug.apk
+```
+
+APK: `dist/app-debug.apk`, 12,090,786 bytes. `aapt2 dump badging`:
+
+```
+package: name='io.github.ytdlpforandroid' versionCode='1' versionName='0.0.1'
+platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37'
+minSdkVersion:'24' targetSdkVersion:'37'
+application-label:'yt-dlp for Android'
+launchable-activity: name='io.github.ytdlpforandroid.MainActivity'
+```
+
+Not yet installed on a phone: there was no device attached during setup. That happens with the Phase 0 checklist.
