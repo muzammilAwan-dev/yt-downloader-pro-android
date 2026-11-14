@@ -15,7 +15,9 @@ Re-read `AGENTS.md` and this file after any context reset. Every claim below is 
 - [x] 7. Gradle project + wrapper, hello-world Compose app
 - [x] 8. Proved toolchain: `tools/check-env.ps1`, `gradlew testDebugUnitTest lintDebug assembleDebug`, APK in `dist/`
 - [x] 9. `docs/dev-setup.md`
-- [ ] 10. Conventional commits, tag `setup-complete`, stop and report
+- [x] 10. Conventional commits, tag `setup-complete`, stop and report
+
+**Setup gate reached 14 Nov 2026** — waiting for the owner to say "continue" before Phase 0 research/coding.
 
 ### Step 1 output (14 Nov 2026)
 
