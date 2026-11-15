@@ -118,9 +118,25 @@ updatable extractor JS, which we reject.)
 
 ## 6. Cookies
 
-WebView sign-in -> `CookieManager` -> write a Netscape-format temp file for the duration of one task -> delete in `finally`. Include
-YouTube auth cookies SAPISID and `__Secure-3PAPISID` (the desktop v6.4.9 fix found they were missing from an allowlist). Store nothing
-in Room. If persisting a login for reuse, encrypt with a Keystore-backed key and let the user clear it.
+**Revised 15 Nov 2026; proposed, not implemented.** The owner reports YouTube website sign-in inside the reference app's
+browser and a sign-in recommendation after bot errors. This is not necessarily an OAuth integration. Google OAuth's
+embedded-agent restriction must not be generalized to every direct website login; website acceptance and authenticated
+download-session transfer need device proof. Full evidence and limits: `16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` §§3–4.
+
+Do not assume `WebView -> CookieManager -> Netscape file` is a complete cookie exporter: `getCookie(url)` returns request
+header pairs without domain/path/expiry metadata. Do not invent a broad cookie scope or persist captured headers in Room.
+AndroidX `CookieManagerCompat.getCookieInfo` (added in WebKit 1.6.0) provides URL-scoped cookies with set attributes when
+`WebViewFeature.GET_COOKIE_INFO` is supported. This makes a validated task-cookie adapter plausible, not yet implemented
+or device-tested; test the feature and cookie scope/partition semantics rather than guessing from header pairs.
+Custom Tabs use browser state, not the app's WebView store; opening a logged-in tab does not authenticate yt-dlp. An Android
+app cannot assume access to another browser's private cookie database.
+
+Investigate opt-in, user-selected Netscape cookie import as a fallback, with strict validation, bounded input, correct
+scope and task-private copies. Delete app-created task cookie files on all terminal paths and on startup after process
+death; never write cookies, auth headers or tokens to logs/history. Import does not authorize deleting an owner's source
+file. Persistent login is a separate explicit security/product decision, not solved merely by encrypting a copy while
+leaving a WebView cookie store populated. Cookies may help some failures but cannot guarantee bot immunity or replace
+PO tokens; respect rejected sign-in instead of spoofing the user agent or weakening TLS checks.
 
 ## 7. Storage
 

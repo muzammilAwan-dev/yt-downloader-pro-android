@@ -33,11 +33,14 @@ Facebook/Instagram-style URLs, and a clipboard monitor that offers to download w
 | Site shortcuts / speed-dial | Grid of the nine supported sites from `contracts/sites.json`, with **our own** icons, opening the site in a Custom Tab; user shares the link back | 2 |
 | Clipboard offer | Only when the app is in the foreground: "Paste link" chip. No background clipboard service | 1 |
 | Search across sources | Out of scope for MVP; yt-dlp supports `ytsearch:` prefixes, so an optional search box is cheap later | 4 |
-| In-app browser with page sniffing | Not planned: it needs WebView interception and carries policy risk. Prefer sharing the page URL to yt-dlp | later, if ever |
+| In-app browser with media discovery | Owner-requested feasibility research: optional non-DRM discovery alongside yt-dlp; direct website login and safe session transfer need separate proof. Not added to MVP. See doc 16 | post-MVP research; implementation scope undecided |
 | Queue / downloads tab | Persisted queue with pause/resume/retry, swipe to retry/delete (YTDLnis precedent) | 1 |
 | Ads, cleaner, vault | Never | n/a |
 
 ## 4. Visual design
 
 Material 3 with dynamic color (Seal precedent), dark theme first, large touch targets, one-handed layout (primary actions in the lower half), clear states per task stage with
-the error taxonomy's recovery button. Check accessibility (TalkBack labels, contrast, font scaling) in Phase 3.
+the error taxonomy's recovery button. Check accessibility (TalkBack labels, contrast, font scaling) with each UI increment;
+Phase 3 is the final release audit, not the first check. All nine owner screenshots were reviewed on 15 Nov 2026; visual
+observations and their limits are recorded in `16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` §1. Use original ClipHarbor layouts,
+tokens, assets and navigation labels, not a traced replica.

@@ -384,3 +384,33 @@ Snaptube screenshots will be used for interaction inspiration only, with an orig
 
 Code increments committed: `30f6666` (logging), `2e86113` (engine-version reporting). Documentation-only follow-up does
 not change the last tested application code; tests/lint/APK output is recorded above.
+
+### Browser/login and screenshot follow-up (research only)
+
+- Visually reviewed all nine owner PNGs; image mapping and original-design principles are in
+  `docs/16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md`. No images, feed/account details, competitor code or assets committed.
+- Re-read existing static REA notes; no new binary/dynamic analysis performed. Exact extraction/cookie/PO-token runtime
+  remains unproved; owner-reported website login and the red bot-error sign-in recommendation are recorded separately.
+- Verified upstream generic/HLS/DASH extraction, cookie/account risks, OAuth vs direct website-login scope, Custom Tabs
+  isolation, cookie-header export limitations, WebView interception, MSE/DRM and bridge risks (research R29–R33).
+- Reconsidered the blanket browser rejection as optional post-MVP feasibility research; **no browser/login added to Phase 1**,
+  no security/permissions/remote-code rule relaxed. Corrected the architecture's assumed WebView cookie-export path.
+- `general` completed the owner-requested direct website-login follow-up: broader Google embedded-sign-in guidance,
+  feature-gated AndroidX cookie attributes and explicit Custom Tabs isolation rechecked on primary sources (R34).
+  A validated WebView session-to-task adapter is plausible, not a guaranteed supported Google sign-in path.
+- `explore` completed the owner-requested retained REA trace. Browser/search, auth-aware outcomes, URL/header/expiry models
+  and typed jobs support the high-level architecture; the exact session handoff needs the original export/path, not found
+  within workspace/approved temp/targeted Downloads scope. Read-only REA status reports no open target or retained evidence.
+  No new device/browser-login test or APK handoff performed. Research proposals are **unimplemented/untested**.
+
+Documentation increment validation (application sources unchanged):
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 18s
+36 actionable tasks: 1 executed, 35 up-to-date
+```
+
+Gradle reused the existing unit-test/lint results; this is **not a fresh execution of 59 tests** or browser validation.
+No `assembleDebug` performed for this research-only increment and no new APK delivered.
