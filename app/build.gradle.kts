@@ -15,6 +15,8 @@ android {
         versionCode = 1
         versionName = "0.1.0-phase0"
 
+        buildConfigField("String", "GIT_SHA", "\"${(findProperty("gitSha") as String?) ?: "unknown"}\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // The engine ships native payloads for arm64-v8a, armeabi-v7a, x86 and x86_64; the Phase 0 phone is arm64,
@@ -72,4 +74,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

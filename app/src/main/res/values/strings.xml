@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ClipHarbor</string>
-    <string name="hello_title">ClipHarbor</string>
-    <string name="hello_subtitle">Unofficial. Free and open source (GPL-3.0). Not affiliated with yt-dlp or YouTube.</string>
-    <string name="hello_build">Toolchain check build</string>
 </resources>
