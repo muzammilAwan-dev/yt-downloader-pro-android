@@ -1248,3 +1248,11 @@ Tests executed: 206 total, 205 passed, 1 Windows symlink skip, 0 failures/errors
 R68: full journal has no size cap, retains five private snapshots; rolling preview stays 5×2 MB. No engine/icon/dependency/permission change; refresh tester, native share/foreground checks still pending.
 Helper stamped `6bb477b`: checks BUILD SUCCESSFUL in 59s (206 total / 205 pass / 1 skip, lint 0 errors / 7 known warnings); assembleDebug BUILD SUCCESSFUL in 7s.
 APK `dist/app-debug.apk`: 67,308,714 bytes; SHA-256 74A9FA79B448A2E4792412678A8C82F3510F462BB74D2B9FDAC81E1B83DEEAE6; embedded stamp/copy/signature verified, minSdk 24 / target 37 / arm64, unchanged Android permissions + prior AndroidX signature permission; phone session-share/foreground checks pending.
+
+### Failed foreground phone milestone investigation — 15 Nov 2026 (R69)
+Owner installed `6bb477b`; all 922 attachment lines inspected, sanitized timeline/hash in `docs/evidence/foreground-6bb477b.md`.
+Three attempts: NETWORK_OFFLINE, then two HTTP_403_ON_MEDIA failures; each precedes service destruction, with progress after Activity stop.
+No recorded Cancel/timeout/restart; root cause unresolved, sustained background/lock milestone remains open. One complete startup-to-Share export received.
+No app/test/engine/permission/APK change. Same-video 1080p visible 60s then background 30s, unchanged connection; ask transport/VPN/settings, Share without Clear.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 30s
+Tests and lint analyses FROM-CACHE: reports 206 total / 205 passed / 1 skip / 0 failures/errors; lint report 0 errors / 7 known warnings (not fresh execution).

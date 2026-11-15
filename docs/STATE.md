@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R68);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R69);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -22,15 +22,19 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   New task-only dataSync service wiring retains a session before admission, promotes before Engine work, and connects Android onTimeout.
   Task-scoped immutable notification Cancel retains service/session through cleanup; stale/repeated actions are no-ops, saving is fenced.
   Optional Android 13+ Enable notifications button never starts/resumes work or gates Download. Service loss cancels the actual task Job.
-  CLI-verified only; Android lifecycle/notification/permission behavior is not phone-tested. No durability or automatic rescheduling.
+  `6bb477b` phone milestone **FAILED** (R69): progress continued after backgrounding, then NETWORK_OFFLINE / two media HTTP 403 failures;
+  each failure preceded service destruction. No recorded Cancel/timeout/restart; root cause unresolved. Sustained background/lock success, Cancel
+  and newer-API behavior remain unverified. No durability or automatic rescheduling. Evidence: `docs/evidence/foreground-6bb477b.md`.
 - Full-session logging: fixed UI/lifecycle actions + available resolve/download diagnostics/progress/timings; emails/secrets redacted.
   Share snapshots the flushed startup-to-tap journal, not a rotating chunk; Clear/new process resets it. No silent truncation; R68 disk-space tradeoff.
+  Owner supplied one complete startup-to-Share export with all three attempts (R69); other native share targets remain unverified.
 
 ## Last recorded check — 15 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 33s**.
-Tests executed: 206 total, 205 passed, 1 Windows symlink skip, 0 failures/errors; lint executed, 0 errors / 7 known warnings.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 30s** (R69 docs-only investigation).
+Test task and lint analyses FROM-CACHE: reports 206 total / 205 passed / 1 Windows symlink skip / 0 failures/errors, lint 0 errors / 7 known warnings.
+Last actual execution: helper BUILD SUCCESSFUL in 59s; earlier source checks BUILD SUCCESSFUL in 33s. No new logic/test/APK change in R69.
 12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
-Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure. Native share is phone-untested.
+Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
 Foreground cancellation-first/timeout-first and permission/service tests remain green. No engine/planner/icon/dependency/permission change.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
 Helper reran checks and built `6bb477b`: 67,308,714 bytes, minSdk 24 / target 37 / arm64; 4 Android permissions + pre-existing AndroidX local signature permission.
@@ -49,14 +53,15 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [x] 1e. Notification Cancel action and contextual Android 13+ notification permission UI (not a launch gate); CLI checks green.
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
 - [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), stamped APK built.
-- [ ] 1f. OWNER: install `6bb477b`: background/lock-screen download, notification reopen/Cancel, cleanup and playback with sound; Share session log, no Clear between.
+- [ ] 1f. OWNER: `6bb477b` installed; background/lock milestone failed (R69), not yet fixed. Same video/1080p visible 60s then background 30s;
+        report Wi-Fi/mobile/VPN/network changes and data/battery settings, Share without Clear. No reinstall yet. Cancel/cleanup/playback still open.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)
 - [ ] 5. Engine freshness spike. Owner decision needed first (see Risks).
 
 ## Open owner checks (cannot be automated)
-Gallery/Files visibility of `Download/YTDLP`; native share sheet; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
+Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
 
 ## Risks to keep visible
 - **Engine age:** `youtubedl-android` 0.18.1 bundles yt-dlp 2025.11.12; upstream stable was 2026.10.26 (recorded in PROGRESS). YouTube

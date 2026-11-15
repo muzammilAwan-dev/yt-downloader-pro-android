@@ -289,6 +289,17 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   No new dependency/permission/engine-option/identity change; public MediaStore mirror remains debug-only and restarts after Clear.
   These are recorded app diagnostics, not exhaustive Android events; crash/ANR/connectivity monitors remain unimplemented. Native share remains phone-untested.
 
+- **R69 (15 Nov 2026, failed foreground phone milestone):** Owner's complete `6bb477b` export has three attempts; see
+  `docs/evidence/foreground-6bb477b.md` for attachment hash, line references and UTC ordering. First: network unreachable/DNS failure;
+  next two: media HTTP 403 at 5.6%/5.4%. Every Engine failure precedes service destruction; progress continues after Activity stop.
+  No recorded Cancel/timeout/destroy/restart; code audit agrees with Home terminal lease release removing the notification, not UI cancellation.
+  Rechecked https://developer.android.com/training/monitoring-device-state/doze-standby (idle network restrictions; FGS excludes App Standby)
+  and https://developer.android.com/develop/connectivity/network-ops/data-saver (metered background restrictions and status APIs).
+  https://github.com/yt-dlp/yt-dlp/wiki/FAQ documents that media access may depend on the same IP/headers; a change is a hypothesis, not observed.
+  Current log has no connectivity/power-policy monitoring or same-video sustained foreground control. Screen-on failure does not establish Doze.
+  Recommend same APK/video/1080p visible 60s then background 30s on unchanged connection; ask transport/VPN/settings, Share without Clear.
+  No app change/engine update/power exemption; successful foreground milestone stays open. One startup-to-Share export received, not all share paths.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports
