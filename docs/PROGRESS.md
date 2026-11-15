@@ -766,3 +766,44 @@ Branding documentation: updated README, identity/UX guide, local handoff/log-fol
 Preserved historical ClipHarbor evidence and other-app naming restrictions; owner's current YTDLP decision supersedes
 only the prior display-name/no-"yt" preference. These documentation changes were present during the successful build
 above and introduce no executable code. A clean-source stamped `dist/` handoff is the final step.
+
+### YTDLP tester APK handoff (15 Nov 2026)
+
+Built from clean source at `69f343f` with the existing helper in the background. Recorded results after completion:
+
+```
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
+
+testDebugUnitTest lintDebug:
+BUILD SUCCESSFUL in 42s
+36 actionable tasks: 15 executed, 21 up-to-date
+
+assembleDebug:
+BUILD SUCCESSFUL in 4s
+38 actionable tasks: 3 executed, 35 up-to-date
+
+XML reports: suites=13 tests=98 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+APK bytes=67694988
+APK SHA256=38A612D6D49C8043BA34486EB37A0CE57204912CEC57AEB3C5008EDD0362E810
+APK DEX contains expected gitSha=69f343f
+Packaged icon MIT notice matches source
+Built and dist APK hashes match
+
+aapt2 dump badging:
+package: name='io.github.muzammilawan.clipharbor' versionCode='1' versionName='0.1.0-phase0'
+application-label:'YTDLP'
+application: label='YTDLP' icon='res/drawable-anydpi-v26/ic_launcher.xml'
+native-code: 'arm64-v8a'
+```
+
+Tests executed: 97 passed, one Windows symlink-capability case skipped. Generated BuildConfig and packaged DEX agree on
+`gitSha=69f343f`; packaged label/adaptive icon confirmed by SDK aapt2. `dist/app-debug.apk` is now the renamed tester
+candidate, superseding the previous `5889eee` handoff. The full desktop MIT notice was checked inside the APK. Implementation
+and branding docs were pushed non-force and remote HEAD verified at `69f343f1e0b492644b85e2a583bb89556fefee7c`; the following
+documentation-only commit records this handoff without changing APK code.
+
+Install this refreshed APK over the old local debug build. Check YTDLP launcher name/icon, new downloads/log folders,
+and playback/audio/gallery results; no automatic device install was attempted. Engine success is already evidenced on
+`5889eee`, but native branding/MediaStore folder appearance and cancellation remain untested. Phase 1 picker, validated
+share/paste, durable queue and foreground notification/service remain unfinished.
