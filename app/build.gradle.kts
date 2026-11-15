@@ -4,16 +4,16 @@ plugins {
 }
 
 android {
-    namespace = "io.github.ytdlpforandroid"
+    namespace = "io.github.muzammilawan.clipharbor"
 
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "io.github.ytdlpforandroid"
+        applicationId = "io.github.muzammilawan.clipharbor"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "0.0.1"
+        versionName = "0.1.0-phase0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

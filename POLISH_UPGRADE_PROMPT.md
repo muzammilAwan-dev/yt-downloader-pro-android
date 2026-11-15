@@ -25,7 +25,7 @@ APK size (R8/shrinking, ABI splits, unused resources and dependencies). Propose 
 the migration notes you found, the risk of each, and the test command that must be green after each. Never invent versions.
 
 **4. UI/UX review (from my screenshots).** Review each screen: clarity of the primary action, one-handed reach, touch targets (at least 48 dp), contrast and dark theme, font scaling, empty/loading/error states with the recovery button from `contracts/errors.json`, progress feedback, TalkBack labels, language/strings in resources, tablet/landscape behaviour.
-Give concrete Compose changes (complete composables), not just advice. Keep the identity "yt-dlp for Android" and the privacy-first tone from `docs/11-BRANDING-AND-UX.md`. Do not copy Snaptube, Seal or YTDLnis designs or assets.
+Give concrete Compose changes (complete composables), not just advice. Keep the identity "ClipHarbor" and the privacy-first tone from `docs/11-BRANDING-AND-UX.md`. Do not copy Snaptube, Seal or YTDLnis designs or assets.
 
 **5. Tests and logging gaps.** List missing tests against `docs/09` and `docs/12`, and weak spots in the diagnostic log (anything a debugger would still need). Write the missing tests.
 

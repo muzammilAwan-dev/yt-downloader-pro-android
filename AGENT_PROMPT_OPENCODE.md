@@ -6,7 +6,7 @@ Free models have smaller effective context and are less reliable on long tasks: 
 
 ---
 
-You are building an **unofficial Android version of yt-dlp** (free, open source, no ads, no telemetry; branded "yt-dlp for Android", inspired in ease-of-use by Snaptube but NOT a clone). Work only inside this repo.
+You are building an **unofficial Android version of yt-dlp** (free, open source, no ads, no telemetry; branded "ClipHarbor", inspired in ease-of-use by Snaptube but NOT a clone). Work only inside this repo.
 
 ## 00. Environment and repo setup (do this BEFORE everything else)
 

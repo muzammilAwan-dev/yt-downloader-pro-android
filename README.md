@@ -1,9 +1,9 @@
-# yt-dlp for Android
+# ClipHarbor
 
 **Unofficial, free, open-source Android front end for [yt-dlp](https://github.com/yt-dlp/yt-dlp).** No ads, no analytics,
 no accounts, no telemetry. Licensed GPL-3.0.
 
-> Working name. The final app name and package id are not decided yet (`docs/11-BRANDING-AND-UX.md`).
+> Name chosen by the owner on 15 Nov 2026 (`docs/11-BRANDING-AND-UX.md` §2). Package id `io.github.muzammilawan.clipharbor`.
 
 This project is **not affiliated with, endorsed by, or supported by** the yt-dlp maintainers. yt-dlp is a separate project
 under the Unlicense; this app only drives it. Downloading may violate a site's terms of service or copyright law in your
@@ -14,7 +14,7 @@ country — you are responsible for what you download.
 | Phase | State |
 |---|---|
 | Environment setup | done on the owner's PC (`docs/dev-setup.md`) |
-| Phase 0 — engine spike on a real arm64 phone | **next**; see `docs/01-PLAN.md` |
+| Phase 0 — engine spike on a real arm64 phone | **in progress**; see `docs/01-PLAN.md` |
 | Phase 1 — MVP (share target, picker, queue, notifications) | not started |
 | Phase 2 — parity (playlists, trim, audio, subs, cookies, updates) | not started |
 | Phase 3 — release (baseline profiles, a11y, signing, F-Droid metadata) | not started |

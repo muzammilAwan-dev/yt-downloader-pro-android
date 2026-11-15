@@ -2,9 +2,13 @@
 
 ## 1. Positioning
 
-**Main identity: "the yt-dlp Android app", an unofficial, free, open-source Android front-end (alternative) for yt-dlp.**
-Snaptube is an *inspiration for ease of use* (paste/share, quick queue, site shortcuts), not a brand to imitate. Tagline pattern:
-"yt-dlp for Android: simple, private, free." Keep "unofficial" and "powered by yt-dlp" visible in the About screen and README.
+**Main identity: "ClipHarbor", an unofficial, free, open-source Android front end (alternative) for yt-dlp.**
+Snaptube is an *inspiration for ease of use* (paste/share, quick queue, site shortcuts), not a brand to imitate. Tagline:
+"ClipHarbor: simple, private, free." Keep "unofficial" and "powered by yt-dlp" visible in the About screen and README.
+
+Owner decision (15 Nov 2026): **ClipHarbor**, package id `io.github.muzammilawan.clipharbor`; label must stay free of
+"YouTube", "yt", Snaptube, Seal and YTDLnis. Re-verify the name against GitHub, F-Droid, IzzyOnDroid and a trademark search
+before any public release.
 
 ## 2. Naming rules
 
@@ -13,6 +17,7 @@ Snaptube is an *inspiration for ease of use* (paste/share, quick queue, site sho
 - The desktop name "YT Downloader Pro" is already crowded: other GitHub repos, a commercial "YT Downloader Pro 10.x" and ytdownloader.pro appeared in search results. [V]
   Pick a more distinctive name for the Android app, or at least a distinctive suffix.
 - Working-name ideas (availability, trademarks, F-Droid and package-name collisions NOT checked): `YTDLP Droid`, `Droid DLP`, `Pocket DLP`, `DLP Pocket`.
+  **Superseded 15 Nov 2026: the owner chose `ClipHarbor`.**
   Check GitHub, F-Droid, IzzyOnDroid and a trademark search before you commit.
 - Package id: reverse-domain you control; GitHub-based ids like `io.github.<handle>.<app>` are common (youtubedl-android publishes under `io.github.junkfood02`). [V] No hyphens allowed in
   package segments; use underscores or none. Decide once; changing it later forces users to reinstall.

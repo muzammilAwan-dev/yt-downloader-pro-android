@@ -1,4 +1,4 @@
-package io.github.ytdlpforandroid
+package io.github.muzammilawan.clipharbor
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
