@@ -285,7 +285,7 @@ class MainActivity : ComponentActivity() {
                 ),
             )
 
-            state.status = "Publishing to Downloads/ClipHarbor…"
+            state.status = "Publishing to Downloads/${AppInfo.DISPLAY_NAME}…"
             logger.event('I', "start", task = taskId, stage = Stage.PUBLISHING.name)
             val published = withContext(Dispatchers.IO) {
                 publisher.publish(file, mimeTypeFor(file))
@@ -302,7 +302,7 @@ class MainActivity : ComponentActivity() {
                 stage = Stage.PUBLISHING.name,
                 fields = mapOf("uri" to uri.toString(), "mime" to mimeTypeFor(file)),
             )
-            state.status = "Saved ${file.name} to Downloads/ClipHarbor ($uri)"
+            state.status = "Saved ${file.name} to Downloads/${AppInfo.DISPLAY_NAME} ($uri)"
             workingDir.deleteRecursively()
         } finally {
             snapshot?.close()
@@ -357,10 +357,10 @@ class MainActivity : ComponentActivity() {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "ClipHarbor diagnostic log")
+                putExtra(Intent.EXTRA_SUBJECT, "${AppInfo.DISPLAY_NAME} diagnostic log")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            startActivity(Intent.createChooser(intent, "Share ClipHarbor log"))
+            startActivity(Intent.createChooser(intent, "Share ${AppInfo.DISPLAY_NAME} log"))
         }.onFailure { state.status = "Could not share log: ${it.message}" }
     }
 
@@ -369,7 +369,7 @@ class MainActivity : ComponentActivity() {
         val highlights = logger.snapshot(400).lines().filter { it.contains(" E ") || it.contains(" W ") }.takeLast(40)
         val summary = DiagnosticReport.summary(context, highlights) + "\n\n" + state.report
         val clipboard = getSystemService(ClipboardManager::class.java)
-        clipboard?.setPrimaryClip(ClipData.newPlainText("ClipHarbor diagnostic summary", summary))
+        clipboard?.setPrimaryClip(ClipData.newPlainText("${AppInfo.DISPLAY_NAME} diagnostic summary", summary))
         state.status = "Summary copied to the clipboard."
     }
 

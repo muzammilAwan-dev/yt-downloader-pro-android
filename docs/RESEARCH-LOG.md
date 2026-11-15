@@ -96,6 +96,19 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
 | R39 | Parent replay/cancellation recheck and implementation limits | Parent re-read pinned [Android execute source](https://github.com/yausername/youtubedl-android/blob/d725d5c9a18c3a99a13ee0308bf78275dc310760/library/src/main/java/com/yausername/youtubedl_android/YoutubeDL.kt), [yt-dlp format-field source](https://github.com/yt-dlp/yt-dlp/blob/5977782142ca7e41240f07202cc9b8dcc087b401/yt_dlp/YoutubeDL.py), and [options](https://github.com/yt-dlp/yt-dlp/blob/5977782142ca7e41240f07202cc9b8dcc087b401/yt_dlp/options.py) lines 424/1510 | Confirmed stdout-only default callbacks, merged-output exception limitation, shell helper's arbitrary-key/PID mismatch, and explicit ignore-config/clean-info-json flags. Expanded replay policy to clear top-level request bodies, HLS key/query data and format transport flags while retaining per-format data. Adapter now uses task-bound single-use inputs, source HTTPS validation, interruptible jobs and explicit final/selection markers. No live speed gain, replay success, Google login or full descendant cleanup measured; metadata reuse may still fall back to upstream re-extraction after errors. | High for inspected source/offline policy tests; native runtime untested |
 | R40 | Latest phone evidence belongs to the old APK | Owner attachments `app-20261115.log`, `app-20261115 2.log`, `app-20261115 3.log`, read 15 Nov 2026; clean-source tester build via existing helper | All three are snapshots of one session stamped `8cd9487`. Old build logs successful video/audio download, MP4 publish and self-test 7/7; catalog height is not downloaded height. EJS remains unreported, not proven absent. The 18.367 s pre-progress wait is consistent with old repeated extraction, not a measured new-build comparison. Refreshed `dist/app-debug.apk` from `5889eee`; generated BuildConfig/packaged stamp and identical source/dist SHA-256 checked. 90 JVM tests passed, one host-restricted symlink case skipped; lint/build succeeded. No current phone replay/cancellation, playback/audio or gallery confirmation yet. Personal media/account details not retained. | High for supplied logs/local build; latest native behavior still unverified |
 
+## 15 Nov 2026 — current phone evidence and owner asset
+
+- **R41:** Owner's `app-20261115-091521*.log` attachments identify `5889eee`, show private metadata replay, actual
+  `299+140`/1080 selection, explicit final-file evidence, MP4 publish and 7/7 passing checks. EJS is now reported as
+  0.3.1 (previous unknown is resolved for this run). This proves a successful sample, not universal extraction, native
+  cancellation/descendant cleanup or owner playback. First progress at ~5.632 s is not a controlled comparison to the
+  different earlier video. Engine age warning is retained; no updater change. Personal media details not copied.
+- **R42:** Owner explicitly selected **YTDLP (You Tube Downloader Pro)** and supplied
+  `E:\Github Projects\yt-downloader-pro\host\YTDLPHost\Assets\icon.ico`. Read their local desktop `LICENSE`: MIT,
+  copyright (c) 2026 Muhammad Muzammil. ICO inventory has seven sizes from 16 to 256 px, largest frame PNG-compressed.
+  Reuse only this owner-selected asset with license/attribution; do not replace it with a competitor asset or imply
+  upstream endorsement. Android package id remains stable; icon rendering and public-name availability unverified.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

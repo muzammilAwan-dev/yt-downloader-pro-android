@@ -685,3 +685,38 @@ Owner handoff: copy the newly refreshed `dist/app-debug.apk` to the phone and in
 Keep the app foregrounded, download a small public HTTPS sample, run self-test and share the newest session log. Expect
 `gitSha=5889eee`, `resolveReuse=true`, `selected_formats ids=... actualHeight=... reusedResolve=true` and successful publish;
 report playback/audio/gallery results. Do not call native regression passed until the new phone evidence is received.
+
+### Current-build phone evidence and owner rename (15 Nov 2026)
+
+- Reviewed the three new `app-20261115-091521*.log` snapshots of one session, stamped `5889eee` on the same Android 10
+  arm64 phone. Successful task-private replay is evidenced by `--load-info-json`, `resolveReuse=true` and
+  `reusedResolve=true`; no extractor re-fetch lines are visible in this successful download's captured output.
+- Actual selection marker and summary agree: `299+140`, height 1080 (video plus audio). The explicit after-move marker
+  preceded verified output and a 17,201,445-byte MP4 was published successfully. This validates the successful native
+  replay/selection/final-file path for this sample, not cancellation, error recovery or every supported site.
+- Resolve took 19,943 ms; first download progress arrived about 5.632 s after download start; download/merge reported
+  17,798 ms. The earlier sample was different, so these are observations, not a controlled speed comparison.
+- Self-test passed 7/7 with zero failures; runtime reports yt-dlp 2025.11.12, Python 3.12.11, EJS **0.3.1**, QuickJS
+  `quickjs-2025-04-26` and ffmpeg 7.1.1. Signed media URL queries remain redacted. The engine's age warning is real;
+  no update, warning suppression or remote-component enablement is included in this branding change.
+- Playback with sound/gallery visibility still needs the owner. The summary's missing closing parenthesis remains a
+  cosmetic issue, not a failed check. Media titles/source URLs/account details are not retained in this record.
+- Owner superseded ClipHarbor with **YTDLP (You Tube Downloader Pro)** and supplied their desktop `icon.ico` for reuse.
+  Keep package id `io.github.muzammilawan.clipharbor` so the app updates in place. Unofficial attribution stays visible;
+  no name/trademark availability or upstream endorsement claimed. Source icon conversion follows as a small increment.
+
+Branding step 1: updated launcher label, app metadata, diagnostics heading and share/copy strings. New output-name
+constants are tested; MediaStore wiring follows immediately. Existing private keys/process markers/package/theme names
+remain stable implementation identifiers. Verification pending; no new APK handoff yet.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 19s
+54 actionable tasks: 24 executed, 1 from cache, 29 up-to-date
+XML reports: suites=11 tests=92 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+```
+
+Tests executed: 91 passed; the existing Windows symlink case skipped. Rename compiles, but launcher/phone appearance
+has not been tested. The `dist/` handoff is still `5889eee` until all branding increments are packaged.

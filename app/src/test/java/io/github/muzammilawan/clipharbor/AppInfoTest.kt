@@ -1,6 +1,7 @@
 package io.github.muzammilawan.clipharbor
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -17,8 +18,9 @@ class AppInfoTest {
     }
 
     @Test
-    fun displayNameIsNotEmpty() {
-        assertTrue(AppInfo.DISPLAY_NAME.isNotBlank())
+    fun displayNameAndExpansionMatchOwnerDecision() {
+        assertEquals("YTDLP", AppInfo.DISPLAY_NAME)
+        assertEquals("You Tube Downloader Pro", AppInfo.FULL_NAME)
     }
 
     @Test
@@ -27,12 +29,19 @@ class AppInfoTest {
         assertTrue(AppInfo.hasForbiddenBrand("YouTube"))
         assertTrue(AppInfo.hasForbiddenBrand("YTDLnis"))
         assertFalse(AppInfo.hasForbiddenBrand("ClipHarbor"))
+        assertFalse(AppInfo.hasForbiddenBrand(AppInfo.DISPLAY_NAME))
     }
 
     @Test
-    fun applicationIdMatchesChosenBrand() {
-        assertTrue(AppInfo.APPLICATION_ID.startsWith("io.github."))
-        assertTrue(AppInfo.APPLICATION_ID.endsWith(".clipharbor"))
+    fun applicationIdIsPreservedAcrossDisplayRename() {
+        assertEquals("io.github.muzammilawan.clipharbor", AppInfo.APPLICATION_ID)
         assertFalse(AppInfo.hasForbiddenBrand(AppInfo.APPLICATION_ID))
+    }
+
+    @Test
+    fun newOutputNamesUseChosenBrand() {
+        assertEquals("Download/YTDLP", AppInfo.DOWNLOAD_RELATIVE_PATH)
+        assertEquals("Download/YTDLP-logs", AppInfo.LOG_RELATIVE_PATH)
+        assertEquals("ytdlp-log-", AppInfo.LOG_FILE_PREFIX)
     }
 }

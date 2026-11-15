@@ -7,10 +7,16 @@ package io.github.muzammilawan.clipharbor
  * 15 Nov 2026 (see docs/11-BRANDING-AND-UX.md).
  */
 object AppInfo {
-    /** Chosen working name. Must never contain the name of an app this project is inspired by. */
-    const val DISPLAY_NAME = "ClipHarbor"
+    /** Owner-selected desktop/Android brand (15 Nov 2026); independent of the yt-dlp project. */
+    const val DISPLAY_NAME = "YTDLP"
+    const val FULL_NAME = "You Tube Downloader Pro"
 
-    /** Reverse-DNS id of the app. Changing it makes the device treat the build as a different app. */
+    /** New public output paths only; previously saved ClipHarbor files are not moved or deleted. */
+    const val DOWNLOAD_RELATIVE_PATH = "Download/$DISPLAY_NAME"
+    const val LOG_RELATIVE_PATH = "Download/$DISPLAY_NAME-logs"
+    const val LOG_FILE_PREFIX = "ytdlp-log-"
+
+    /** Retain the original id so the renamed app updates the existing installation. */
     const val APPLICATION_ID = "io.github.muzammilawan.clipharbor"
 
     /** This project is not affiliated with or endorsed by the yt-dlp maintainers. */

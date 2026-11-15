@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.muzammilawan.clipharbor.AppInfo
 
 /** All mutable UI state of the Phase 0 diagnostics screen. */
 class DiagnosticsState {
@@ -58,7 +59,8 @@ fun DiagnosticsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("ClipHarbor", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(AppInfo.DISPLAY_NAME, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(AppInfo.FULL_NAME, style = MaterialTheme.typography.bodyMedium)
         Text(
             "Unofficial, free and open source. Powered by yt-dlp. Phase 0 engine spike.",
             style = MaterialTheme.typography.bodySmall,
