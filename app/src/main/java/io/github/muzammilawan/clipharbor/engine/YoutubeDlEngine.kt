@@ -24,11 +24,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-/** Thrown (as a [Result] failure) when yt-dlp or the library fails; carries the contract error. */
-class EngineFailure(val error: DownloadError) : Exception(error.code.name) {
-    fun describe(): String = error.logFields()
-}
-
 /**
  * The only class that talks to youtubedl-android. All work happens on [Dispatchers.IO]; yt-dlp itself runs in a child
  * process behind the library (Python + QuickJS + ffmpeg, see docs/RESEARCH-LOG.md R14-R21).

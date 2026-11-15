@@ -544,3 +544,28 @@ lint XML: errors=0 warnings=6
 
 Tests executed, including 11 new snapshot/policy cases. The existing host-restricted symlink case remains skipped.
 This verifies the foundation, not Android replay integration, live authentication or process-tree termination.
+
+### Step 3c: offline-testable blocking download orchestration
+
+- Added an original process-runner seam and interruptible coroutine execution; caller task IDs never reach the library's
+  shell-based process helper. Cancellation targets the registered job and uses generated internal keys for best-effort
+  cleanup. This is not a guarantee of complete descendant-process termination in library 0.18.1.
+- Download orchestration supplies a fresh selector, `-N 4`, enabled replay cleaning, two explicit print markers and an
+  empty URL list for task-private replay. It verifies final-file evidence and captures reported IDs/height.
+- Retains a bounded redacted 200-line tail even when the library throws without an exit code. Callback exceptions cannot
+  kill its reader thread or report task success; unrelated lines do not reuse stale progress percentages.
+- Offline runner fixtures cover replay/cleanup, failure/redaction, callback errors, stale progress, HTTPS-only inputs and
+  cancellation. Android engine/MainActivity wiring follows next. Verification pending; no new device test or APK handoff.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 49s
+54 actionable tasks: 18 executed, 36 up-to-date
+
+XML reports: suites=11 tests=88 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+```
+
+Tests executed, including eight new orchestration cases and real-thread interruption against a synthetic blocking runner.
+The host-restricted symlink case remains skipped. This does not execute native yt-dlp or prove Android child cleanup.
