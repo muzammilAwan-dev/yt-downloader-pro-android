@@ -1,7 +1,8 @@
 # 13. Build the APK on your PC from the command line, install it on your phone, read the log
 
 Goal: the Android equivalent of `dotnet build`. Commands below assume Windows PowerShell (macOS/Linux use `./gradlew`). The scripts and commands in this file are
-**UNTESTED** here (no Android SDK, PowerShell or phone in the sandbox that wrote them); fix them against reality and tell the AI what differed.
+originally came from untested reference notes. Windows helper/Gradle builds are now verified on the owner's PC (see
+`docs/dev-setup.md` and `docs/PROGRESS.md`); other-host and phone commands still require their own verification.
 
 ## 1. One-time setup (no Android Studio needed for building)
 
@@ -25,7 +26,9 @@ Goal: the Android equivalent of `dotnet build`. Commands below assume Windows Po
 | `dotnet publish -c Release` | `.\gradlew.bat assembleRelease` (needs signing env vars, doc 07) |
 
 Debug APKs are signed automatically with a local debug key, so they install normally. Always build the same way: test, then build, then copy to `dist\`. Helper scripts: `tools/build-debug.ps1`
-(Windows) and `tools/build-debug.sh` (macOS/Linux).
+(Windows) and `tools/build-debug.sh` (macOS/Linux). On this PC script execution is disabled; use the already-tested,
+process-scoped invocation `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1` instead of
+changing a persistent execution policy. Identify each phone log by `gitSha`, not the unchanged phase-spike version name.
 
 ## 3. Get it onto the phone and install
 
@@ -37,17 +40,19 @@ Debug APKs are signed automatically with a local debug key, so they install norm
 
 Tester (debug) builds write two copies:
 1. **Private rotating log** in app storage (always, as in doc 12).
-2. **Public copy in the phone's `Downloads/ClipHarbor-logs/`** as one text file per app session, e.g. `clipharbor-log-20261115-140322.txt`, written through MediaStore (no storage permission on Android 10+ [K]).
+2. **Public copy in the phone's `Downloads/YTDLP-logs/`** as one text file per app session, e.g. `ytdlp-log-20261115-140322.txt`, written through MediaStore (no storage permission on Android 10+ [K]).
    Keep only the last 5 sessions; write a new file per session instead of overwriting (MediaStore creates duplicate names such as `log (1).txt` when you re-insert the same name).
    On Android 7-9 (minSdk 24 means these exist) a public write needs a storage permission that the permissions budget forbids: there, skip the public copy and rely on **Share log**.
-   *Implemented in Phase 0 as `log/MediaStoreLogMirror.kt` (`Download/ClipHarbor-logs`, 5 sessions).*
+   *Implemented in Phase 0 as `log/MediaStoreLogMirror.kt` (5 sessions). After the owner rename, new logs use
+   `Download/YTDLP-logs`; older files in `Download/ClipHarbor-logs` are not migrated or deleted.*
 3. The same file is available from **Settings -> Diagnostics -> Share log** (share sheet), and **Run self-test** writes its result block into the current session file.
 
 Public-folder trade-off: files in Downloads are not private. Redaction (doc 12 section 4) still applies, and the public copy is **debug/tester builds only**; release builds log to the private folder and export
 only when you tap Share log.
 
-To get the file to the AI: open Downloads on the phone, attach `clipharbor-log-*.txt` to the chat (or copy it to your PC), together with the debug prompt.
-Fallback with a cable: `adb pull /sdcard/Download/ClipHarbor-logs/ .` [K] or `adb logcat -d > logcat.txt`.
+To get the file to the AI: open Downloads on the phone, attach the newest `ytdlp-log-*.txt` or the newest **Share log**
+`app-YYYYMMDD-HHmmss.log` export to the chat (or copy it to your PC), together with the debug prompt.
+Fallback with a cable: `adb pull /sdcard/Download/YTDLP-logs/ .` [K] or `adb logcat -d > logcat.txt`.
 
 ## 5. Daily loop
 

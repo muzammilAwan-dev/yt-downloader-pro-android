@@ -1,9 +1,10 @@
-# ClipHarbor
+# YTDLP — You Tube Downloader Pro
 
 **Unofficial, free, open-source Android front end for [yt-dlp](https://github.com/yt-dlp/yt-dlp).** No ads, no analytics,
 no accounts, no telemetry. Licensed GPL-3.0.
 
-> Name chosen by the owner on 15 Nov 2026 (`docs/11-BRANDING-AND-UX.md` §2). Package id `io.github.muzammilawan.clipharbor`.
+> Owner-selected desktop/Android name and icon (15 Nov 2026; `docs/11-BRANDING-AND-UX.md`). Formerly ClipHarbor;
+> package id stays `io.github.muzammilawan.clipharbor` so existing installations update in place.
 
 This project is **not affiliated with, endorsed by, or supported by** the yt-dlp maintainers. yt-dlp is a separate project
 under the Unlicense; this app only drives it. Downloading may violate a site's terms of service or copyright law in your
@@ -15,14 +16,16 @@ country — you are responsible for what you download.
 |---|---|
 | Environment setup | done on the owner's PC (`docs/dev-setup.md`) |
 | Phase 0 — engine spike on a real arm64 phone | **passed 15 Nov 2026** on an Infinix X682B (Android 10, arm64): 7/7 self-test, merged MP4 published via MediaStore. Evidence: `docs/evidence/phase0.md` |
-| Phase 1 — MVP (share target, picker, queue, notifications) | **in progress**: logging/version regressions fixed; 59 JVM tests and lint green. MVP UI/queue/service still pending (`docs/PROGRESS.md`) |
+| Phase 1 — MVP (share target, picker, queue, notifications) | **in progress**: engine replay and actual 1080p video/audio selection verified on the owner's phone; local tests/lint green. MVP UI/queue/service still pending (`docs/PROGRESS.md`) |
 | Phase 2 — parity (playlists, trim, audio, subs, cookies, updates) | not started |
 | Phase 3 — release (baseline profiles, a11y, signing, F-Droid metadata) | not started |
 
-The current app is the Phase 0 spike: a Diagnostics screen that unpacks the yt-dlp engine, runs a 7-check self-test,
-and can download 1080p video + audio, merge them and publish the result to `Download/ClipHarbor`. The spike is proven on a
-real arm64 phone (Infinix X682B, Android 10): self-test 7/7, 31 formats resolved, separate 1080p-class video + audio merged
-into one MP4 and published through MediaStore (`docs/evidence/phase0.md`).
+The current UI is still the diagnostics spike: it unpacks the yt-dlp engine, runs a 7-check self-test, and can download
+1080p video + audio, merge them and publish the result to `Download/YTDLP`. The engine fixes were checked on a real arm64
+phone (Infinix X682B, Android 10): self-test 7/7, task-private metadata replay, actual `299+140`/1080 selection and successful
+MP4 publishing. Playback/audio/gallery confirmation and cancellation checks remain pending (`docs/PROGRESS.md`). Older
+files remain in `Download/ClipHarbor`; the rename does not move or delete them. New debug logs use `Download/YTDLP-logs`.
+The launcher icon is the owner's supplied desktop artwork, with its MIT notice included in the APK.
 
 The product it is catching up with is the owner's Windows app,
 [muzammilAwan-dev/yt-downloader-pro](https://github.com/muzammilAwan-dev/yt-downloader-pro) (MIT): its feature set and its

@@ -2,6 +2,11 @@
 
 Project: unofficial, free, open-source Android app for yt-dlp (GPL-3.0). Plan and facts: `docs/01-PLAN.md`, `docs/10-VERIFICATION-LOG.md`. Detail docs are listed in `README.md`; read them on demand.
 
+Owner identity decision (15 Nov 2026): **YTDLP (You Tube Downloader Pro)** with the owner's desktop icon (MIT notice
+bundled in app assets). This supersedes ClipHarbor as a display name. Keep package id `io.github.muzammilawan.clipharbor`
+for update continuity; do not rename private cleanup prefixes blindly. Owner asset reuse does not permit competitor
+asset/code copying or imply yt-dlp/website endorsement. Public-name/trademark clearance remains unverified.
+
 ## Always
 - Be factual. Do not claim a build/test passed unless you ran it and saw the output. Mark unrun code "untested". Never invent versions or APIs; look up or mark `TODO(verify)`.
 - Log research in `docs/RESEARCH-LOG.md`; log progress in `docs/PROGRESS.md`. Re-read both after any context reset.
