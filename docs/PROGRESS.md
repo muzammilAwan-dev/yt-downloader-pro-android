@@ -988,3 +988,50 @@ lint XML: errors=0 warnings=7
 120 passed/one existing Windows symlink case skipped. New preview metadata and late-callback/close tests passed.
 Phone rendering/share/download/playback/accessibility still unrun. `dist/` is not refreshed until the stamped clean-source
 helper completes; no incorrect icon-only APK presented as containing the new UI.
+
+### First Phase 1 UI tester handoff — `ec146df` (15 Nov 2026)
+
+Clean source `ec146df670bab77e092d383a04ff06ade12ada11` pushed non-force and remote SHA verified. First standard helper
+attempt failed with `DaemonDisappearedException` during lint after running the stamped unit-test task. Cause is unknown;
+no failing test or app compile error was reported. Do not count that whole helper attempt as successful.
+
+Retried without changing app/source/SDK/dependencies or deleting caches: appended `-Dorg.gradle.daemon=false` to
+`GRADLE_OPTS` only inside the build shell, preserving any existing value; the helper's child PowerShell inherited it.
+Gradle confirmed a fresh single-use daemon for each invocation. No persistent environment/config change made.
+
+```
+> $env:GRADLE_OPTS = "$env:GRADLE_OPTS -Dorg.gradle.daemon=false"
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
+
+testDebugUnitTest lintDebug:
+BUILD SUCCESSFUL in 1m 44s
+36 actionable tasks: 3 executed, 33 up-to-date
+
+assembleDebug:
+BUILD SUCCESSFUL in 29s
+38 actionable tasks: 3 executed, 35 up-to-date
+
+XML reports: suites=16 tests=121 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+APK bytes=67278887
+APK SHA256=2F3C7407897E6ACA0B6E9107F03546E1C2B2DE7535B923BCE3A2D15C69D85E1B
+APK DEX contains gitSha=ec146df, preview version and HomeScreenKt
+Built and dist APK hashes match
+```
+
+120 passing tests/one existing Windows symlink case skipped. On the successful helper retry, unit tests were UP-TO-DATE,
+not executed a second time; validated XML reports are retained from executed stamped/source checks. Generated BuildConfig
+and packaged DEX agree: versionCode 2, `0.1.0-phase1-preview`, `gitSha=ec146df`.
+SDK `aapt2` confirms packaged SEND/DEFAULT/text/plain and singleTask MainActivity, stable package, cleartext=false and
+extracted engine libraries. The padded adaptive wrapper remains packaged with normalized inset 0.1667. App-declared
+permission remains INTERNET; prior AndroidX-generated local signature permission/debug tooling components remain.
+
+`dist/app-debug.apk` is now the first usable Phase 1 UI preview, replacing the icon-only `b83d33c` handoff. Install over
+the previous local debug APK, review/paste/share a link, Find formats, choose a video+audio height ceiling, download with
+the app open, then check saved-file picture/sound and Downloads/YTDLP visibility. Send Home/picker screenshots and latest
+log if convenient; details/checklist in doc 13 §6. The next documentation-only commit does not change this APK/stamp.
+
+Still incomplete: exact-format/audio-only picker, durable Room queue, foreground notifications/service and full progress/
+error recovery. This is not finished Phase 1 or a release. New native UI/share/engine/cancel/open-file and light/dark,
+large-text/TalkBack/window-layout checks have not been run. Earlier owner phone engine/icon evidence remains valid only
+for those earlier builds; playback/audio/file-browser confirmation and complete native descendant cleanup remain open.

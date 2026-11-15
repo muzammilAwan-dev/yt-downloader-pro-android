@@ -159,6 +159,11 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   coroutine alone does not prove library reader threads stopped. Added volatile ownership/close visibility, callback
   gates and fake late-callback tests; activity observers suppress post-close writes. No complete descendant/native
   process-cleanup guarantee inferred. Build/report metadata explicitly marks the new UI as a Phase 1 preview.
+- **R52:** Standard stamped helper's reused Gradle daemon disappeared during lint; root cause unverified. Retried with
+  process-local `GRADLE_OPTS` daemon=false (existing value preserved), no source/cache/dependency/SDK/global setting changes.
+  Fresh-daemon lint/build succeeded. Verified generated/DEX `ec146df` + preview version + HomeScreen, identical source/dist
+  APK SHA-256, compiled share target and unchanged adaptive padding. 120 passed/one existing host symlink skip in XML;
+  helper retry's test task was UP-TO-DATE, not another execution. Native UI/share/download/accessibility remain untested.
 
 ## Still unverified (carried forward)
 
