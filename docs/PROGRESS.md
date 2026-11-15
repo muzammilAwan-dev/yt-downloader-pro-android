@@ -44,11 +44,16 @@ C:\Users\Malku\dev\repos missing
 
 ## Phases (gates: stop and wait for the owner)
 
-- [ ] **Phase 0 (gate)** — spike: YouTube URL resolves with yt-dlp + JS runtime, 1080p video + audio downloaded, merged, saved via
-      MediaStore on a real arm64 phone. Deliverable: exact steps + report template. **STOP for owner's device report.**
-      *App side built and green on 15 Nov 2026 (see "Phase 0 — engine spike" below); the gate stays open until the owner runs it.*
+- [x] **Phase 0 (gate)** — spike: YouTube URL resolves with yt-dlp + JS runtime, 1080p video + audio downloaded, merged, saved via
+      MediaStore on a real arm64 phone. Deliverable: exact steps + report template. **PASSED 15 Nov 2026** on an Infinix X682B
+      (Android 10, API 29, arm64): `SELFTEST RESULT: PASS (7/7 checks)`, merged MP4 2,505,222 B, published to
+      `content://media/external/downloads/18406`. Evidence: `docs/evidence/phase0.md`; log excerpt and findings below.
 - [ ] **Phase 1 (MVP)** — share target/paste, format picker, Room staged queue, notification, error taxonomy
       (`contracts/errors.json`), `onTimeout` handling, unit tests.
+      *Backlog carried in from Phase 0 + the desktop reference (`docs/evidence/phase0.md` §7, `docs/04` sibling section):
+      reuse the resolve via `--load-info-json` instead of extracting twice, `-N 4` concurrent fragments, parse
+      `[info] … Downloading N format(s)` and `[Merger] Merging formats into "…"`, 3 concurrent tasks, idempotent redaction,
+      distinguishable log names, foreground service.*
 - [ ] **Phase 2 (parity)** — playlists, trim, audio formats, subtitles, cookie sign-in, site shortcuts/toggles, speed settings,
       engine update with checksum + rollback.
 - [ ] **Phase 3 (release)** — Baseline Profiles, accessibility, signing via env vars, fastlane metadata, security policy, changelog.
@@ -71,6 +76,8 @@ Every phase must ship with automated tests (fake `Engine`, validator, error mapp
 | 15 Nov 2026 | Added youtubedl-android 0.18.1 + ffmpeg, arm64-only ABI, legacy native-lib packaging | `assembleDebug` green, APK 67,007,639 B (pre-code) |
 | 15 Nov 2026 | Implemented engine spike: diagnostics self-test, 1080p download+merge, MediaStore publish, redacted rotating log, Share log | `testDebugUnitTest lintDebug assembleDebug` green — outputs below |
 | 15 Nov 2026 | Built installable APK with `tools/build-debug.ps1` | `dist/app-debug.apk`, SHA-256 below |
+| 15 Nov 2026 | Owner ran the spike on an Infinix X682B (Android 10, API 29): self-test 7/7, 1080p-class Shorts resolved, merged MP4 2,505,222 B published via MediaStore | **Phase 0 gate: PASS** (evidence below and in `docs/evidence/phase0.md`) |
+| 15 Nov 2026 | Read the owner's desktop repo (`muzammilAwan-dev/yt-downloader-pro`, MIT) as the reference implementation; reconciled `contracts/allowed-options.json` v2 with its real validator and mapped features to phases | `docs/04-OPEN-SOURCE-REFERENCES.md` (sibling-project section), `docs/RESEARCH-LOG.md` R24 |
 
 ## Step 4 output (install, 14 Nov 2026)
 
@@ -259,7 +266,35 @@ Byte budget: yt-dlp zipapp 3.2 MB + Python payload 13.6 MB + ffmpeg payload 34 M
 - The engine initialises when the screen opens, so the first launch spends a few seconds unpacking; the log records
   `event=engine_init ms=…`.
 
-### On-device checklist (owner) — the Phase 0 gate
+### On-device result (owner's run, 15 Nov 2026) — gate **PASS**
+
+Device and build as reported by the app itself: `device=INFINIX MOBILITY LIMITED Infinix X682B android=10 api=29
+abi=arm64-v8a locale=en-US freeSpaceMB=11194`, `gitSha=8cd9487` (the audited APK). Logs supplied:
+`app-20261115.log` (self-test only, `resolve` skipped because no URL was entered → `PASS (6/7 checks)`) and two snapshots
+of the download session. Full detail in `docs/evidence/phase0.md` §5.
+
+```
+2026-11-15T05:06:02.780Z I stage=APP event=engine_init ms=8297
+check=engine-init status=PASS detail="library=0.18.1 ytdlp=(2025.11.12) python=3.12.11 ejs=? jsRuntime=quickjs-2025-04-26 ffmpeg=7.1.1"
+check=resolve status=PASS detail="formats=31 videoOnly=18 audioOnly=8 muxed=1 maxHeight=1920 maxHeightMuxed=640 hdUnavailable=false withheld=false warnings=0"
+SELFTEST RESULT: PASS (7/7 checks)
+2026-11-15T05:07:27.685Z I task=t153727 stage=MERGING event=ok file=…[j6EUktS4XYo].mp4 bytes=2505222 ms=19622
+2026-11-15T05:07:28.007Z I task=t153727 stage=PUBLISHING event=ok uri=content://media/external/downloads/18406 mime=video/mp4
+```
+
+Verdict: **GO.** Resolve with QuickJS, 1080p-class formats offered with no token block, separate video (1.73 MiB) +
+audio (660.71 KiB) downloaded, merged to a 2,505,222-byte MP4, published through MediaStore on API 29 (Android 10).
+Outstanding human check: that the file plays with sound and shows in the gallery — the size arithmetic already proves the
+audio stream is inside the container.
+
+Engine versions measured on the device: yt-dlp 2025.11.12, CPython **3.12.11**, QuickJS `quickjs-2025-04-26`, ffmpeg
+**7.1.1**. First-run unpack: **8.3 s**.
+
+Findings handed to Phase 1 (`docs/evidence/phase0.md` §7): the URL is extracted twice (~18 s wasted per item), the
+selected format id/height is not logged, `ejs=?` and `ytdlp=(2025.11.12)` need fixing in the report, the URL is redacted
+twice (`?<redacted><redacted>`), session log names are indistinguishable, and the foreground service is still missing.
+
+### On-device checklist (owner) — kept for regression runs
 
 1. Copy `dist\app-debug.apk` to the phone and install it (allow "install unknown apps" for Files). The package id is
    new, so a previously installed placeholder APK is a separate app — uninstall it if it is in the way.

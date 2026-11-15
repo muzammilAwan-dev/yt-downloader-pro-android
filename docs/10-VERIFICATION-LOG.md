@@ -37,7 +37,8 @@ every primary document; confidence is stated honestly.
 ## C. Not verified (treat as unknown)
 
 1. That `youtubedl-android` + current yt-dlp returns 1080p on a real device today (Phase 0).
-   *15 Nov 2026: the app side is built and tested; the device half is still open (docs/PROGRESS.md checklist).*
+   *15 Nov 2026: **answered on-device** — 31 formats, `maxHeight=1920`, separate 1080p-class video + audio merged and
+   published on Android 10 (E11–E14). One video only, and no PO token in play; broader coverage is Phase 1–2 testing.*
 2. The bundled Python version in the library and whether the latest yt-dlp still supports it.
    *15 Nov 2026: **answered from the artifact** — CPython 3.12 (see E.3).*
 3. Licenses of the FFmpeg, aria2c and QuickJS builds shipped with the library; whether F-Droid main accepts prebuilt binaries for this app.
@@ -71,3 +72,7 @@ It does **not** prove the workflow runs on GitHub; no Actions runner was availab
 | E8 | `extractNativeLibs=true` is produced by `jniLibs.useLegacyPackaging = true` and legacy libs are compressed in the APK | `aapt2 dump xmltree` on the built APK + zip entry sizes | High (reproduced) |
 | E9 | The APK requests only `INTERNET` plus the AndroidX-generated signature permission; cleartext is off | same manifest dump | High (reproduced) |
 | E10 | 46 JVM tests and lint pass; APK builds | `gradlew testDebugUnitTest lintDebug assembleDebug`, `tools/build-debug.ps1` | High (reproduced) |
+| E11 | On a real arm64 phone (Infinix X682B, Android 10 / API 29) the engine unpacks in 8.3 s and yt-dlp runs with CPython **3.12.11**, QuickJS **2025-04-26**, ffmpeg **7.1.1** | owner's device log, `event=engine_init ms=8297` + self-test details | High (device) |
+| E12 | A public Shorts link resolved to 31 formats with `maxHeight=1920`, `withheld=false`, 0 warnings — no PO-token block for this video | same log, `check=resolve` | High for this sample, **not** a general guarantee |
+| E13 | Video (1.73 MiB) and audio (660.71 KiB) downloaded as separate streams and merged into one 2,505,222-byte MP4 | same log, `[download]` lines + `stage=MERGING event=ok bytes=2505222` | High (device) |
+| E14 | MediaStore publish works on API 29: `content://media/external/downloads/18406`, `mime=video/mp4` | same log, `stage=PUBLISHING event=ok` | High (device) |

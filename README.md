@@ -14,13 +14,19 @@ country — you are responsible for what you download.
 | Phase | State |
 |---|---|
 | Environment setup | done on the owner's PC (`docs/dev-setup.md`) |
-| Phase 0 — engine spike on a real arm64 phone | **APK built 15 Nov 2026; waiting for the owner's device report** (checklist in `docs/PROGRESS.md`) |
-| Phase 1 — MVP (share target, picker, queue, notifications) | not started |
+| Phase 0 — engine spike on a real arm64 phone | **passed 15 Nov 2026** on an Infinix X682B (Android 10, arm64): 7/7 self-test, merged MP4 published via MediaStore. Evidence: `docs/evidence/phase0.md` |
+| Phase 1 — MVP (share target, picker, queue, notifications) | next |
 | Phase 2 — parity (playlists, trim, audio, subs, cookies, updates) | not started |
 | Phase 3 — release (baseline profiles, a11y, signing, F-Droid metadata) | not started |
 
 The current app is the Phase 0 spike: a Diagnostics screen that unpacks the yt-dlp engine, runs a 7-check self-test,
-and can download 1080p video + audio, merge them and publish the result to `Download/ClipHarbor`.
+and can download 1080p video + audio, merge them and publish the result to `Download/ClipHarbor`. The spike is proven on a
+real arm64 phone (Infinix X682B, Android 10): self-test 7/7, 31 formats resolved, separate 1080p-class video + audio merged
+into one MP4 and published through MediaStore (`docs/evidence/phase0.md`).
+
+The product it is catching up with is the owner's Windows app,
+[muzammilAwan-dev/yt-downloader-pro](https://github.com/muzammilAwan-dev/yt-downloader-pro) (MIT): its feature set and its
+hardened-option rules are the parity target (`docs/04-OPEN-SOURCE-REFERENCES.md`).
 
 ## Build and test
 

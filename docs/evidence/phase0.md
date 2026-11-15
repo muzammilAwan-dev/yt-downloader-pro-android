@@ -68,21 +68,46 @@ lint: 0 errors, 6 warnings
 - Lint: 0 errors, 6 deliberate/informational warnings (Gradle 9.9.1 exists; Compose plugin 2.4.21 exists; coroutines
   1.11.0 exists ×2; ChromeOS x86_64 ABI missing because the APK is arm64-only; `UsableSpace` hint).
 
-## 5. Device evidence — to be filled from the owner's report
+## 5. Device evidence (owner's run, 15 Nov 2026)
 
-| Check | Expected | Owner's result |
+Device as reported by the app's own header: `device=INFINIX MOBILITY LIMITED Infinix X682B android=10 api=29
+abi=arm64-v8a locale=en-US freeSpaceMB=11194`, APK `gitSha=8cd9487` (the build audited in §1).
+
+| Check | Expected | Result (from `app-20261115*.log`) |
 |---|---|---|
-| Install and first launch unpacks the engine | status "Engine ready.", `ms=` in the log | pending |
-| `SELFTEST RESULT` | `PASS (7/7 checks)` | pending |
-| `jsRuntime=` line | a QuickJS entry, not `missing` | pending |
-| `ffmpeg=` line | a version, not `missing` | pending |
-| resolve | `maxHeight=1080`, `withheld=false` | pending |
-| download | `Saved … to Downloads/ClipHarbor`, `container=mp4` or `mkv` | pending |
-| playback | 1920×1080 (or highest offered) **with audio** | pending |
-| visibility | file appears in Files/gallery under `Downloads/ClipHarbor` | pending |
-| log copy | `Download/ClipHarbor-logs/clipharbor-log-*.txt` exists and uploads/copies out | pending |
+| Install and first launch unpacks the engine | status "Engine ready.", `ms=` in the log | **PASS** — `event=engine_init ms=8297` |
+| `SELFTEST RESULT` | `PASS (7/7 checks)` | **PASS** — `SELFTEST RESULT: PASS (7/7 checks)` (the earlier run was 6/7 with `resolve` skipped because no URL was entered) |
+| `jsRuntime=` line | a QuickJS entry, not `missing` | **PASS** — `quickjs-2025-04-26` |
+| `ffmpeg=` line | a version, not `missing` | **PASS** — `ffmpeg=7.1.1` |
+| resolve | HD offered, `withheld=false` | **PASS** — `formats=31 videoOnly=18 audioOnly=8 muxed=1 maxHeight=1920 maxHeightMuxed=640 hdUnavailable=false withheld=false warnings=0`, 17,556 ms |
+| download | merged file, published | **PASS** — video 1.73 MiB + audio 660.71 KiB → merged `…[j6EUktS4XYo].mp4` = **2,505,222 bytes**, 19,622 ms |
+| publish | `Downloads/ClipHarbor` via MediaStore | **PASS** — `uri=content://media/external/downloads/18406 mime=video/mp4` on API 29 |
+| playback | plays **with audio** at the offered HD size | **owner's word needed** — not visible in the log; the size arithmetic (1,814,000 + 660,710 ≈ 2,474,710 B → 2,505,222 B container) shows both streams are in the file |
+| visibility | appears in Files/gallery under `Downloads/ClipHarbor` | **owner's word needed** |
+| log copy | log can be shared out and read on the PC | **PASS** — three files supplied: one 6/7 session (no URL) and two snapshots of the download session |
 
-Report template to paste into this section (also in `docs/PROGRESS.md`):
+Engine versions measured on the device (from the second self-test, which runs after a successful resolve):
+
+```
+check=engine-init status=PASS detail="library=0.18.1 ytdlp=(2025.11.12) python=3.12.11 ejs=? jsRuntime=quickjs-2025-04-26 ffmpeg=7.1.1"
+```
+
+So the artifact-derived facts in §2 hold on the phone: CPython **3.12.11**, QuickJS present, ffmpeg 7.1.1, yt-dlp
+2025.11.12. Two gaps in the report itself: `ejs=?` (yt-dlp's `-v` header did not print a separate EJS version line) and
+`ytdlp=(2025.11.12)` (the library's `version()` returns the value with parentheses, and our parser did not override it).
+
+### What the run also shows
+
+- **No PO-token block on this video**: 1080p-class formats were offered and downloaded with zero warnings, so the default
+  client order worked without a token provider (not a general guarantee — see docs/RESEARCH-LOG.md R17).
+- **The URL is extracted twice**: resolve took 17.6 s and the download stage spent another ~17.9 s before the first byte
+  (05:07:08.063 start → 05:07:25.915 first progress line), because `download()` calls `execute()` on the URL again
+  instead of reusing the resolved info (Phase 1: `--load-info-json` or a single process).
+- **Log hygiene**: the shared copies are hard to tell apart (same `app-20261115*.log` name, one snapshot without the
+  report header) and one URL line reads `?<redacted><redacted>` because the URL is redacted twice (once by the caller,
+  once by the log writer). Phase 1 items.
+
+### Report template (kept for later phases)
 
 ```
 app=ClipHarbor version=0.1.0-phase0 build=debug
@@ -99,8 +124,21 @@ oddities=<thermal warnings, notification missing, UI stall, anything else>
 
 ## 6. Exit decision
 
-- **Go** if the self-test passes on the device and the file plays with audio at 1080p (or the highest format YouTube
-  offers, with the withholding recorded in the report).
-- **Conditional go** if HD is withheld: that is a PO-token/enforcement fact (docs/RESEARCH-LOG.md R17), not an engine
-  bug; Phase 1 can proceed and Phase 2 owns the mitigation.
-- **No-go** if QuickJS fails to start, ffmpeg cannot merge, or MediaStore publish fails — those block every later phase.
+**GO** (15 Nov 2026). The device run satisfies every measurable exit criterion in `docs/01-PLAN.md` §4: the link resolved
+with QuickJS present, HD video + separate audio downloaded, ffmpeg merged them into one MP4, and MediaStore published it
+on API 29. Two human checks (does it play with sound, does the gallery see it) remain to be confirmed by the owner; the
+file size arithmetic already shows both streams inside the merged file.
+
+- **Conditional go** would have applied if HD had been withheld: that is a PO-token/enforcement fact
+  (docs/RESEARCH-LOG.md R17), not an engine bug.
+- **No-go** would have applied if QuickJS had not started, ffmpeg could not merge, or the MediaStore publish failed —
+  none of that happened.
+
+## 7. Phase 1 backlog opened by this run
+
+1. Reuse the resolve result for the download (`--load-info-json` / one process) — saves ~18 s per item.
+2. Log the selected `format_id`/height/fps and the `[debug]` header of the resolve, so "1080p" is provable from the log.
+3. Report EJS: parse whatever yt-dlp prints, or state `unknown` explicitly; normalise the library's `(2025.11.12)`.
+4. Make `LogRedactor` idempotent and stop pre-redacting at call sites (fixes the doubled `<redacted>`).
+5. Distinguishable session log names and a header written into every new file.
+6. Foreground service + notification (the spike must stay in the foreground today).
