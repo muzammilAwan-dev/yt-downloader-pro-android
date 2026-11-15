@@ -30,6 +30,7 @@ import androidx.core.content.FileProvider
 import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.SharedSessionOwner
 import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsScreen
@@ -43,7 +44,11 @@ import io.github.muzammilawan.clipharbor.feature.home.HomeScreen
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
 import io.github.muzammilawan.clipharbor.feature.home.YtdlpTheme
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
+import io.github.muzammilawan.clipharbor.log.UserAction
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Single activity: Phase 1 link review/quality picker with separately accessible local diagnostics.
@@ -70,6 +75,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         attachment = (application as YtdlpApplication).sessions.attach()
+        logger.action(UserAction.ACTIVITY_CREATE, home.state.value.phase.name)
         // Do not replay the original share over a retained task; fresh process/session still prefills it.
         if (savedInstanceState == null || home.state.value.url.isEmpty()) receiveShare(intent)
         home.initialize()
@@ -87,6 +93,17 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshNotificationAccess()
+        if (::attachment.isInitialized) logger.action(UserAction.ACTIVITY_RESUME, home.state.value.phase.name)
+    }
+
+    override fun onPause() {
+        if (::attachment.isInitialized) logger.action(UserAction.ACTIVITY_PAUSE, home.state.value.phase.name)
+        super.onPause()
+    }
+
+    override fun onStop() {
+        if (::attachment.isInitialized) logger.action(UserAction.ACTIVITY_STOP, home.state.value.phase.name)
+        super.onStop()
     }
 
     private fun refreshNotificationAccess() {
@@ -100,6 +117,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestNotifications() {
+        logger.action(UserAction.ENABLE_NOTIFICATIONS, home.state.value.phase.name)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || notificationRequestPending ||
             home.state.value.phase != HomePhase.CHOOSING || diagnostics.busy) return
         refreshNotificationAccess()
@@ -116,21 +134,44 @@ class MainActivity : ComponentActivity() {
     private fun AppRoute() {
         val ui by home.state.collectAsState()
         val state = diagnostics
-        BackHandler(enabled = showDiagnostics) { showDiagnostics = false }
+        BackHandler(enabled = showDiagnostics) {
+            logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
+            showDiagnostics = false
+        }
         if (!showDiagnostics) {
-            HomeScreen(state = ui, externalBusy = state.busy, onUrlChange = home::editUrl,
+            HomeScreen(state = ui, externalBusy = state.busy, onUrlChange = {
+                logger.action(UserAction.EDIT_LINK, ui.phase.name)
+                home.editUrl(it)
+            },
                 notificationAccess = notificationVisibility, notificationRequestPending = notificationRequestPending,
                 onRequestNotifications = ::requestNotifications,
                 onPaste = {
+                    logger.action(UserAction.PASTE_LINK, ui.phase.name)
                     val text = getSystemService(ClipboardManager::class.java)?.primaryClip
                         ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text
                     if (text != null) home.receiveShared(text.take(MediaEntry.MAX_INPUT_CHARS + 1).toString())
                     else home.receiveShared("")
-                }, onResolve = { if (!state.busy) home.resolve() }, onSelectQuality = home::selectQuality,
-                onDownload = { if (!state.busy) home.download() }, onCancel = home::cancel,
-                onRetryEngine = { if (!state.busy) home.initialize() },
-                onPendingLink = home::usePendingLink, onOpenFile = ::openSaved,
+                }, onResolve = {
+                    logger.action(UserAction.FIND_FORMATS, ui.phase.name)
+                    if (!state.busy) home.resolve()
+                }, onSelectQuality = {
+                    logger.action(UserAction.SELECT_QUALITY, ui.phase.name, qualityPixels = it.pixels)
+                    home.selectQuality(it)
+                }, onDownload = {
+                    logger.action(UserAction.DOWNLOAD, ui.phase.name, qualityPixels = ui.selectedQuality?.pixels)
+                    if (!state.busy) home.download()
+                }, onCancel = {
+                    logger.action(UserAction.CANCEL, ui.phase.name)
+                    home.cancel()
+                }, onRetryEngine = {
+                    logger.action(UserAction.RETRY_ENGINE, ui.phase.name)
+                    if (!state.busy) home.initialize()
+                }, onPendingLink = {
+                    logger.action(UserAction.USE_PENDING_LINK, ui.phase.name)
+                    home.usePendingLink()
+                }, onOpenFile = ::openSaved,
                 onDiagnostics = {
+                    logger.action(UserAction.OPEN_DIAGNOSTICS, ui.phase.name)
                     state.engineLine = "engine: " + engine.info().headerLine()
                     state.logTail = logger.snapshot()
                     state.verbose = logger.verbose
@@ -139,14 +180,21 @@ class MainActivity : ComponentActivity() {
             return
         }
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            OutlinedButton(onClick = { showDiagnostics = false }, modifier = Modifier.padding(horizontal = 16.dp)) {
+            OutlinedButton(onClick = {
+                logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
+                showDiagnostics = false
+            }, modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text("Back to downloads")
             }
             DiagnosticsScreen(
                 state = state,
                 externalBusy = ui.busy,
-                onUrlChange = { state.url = it },
+                onUrlChange = {
+                    logger.action(UserAction.EDIT_SELFTEST_LINK, ui.phase.name)
+                    state.url = it
+                },
                 onRunSelfTest = {
+                    logger.action(UserAction.RUN_SELF_TEST, ui.phase.name)
                     val current = session
                     attachment.scope.launch {
                         current.runSelfTest("selftest-" + java.util.UUID.randomUUID())
@@ -157,13 +205,13 @@ class MainActivity : ComponentActivity() {
                 onCopySummary = { copySummary(state) },
                 onClearLogs = {
                     logger.clear()
-                    state.logTail = ""
-                    state.status = "Logs cleared."
+                    state.logTail = logger.snapshot()
+                    state.status = "Logs cleared. A new timeline starts here."
                 },
                 onVerboseChange = {
                     logger.verbose = it
                     state.verbose = it
-                    logger.event('I', "verbose_changed", stage = "APP", fields = mapOf("verbose" to it.toString()))
+                    logger.action(UserAction.SET_VERBOSE, ui.phase.name, enabled = it)
                     state.logTail = logger.snapshot()
                 },
             )
@@ -172,12 +220,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        logger.action(UserAction.NEW_INTENT, home.state.value.phase.name)
         setIntent(intent)
         receiveShare(intent)
     }
 
     private fun receiveShare(intent: Intent?) {
         if (intent?.action != Intent.ACTION_SEND) return
+        logger.action(UserAction.SHARE_LINK_RECEIVED, home.state.value.phase.name)
         showDiagnostics = false
         val text = if (intent.type == "text/plain") runCatching {
             intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
@@ -187,36 +237,55 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openSaved(saved: PublishedMedia) {
+        logger.action(UserAction.OPEN_SAVED_FILE, home.state.value.phase.name)
         val uri = saved.uri.toUri()
         if (uri.scheme != "content") return
         runCatching {
             startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, saved.mimeType)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+            logger.event('I', "open_file_launched", stage = "UI")
         }.onFailure {
+            logger.event('W', "open_file_failed", stage = "UI", fields = mapOf("error" to it.javaClass.simpleName))
             diagnostics.status = "No compatible viewer opened. Find the file in ${saved.location}."
             showDiagnostics = true
         }
     }
 
     private fun shareLog(state: DiagnosticsState) {
-        val file = logger.newestLogFile()
-        if (file == null) {
-            state.status = "No log file yet."
+        if (state.sharingLog) return
+        val currentLogger = logger
+        val cutoff = try { currentLogger.captureShare(home.state.value.phase.name) } catch (_: Exception) {
+            state.status = "Full session log is unavailable. Clear logs to start a fresh debugging timeline."
             return
         }
-        runCatching {
-            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "${AppInfo.DISPLAY_NAME} diagnostic log")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        state.sharingLog = true
+        state.status = "Preparing the full session log…"
+        lifecycleScope.launch {
+            try {
+                val file = withContext(Dispatchers.IO) { currentLogger.exportSession(cutoff) }
+                val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file)
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "${AppInfo.DISPLAY_NAME} session diagnostic log")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(intent, "Share ${AppInfo.DISPLAY_NAME} session log"))
+                currentLogger.event('I', "share_chooser_opened", stage = "UI", fields = mapOf("bytes" to file.length().toString()))
+                state.status = "Session snapshot ready: startup (or Clear logs) through the Share tap. Choose an app to share it."
+            } catch (canceled: CancellationException) {
+                throw canceled
+            } catch (error: Exception) {
+                currentLogger.event('W', "share_log_failed", stage = "UI", fields = mapOf("error" to error.javaClass.simpleName))
+                state.status = "Could not prepare or share the full session log. No partial log was shared."
+            } finally {
+                state.sharingLog = false
             }
-            startActivity(Intent.createChooser(intent, "Share ${AppInfo.DISPLAY_NAME} log"))
-        }.onFailure { state.status = "Could not share log: ${it.message}" }
+        }
     }
 
     private fun copySummary(state: DiagnosticsState) {
+        logger.action(UserAction.COPY_SUMMARY, home.state.value.phase.name)
         val context = ReportContextFactory.build(this, engine.info(), logger.verbose, storage.freeSpaceMb())
         val highlights = logger.snapshot(400).lines().filter { it.contains(" E ") || it.contains(" W ") }.takeLast(40)
         val summary = DiagnosticReport.summary(context, highlights) + "\n\n" + state.report
@@ -226,7 +295,10 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        if (::attachment.isInitialized) attachment.close()
+        if (::attachment.isInitialized) {
+            logger.action(UserAction.ACTIVITY_DESTROY, home.state.value.phase.name)
+            attachment.close()
+        }
         super.onDestroy()
     }
 }

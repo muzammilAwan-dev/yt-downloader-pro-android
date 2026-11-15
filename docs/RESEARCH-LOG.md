@@ -279,6 +279,16 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   CLI/fake-Engine evidence is not Android lifecycle/permission/notification proof. Next phone milestone remains Android 10 background/cancel/sound;
   API 33+ permission and API 35+ timeout need separate devices. No process-death/durable recovery or wake-lock claim.
 
+- **R68 (15 Nov 2026, owner logging priority):** Owner requested all app-action/deep logs from opening the app through the Share tap before more features.
+  Code audit: MainActivity shared `newestLogFile()` only; rotation could lose startup, UI controls had gaps, Home dropped resolve debugTail.
+  Keep bounded rolling history but add a full private current-process journal + five immutable share exports; no active-session size cap, an explicit
+  storage tradeoff for the owner's complete-timeline request. Share records its action and flushed-byte cutoff before async IO; no later writes in it.
+  Clear resets coverage and private exports; a new process resets the journal. Write/export failures must not masquerade as a complete log.
+  Fixed UI/lifecycle action names carry phase/quality/flags only, not text/clipboard/title; forward available resolve/download diagnostics and timings.
+  Tests also exposed absent email redaction; add it alongside the existing cookie/auth/PO-token/signed-query defenses. No raw info JSON/secret files.
+  No new dependency/permission/engine-option/identity change; public MediaStore mirror remains debug-only and restarts after Clear.
+  These are recorded app diagnostics, not exhaustive Android events; crash/ANR/connectivity monitors remain unimplemented. Native share remains phone-untested.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

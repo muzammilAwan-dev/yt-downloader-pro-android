@@ -33,6 +33,7 @@ import io.github.muzammilawan.clipharbor.AppInfo
 class DiagnosticsState {
     var url by mutableStateOf("")
     var busy by mutableStateOf(false)
+    var sharingLog by mutableStateOf(false)
     var status by mutableStateOf("Ready. Paste a link or run the self-test.")
     var report by mutableStateOf("")
     var logTail by mutableStateOf("")
@@ -82,9 +83,13 @@ fun DiagnosticsScreen(
             Button(onClick = onRunSelfTest, enabled = !state.busy && !externalBusy) { Text("Run self-test") }
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onShareLog, modifier = Modifier.fillMaxWidth()) { Text("Share log") }
+            Text("Share exports the full redacted session through your tap, not just the preview below. Clear logs starts a new timeline.",
+                style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = onShareLog, enabled = !state.sharingLog, modifier = Modifier.fillMaxWidth()) {
+                Text(if (state.sharingLog) "Preparing session log…" else "Share session log")
+            }
             OutlinedButton(onClick = onCopySummary, modifier = Modifier.fillMaxWidth()) { Text("Copy summary") }
-            OutlinedButton(onClick = onClearLogs, enabled = !state.busy && !externalBusy,
+            OutlinedButton(onClick = onClearLogs, enabled = !state.busy && !externalBusy && !state.sharingLog,
                 modifier = Modifier.fillMaxWidth()) { Text("Clear logs") }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

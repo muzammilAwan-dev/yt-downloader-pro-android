@@ -85,6 +85,10 @@ edit/ask AI -> .\tools\build-debug.ps1 -> adb install -r dist\*.apk (or copy to 
 - Share one text link from another app to YTDLP. It must only prefill for review, not begin extraction or a download.
 - If convenient, send Home/picker screenshots (redact personal URLs/titles), light/dark or larger-text observations,
   and the newest exported log. Native share/UI/engine/cancel/open-file checks are not implied by JVM tests or compilation.
+- For the full-session logging build, open the app, paste/find formats, change quality, download/cancel/open a file as desired,
+  then Diagnostics -> **Share session log**. One redacted `.txt` should contain startup, your action sequence and engine/stage details
+  through that Share tap, including background/reopen events. The on-screen preview is only a tail; it is not the export.
+  Clear logs deliberately starts a new timeline. Do not clear between reproducing a bug and sharing its log.
 
 Owner confirmed first-preview `ec146df` playback with sound and supplied dark Home/picker/progress/saved screenshots.
 Second-preset playback/dimensions and MKV playback still need their own phone checks. The foreground milestone is an

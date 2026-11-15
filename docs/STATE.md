@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R67);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R68);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -23,18 +23,20 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Task-scoped immutable notification Cancel retains service/session through cleanup; stale/repeated actions are no-ops, saving is fenced.
   Optional Android 13+ Enable notifications button never starts/resumes work or gates Download. Service loss cancels the actual task Job.
   CLI-verified only; Android lifecycle/notification/permission behavior is not phone-tested. No durability or automatic rescheduling.
+- Full-session logging: fixed UI/lifecycle actions + available resolve/download diagnostics/progress/timings; emails/secrets redacted.
+  Share snapshots the flushed startup-to-tap journal, not a rotating chunk; Clear/new process resets it. No silent truncation; R68 disk-space tradeoff.
 
 ## Last recorded check — 15 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 23s**.
-Tests executed: 194 total, 193 passed, 1 Windows symlink skip, 0 failures/errors; lint executed, 0 errors / 7 known warnings.
-12 new tests: 6 fake-Engine cancellation/session controls, 6 notification policy/action-codec controls. Initial placeholders failed 7/30.
-Late progress saving-notice regression failed 1/1 before the fence fix. Source manifest: private service/receiver and 4 Android permissions.
-Cancellation-first stays CANCELED even on timeout during cleanup; timeout-first keeps FGS_TIMEOUT. Platform behavior remains phone-untested.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 33s**.
+Tests executed: 206 total, 205 passed, 1 Windows symlink skip, 0 failures/errors; lint executed, 0 errors / 7 known warnings.
+12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
+Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure. Native share is phone-untested.
+Foreground cancellation-first/timeout-first and permission/service tests remain green. No engine/planner/icon/dependency/permission change.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
-Helper reran checks and built `991a048`: 67,305,954 bytes, minSdk 24 / target 37 / arm64; APK also has the pre-existing AndroidX local signature permission.
+Source base `21f44a7`; no APK refreshed yet this step: `dist/app-debug.apk` is still `991a048` without full-session sharing. Build next after commit.
 
 ## Next steps (do in order, one per `/next`)
-Owner cadence (R65): push verified increments; foreground milestone APK `991a048` is ready for the next meaningful reinstall.
+Owner cadence (R65): push verified increments; refresh the foreground tester with full-session logs before the next meaningful reinstall.
 Passing CLI checks is not phone verification. Existing phone checks and the major-feature-area gate remain open.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
@@ -46,6 +48,7 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [x] 1d. Task-only Android service admission/session attachment, basic progress/saving notification, `onTimeout` wiring; CLI checks green.
 - [x] 1e. Notification Cancel action and contextual Android 13+ notification permission UI (not a launch gate); CLI checks green.
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
+- [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), refresh stamped APK.
 - [ ] 1f. OWNER: install `991a048`: background/lock-screen download, notification reopen/Cancel, cleanup and playback with sound/logs.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.

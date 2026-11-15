@@ -102,10 +102,10 @@ class DownloadSession(
         override fun failure(task: String?, error: DownloadError) {
             if (!closed) logFailure(task, error)
         }
-        override fun line(task: String, line: String) {
+        override fun line(task: String, stage: String, line: String) {
             if (closed) return
             logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
-                " V task=$task stage=DOWNLOADING event=ytdlp " + line)
+                " V task=$task stage=$stage event=ytdlp " + line)
         }
     }, foreground = foreground)
 

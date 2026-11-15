@@ -15,6 +15,7 @@ import io.github.muzammilawan.clipharbor.core.Stage
 import io.github.muzammilawan.clipharbor.engine.EngineFailure
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -54,6 +55,7 @@ interface HomeObserver {
     fun event(task: String?, stage: String, event: String, fields: Map<String, String> = emptyMap()) {}
     fun failure(task: String?, error: DownloadError) {}
     fun line(task: String, line: String) {}
+    fun line(task: String, stage: String, line: String) { line(task, line) }
 }
 
 /** One-task entry flow; the caller owns its scope. Durable queue/foreground execution is separate. */
@@ -82,9 +84,10 @@ class HomeController(
         if (closed || job?.isActive == true || state.value.engineReady) return
         mutable.update { it.copy(phase = HomePhase.INITIALIZING, status = "Preparing the bundled engine…") }
         job = scope.launch {
+            val started = clockMs()
             try {
                 engine.init().getOrThrow()
-                observer.event(null, "APP", "engine_init")
+                observer.event(null, "APP", "engine_init", mapOf("ms" to (clockMs() - started).coerceAtLeast(0).toString()))
                 mutable.update { it.copy(phase = HomePhase.READY, engineReady = true, status = "Ready when you are.") }
             } catch (canceled: CancellationException) {
                 throw canceled
@@ -143,11 +146,13 @@ class HomeController(
             status = "Finding available video and audio formats…") }
         job = scope.launch {
             var snapshot: ResolvedSnapshot? = null
+            val started = clockMs()
             try {
                 observer.event(task, Stage.RESOLVING.name, "start")
                 val outcome = engine.resolveForTask(url, task).getOrThrow()
                 snapshot = outcome.resolvedSnapshot
                 currentCoroutineContext().ensureActive()
+                outcome.debugTail.takeLast(200).forEach { observer.line(task, Stage.RESOLVING.name, it) }
                 val qualities = VideoQualities.choices(outcome.media.formats)
                 val plans = qualities.filter { it.available }.associate { choice ->
                     choice.quality to checkNotNull(VideoQualities.plan(outcome.media.formats, choice.quality))
@@ -155,7 +160,8 @@ class HomeController(
                 if (plans.isEmpty()) throw EngineFailure(DownloadError(ErrorCode.FORMATS_WITHHELD, Stage.RESOLVING))
                 prepared = Prepared(task, url, snapshot, clockMs(), plans)
                 snapshot = null // Ownership is transferred to the chooser, not persisted in UI/history.
-                observer.event(task, Stage.RESOLVING.name, "ok", mapOf("formats" to outcome.media.formats.size.toString()))
+                observer.event(task, Stage.RESOLVING.name, "ok", mapOf("formats" to outcome.media.formats.size.toString(),
+                    "ms" to (clockMs() - started).coerceAtLeast(0).toString()))
                 mutable.update { it.copy(phase = HomePhase.CHOOSING, title = outcome.media.title,
                     qualities = qualities, selectedQuality = VideoQualities.default(qualities),
                     status = "Choose a video quality limit. Audio is included.") }
@@ -205,6 +211,7 @@ class HomeController(
                     "requestedResolution" to plan.quality.pixels.toString(), "qualityAxis" to "shortEdge",
                     "resolveReuse" to (input.snapshot != null).toString(),
                     "concurrentFragments" to "4"))
+                val lastLoggedProgress = AtomicInteger(-1)
                 val outcome = engine.download(DownloadRequest(input.url, plan.quality.pixels, directory, input.task,
                     mergeContainer = if (plan.quality.pixels >= 1440) "mkv" else "mp4/mkv",
                     resolvedSnapshot = input.snapshot, qualityPlan = plan), onProgress = { event ->
@@ -213,13 +220,18 @@ class HomeController(
                             mutable.update {
                                 if (!closed && activeTask == input.task && it.phase == HomePhase.DOWNLOADING) it.copy(progress = percent) else it
                             }
+                            if (state.value.phase == HomePhase.DOWNLOADING && lastLoggedProgress.getAndSet(percent) != percent) {
+                                observer.event(input.task, Stage.DOWNLOADING.name, "progress", mapOf("percent" to percent.toString()))
+                            }
                             admitted.progress(percent)
                         }
                     }
                 }, onLine = {
-                    if (!closed && activeTask == input.task && timeoutTask != input.task) observer.line(input.task, it)
+                    if (!closed && activeTask == input.task && timeoutTask != input.task) observer.line(input.task, Stage.DOWNLOADING.name, it)
                 }).getOrThrow()
                 currentCoroutineContext().ensureActive()
+                observer.event(input.task, Stage.DOWNLOADING.name, "engine_result", mapOf(
+                    "exit" to outcome.exitCode.toString(), "ms" to outcome.elapsedMs.toString()))
                 val file = outcome.files.singleOrNull()?.takeIf { it.isFile && it.length() > 0 }
                     ?: throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING))
                 observer.event(input.task, Stage.DOWNLOADING.name, "selected_formats", mapOf(
@@ -232,11 +244,13 @@ class HomeController(
                     "reusedResolve" to outcome.reusedResolve.toString()))
                 mutable.update { it.copy(phase = HomePhase.PUBLISHING, progress = null, status = "Saving the finished file…") }
                 admitted.publishing()
+                val publicationStarted = clockMs()
                 observer.event(input.task, Stage.PUBLISHING.name, "start")
                 currentCoroutineContext().ensureActive()
                 val saved = publish(file)
                 observer.event(input.task, Stage.PUBLISHING.name, "ok", mapOf("uri" to saved.uri,
-                    "bytes" to file.length().toString(), "mime" to saved.mimeType))
+                    "bytes" to file.length().toString(), "mime" to saved.mimeType,
+                    "ms" to (clockMs() - publicationStarted).coerceAtLeast(0).toString()))
                 val width = outcome.selectedWidth
                 val height = outcome.selectedHeight
                 val actual = if (width != null && height != null) "$width × $height (${minOf(width, height)}p short edge)"

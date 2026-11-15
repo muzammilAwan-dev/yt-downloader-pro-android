@@ -22,6 +22,7 @@ object LogRedactor {
     )
 
     private val cookiePair = Regex("""(?i)\b(SAPISID|APISID|SSID|HSID|SID|__Secure-[13]PAPISID|__Secure-[13]PSID)=([^;\s]+)""")
+    private val email = Regex("""(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b""")
 
     fun redactLine(line: String): String {
         var out = headerSecret.replace(line) { m -> "${m.groupValues[1]}: $REDACTED" }
@@ -33,6 +34,7 @@ object LogRedactor {
         }
         out = poToken.replace(out) { m -> "${m.groupValues[1]}=$REDACTED" }
         out = cookiePair.replace(out) { m -> "${m.groupValues[1]}=$REDACTED" }
+        out = email.replace(out, REDACTED)
         return out
     }
 

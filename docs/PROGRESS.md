@@ -1238,3 +1238,11 @@ Tests executed: 194 total, 193 passed, 1 Windows symlink skip, 0 failures/errors
 No engine/planner/launcher-icon/dependency/permission-budget change. Prepare stamped APK; background/cancel/sound still require phone evidence.
 Helper stamped `991a048`: checks BUILD SUCCESSFUL in 1m 49s (194 total / 193 pass / 1 skip, lint 0 errors / 7 warnings); assembleDebug BUILD SUCCESSFUL in 14s.
 APK `dist/app-debug.apk`: 67,305,954 bytes; SHA-256 F753CE1DA2B42E025CA4BBEF2ABF34630C34B372724D46620AAC76D69906526F; embedded BuildConfig stamp/copy/signature verified, minSdk 24 / target 37 / arm64; private service/receiver, 4 Android permissions + pre-existing AndroidX local signature permission; phone checks pending.
+
+### Owner priority: complete session/action log sharing — 15 Nov 2026
+Share now records its tap/cutoff before IO and exports an immutable full-process journal, surviving rotating pruning; Clear/new process resets coverage.
+Fixed UI/lifecycle actions (no text payload), resolve/download diagnostics, progress/timings; added missing email redaction, kept secret/query defenses.
+12 new tests incl. fake-Engine full timeline; placeholders failed 9/9 (BUILD FAILED in 11s), then email/resolve gaps failed before fixes.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 33s
+Tests executed: 206 total, 205 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
+R68: full journal has no size cap, retains five private snapshots; rolling preview stays 5×2 MB. No engine/icon/dependency/permission change; refresh tester, native share/foreground checks still pending.

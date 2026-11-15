@@ -42,9 +42,17 @@ The Phase 0 spike is essentially this screen. The "report template" the AI asks 
 
 ## 4. Deep logging requirements
 
-**Where:** app-private `files/logs/app-YYYYMMDD.log` (rotating: max 5 files, 2 MB each). Not world-readable. No network upload, ever.
-**Tester (debug) builds also write a public copy** to `Downloads/ClipHarbor-logs/` (one file per session, last 5 kept) so you can grab it without any menu; see `13-LOCAL-BUILD-AND-INSTALL.md` section 4 for how and the Android 7-9 limitation.
-**How the owner gets it:** Settings -> Diagnostics -> **Share log** (Android share sheet via `FileProvider`, as one `.txt` with a header) and **Copy summary**. Fallback for developers: `adb logcat -s <TAG>` mirrors the same lines at debug level.
+**Where:** app-private `files/logs/app-YYYYMMDD-HHmmss.log` for the bounded preview/history (max 5 files, 2 MB each).
+Owner-requested full-session logging (R68) additionally keeps `files/logs/session/active.txt` from the current process startup through all
+recorded actions, including background work/reopens. It has **no 2 MB cap** so rotation cannot silently remove the beginning; long sessions
+use more disk space. The journal resets on a new process or explicit **Clear logs**. Not world-readable. No network upload, ever.
+**Tester (debug) builds also write a public copy** to `Download/YTDLP-logs/` (one file per session, last 5 kept) so you can grab it without any menu; see `13-LOCAL-BUILD-AND-INSTALL.md` section 4 for how and the Android 7-9 limitation.
+**How the owner gets it:** Diagnostics -> **Share session log** captures the Share action and exact flushed-byte cutoff synchronously,
+then prepares one immutable `.txt` on IO and opens the Android share sheet via `FileProvider`. All recorded session events up to that tap are
+included, not only the newest rotating chunk or visible tail. Subsequent events do not change that file; keep the last 5 private exports.
+Explicit Clear removes private history/exports and starts a `session_scope=since_clear` timeline; previous public copies/already-shared files
+are not withdrawn. Incomplete journals/export failures produce a clear error rather than silently sharing a partial log.
+**Copy summary** remains a short report, not the full log. Opening a chooser is not proof that the owner sent the file.
 **Switch:** `Verbose logging` setting, **ON by default in debug and "tester" builds, OFF in release**, with a clear "Clear logs" button. Incognito mode disables file logging.
 
 **Header (first lines of every shared file):**
@@ -67,6 +75,13 @@ permissions: notifications=<granted|denied> safTree=<set|unset>
 Levels: V/D/I/W/E. Always include `task`, `stage`, `event`. One correlation id (`task`) ties every line of a download together.
 
 **Must log:** app start and engine init (with timings); every stage transition; every engine call with duration and exit code; the **last N (e.g. 200) lines of yt-dlp `-v` output** for any failed task (keep success tasks to a short summary to limit size); every error code from `contracts/errors.json`; foreground-service start/stop/`onTimeout`; connectivity changes; free-space checks; update/rollback events; unhandled exceptions with stack trace (install an uncaught-exception handler that writes the trace, then rethrows); ANR-ish slow main-thread warnings in debug builds (StrictMode).
+
+Implemented action coverage: link edit/paste/share receipt, find formats, quality selection/Download/Cancel/retry, pending link, saved-file open,
+diagnostics/back/self-test/summary/clear/verbose/permission controls, Activity create/resume/pause/stop/destroy/new intent. Action entries contain
+fixed names, phase and numeric/boolean choices, **not typed or clipboard text**. Home forwards the available last-200 resolve debug lines with
+the correct stage, engine download lines, changed integer progress, success timings/exit and publication details; errors keep their redacted tails.
+This is app diagnostics, not every Android/system event or raw info JSON. Crash-handler, StrictMode/ANR and connectivity-change monitors above
+remain requirements, not implemented/proven coverage. Native chooser/phone paths need device verification.
 
 **Must NOT log (redact before writing, unit-tested):** cookie values or cookie file contents; `Authorization`, `Cookie`, `Set-Cookie` headers; PO tokens; signed media URL query strings (log host + path only; replace the query with `?<redacted>`); the owner's account names/emails; clipboard contents other than the URL being processed. Full page URLs are logged by default **only in tester/debug builds**; release builds log video ID/host only unless the owner turns on "include URLs".
 

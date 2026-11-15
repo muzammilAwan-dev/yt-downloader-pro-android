@@ -7,11 +7,14 @@ import java.io.File
 /**
  * App-wide logger (docs/12 §4): rotating private file always, plus a public MediaStore copy in debug builds only.
  *
- * Lines are redacted by [RotatingLog] and [MediaStoreLogMirror] before they reach disk, as a second line of defence.
+ * Full-session shares use [SessionLog]; the rotating files are only the bounded preview/history.
+ * Every sink redacts before writing; sharing never exposes a live file that keeps changing.
  */
 class AppLogger(context: Context) {
     private val appContext = context.applicationContext
     private val rotating = RotatingLog(File(appContext.filesDir, LOG_DIR))
+    private val session = SessionLog(File(appContext.filesDir, "$LOG_DIR/session"))
+    private var sessionHeader = ""
     private val mirror: MediaStoreLogMirror? =
         if (BuildConfig.DEBUG) MediaStoreLogMirror(appContext) else null
 
@@ -22,10 +25,13 @@ class AppLogger(context: Context) {
     var publicMirrorActive: Boolean = false
         private set
 
+    @Synchronized
     fun startSession(header: String) {
+        sessionHeader = header
         // The rotating log stamps this header at the top of every file it opens from now on.
         rotating.fileHeader = header
-        rotating.ensureOpen()
+        session.start(header)
+        runCatching { rotating.ensureOpen() }
         publicMirrorActive = mirror?.start(header) == true
     }
 
@@ -54,10 +60,25 @@ class AppLogger(context: Context) {
         write(line)
     }
 
+    @Synchronized
     fun write(line: String) {
-        rotating.append(line)
+        session.append(line)
+        runCatching { rotating.append(line) }
         mirror?.append(line)
     }
+
+    fun action(action: UserAction, phase: String? = null, qualityPixels: Int? = null, enabled: Boolean? = null) {
+        write(action.line(System.currentTimeMillis(), phase, qualityPixels, enabled))
+    }
+
+    /** Share action and exact cutoff are captured together, before any asynchronous IO. */
+    @Synchronized
+    fun captureShare(phase: String?): SessionLog.Cutoff {
+        action(UserAction.SHARE_LOG, phase)
+        return session.capture()
+    }
+
+    fun exportSession(cutoff: SessionLog.Cutoff): File = session.export(cutoff)
 
     /** Last [maxLines] lines across the newest log files, for the on-screen preview. */
     fun snapshot(maxLines: Int = 200): String {
@@ -74,14 +95,21 @@ class AppLogger(context: Context) {
 
     fun newestLogFile(): File? = rotating.files().firstOrNull()
 
+    @Synchronized
     fun clear() {
         rotating.clear()
+        session.clear()
         mirror?.close()
+        publicMirrorActive = mirror?.start(sessionHeader + "\nsession_scope=since_clear") == true
+        action(UserAction.CLEAR_LOGS)
     }
 
+    @Synchronized
     fun close() {
         rotating.close()
+        session.close()
         mirror?.close()
+        publicMirrorActive = false
     }
 
     companion object {
