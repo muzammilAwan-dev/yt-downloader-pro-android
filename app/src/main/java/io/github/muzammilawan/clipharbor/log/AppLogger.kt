@@ -23,7 +23,9 @@ class AppLogger(context: Context) {
         private set
 
     fun startSession(header: String) {
-        header.lineSequence().forEach { write(it) }
+        // The rotating log stamps this header at the top of every file it opens from now on.
+        rotating.fileHeader = header
+        rotating.ensureOpen()
         publicMirrorActive = mirror?.start(header) == true
     }
 

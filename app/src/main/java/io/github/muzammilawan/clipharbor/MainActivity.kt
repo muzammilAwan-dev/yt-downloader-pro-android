@@ -36,7 +36,6 @@ import io.github.muzammilawan.clipharbor.engine.EngineFailure
 import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
 import io.github.muzammilawan.clipharbor.log.AppLogger
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
-import io.github.muzammilawan.clipharbor.log.LogRedactor
 import io.github.muzammilawan.clipharbor.log.RotatingLog
 import io.github.muzammilawan.clipharbor.publish.MediaStorePublisher
 import java.io.File
@@ -197,7 +196,8 @@ class MainActivity : ComponentActivity() {
             event = "start",
             task = taskId,
             stage = Stage.RESOLVING.name,
-            fields = mapOf("url" to LogRedactor.redactUrl(url)),
+            // AppLogger redacts the complete line exactly once before either copy reaches disk.
+            fields = mapOf("url" to url),
         )
         val resolveStarted = System.currentTimeMillis()
         try {
@@ -248,7 +248,7 @@ class MainActivity : ComponentActivity() {
                         logger.write(
                             RotatingLog.timestamp(System.currentTimeMillis()) +
                                 " V task=$taskId stage=DOWNLOADING event=ytdlp " +
-                                LogRedactor.redactLine(line),
+                                line,
                         )
                     }
                 },
@@ -315,7 +315,7 @@ class MainActivity : ComponentActivity() {
         error.stderrTail.takeLast(200).forEach { line ->
             logger.write(
                 RotatingLog.timestamp(System.currentTimeMillis()) +
-                    " E task=$taskId stage=${error.stage} event=ytdlp " + LogRedactor.redactLine(line),
+                    " E task=$taskId stage=${error.stage} event=ytdlp " + line,
             )
         }
         state.status = "Failed: ${error.code.name}. See the log (Share log) for details."

@@ -50,6 +50,7 @@ C:\Users\Malku\dev\repos missing
       `content://media/external/downloads/18406`. Evidence: `docs/evidence/phase0.md`; log excerpt and findings below.
 - [ ] **Phase 1 (MVP)** — share target/paste, format picker, Room staged queue, notification, error taxonomy
       (`contracts/errors.json`), `onTimeout` handling, unit tests.
+      **Started with the owner's approval on 15 Nov 2026.** Phase 0 regression fixes are the first increments.
       *Backlog carried in from Phase 0 + the desktop reference (`docs/evidence/phase0.md` §7, `docs/04` sibling section):
       reuse the resolve via `--load-info-json` instead of extracting twice, `-N 4` concurrent fragments, parse
       `[info] … Downloading N format(s)` and `[Merger] Merging formats into "…"`, 3 concurrent tasks, idempotent redaction,
@@ -323,3 +324,30 @@ player: resolution shown=<..> audio=<yes|no> visible in gallery=<yes|no>
 log file=<clipharbor-log-....txt, attached=yes|no>
 oddities=<thermal warnings, notification missing, UI stall, anything else>
 ```
+
+## Phase 1 — incremental implementation (15 Nov 2026)
+
+### Step 1: logging regressions
+
+- Removed pre-redaction from `MainActivity`; both disk sinks still redact independently.
+- Made URL redaction idempotent, including already-redacted token markers followed by other query parameters.
+  Credentials, fragments, signed query parameters and HttpOnly Netscape cookie values are removed.
+- Private logs now use `app-YYYYMMDD-HHmmss[-N].log`, carry a redacted header after every rotation, and are shareable
+  before the first event. UTF-8 byte accounting and safe truncation enforce the per-file byte cap.
+- Regression tests cover repeated redaction, header rotation, timestamp collisions and multi-byte truncation.
+
+Verified command output (whole working tree, including pending engine-version regression tests):
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 31s
+54 actionable tasks: 16 executed, 38 up-to-date
+
+XML reports: suites=8 tests=57 failures=0 errors=0 skipped=0
+lint XML: errors=0 warnings=6
+```
+
+An earlier invocation was interrupted by the user and is **not** counted as a completed verification run. The 6 lint
+warnings remain the Phase 0 informational warnings. Device regression testing of this increment is **not run**;
+`dist/app-debug.apk` still contains the previously delivered Phase 0 build.

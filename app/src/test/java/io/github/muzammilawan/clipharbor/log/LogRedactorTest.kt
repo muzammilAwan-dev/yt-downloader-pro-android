@@ -1,5 +1,6 @@
 package io.github.muzammilawan.clipharbor.log
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -66,5 +67,58 @@ class LogRedactorTest {
         val out = LogRedactor.redactLine("see https://example.invalid/v.mp4?a=$secret.")
         assertTrue(out.endsWith("."))
         assertFalse(out.contains(secret))
+    }
+
+    @Test
+    fun redactingAnAlreadyRedactedUrlIsIdempotent() {
+        val once = LogRedactor.redactLine("url=https://example.invalid/watch?v=id&sig=$secret")
+        val twice = LogRedactor.redactLine(once)
+
+        assertEquals(once, twice)
+        assertEquals(1, "<redacted>".toRegex().findAll(twice).count())
+    }
+
+    @Test
+    fun redactionIsIdempotentForEverySecretKind() {
+        val inputs = listOf(
+            "Cookie: SAPISID=$secret; HSID=another",
+            "Authorization: Bearer $secret",
+            "po_token=$secret",
+            "SAPISID=$secret",
+            "#HttpOnly_.youtube.com\tTRUE\t/\tTRUE\t1893456000\tSAPISID\t$secret",
+            "url=https://youtube.com/shorts/video?sig=$secret",
+            "url=https://www.youtube.com/watch?v=video&list=$secret",
+            "see https://example.invalid/media?pot=$secret&sig=another.",
+        )
+        inputs.forEach { input ->
+            val once = LogRedactor.redactLine(input)
+            assertFalse(once.contains(secret))
+            assertEquals(input, once, LogRedactor.redactLine(once))
+        }
+    }
+
+    @Test
+    fun existingTokenMarkerDoesNotExposeTheRestOfASignedQuery() {
+        val out = LogRedactor.redactLine("https://example.invalid/media?pot=<redacted>&sig=$secret")
+        assertEquals("https://example.invalid/media?<redacted>", out)
+    }
+
+    @Test
+    fun httpOnlyCookieFileLineLosesItsValue() {
+        val out = LogRedactor.redactLine("#HttpOnly_.youtube.com\tTRUE\t/\tTRUE\t1893456000\tSAPISID\t$secret")
+        assertFalse(out.contains(secret))
+        assertTrue(out.endsWith("\t<redacted>"))
+    }
+
+    @Test
+    fun credentialsAndFragmentsAreRemovedEvenWhenAQueryIsAlreadyRedacted() {
+        val out = LogRedactor.redactLine("https://user:$secret@example.invalid/media?<redacted>#token=$secret")
+        assertEquals("https://example.invalid/media?<redacted>", out)
+    }
+
+    @Test
+    fun signedUrlNeverKeepsAnArbitraryVParameter() {
+        val out = LogRedactor.redactUrl("https://example.invalid/media?v=$secret")
+        assertEquals("https://example.invalid/media?<redacted>", out)
     }
 }
