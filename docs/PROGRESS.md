@@ -374,3 +374,13 @@ The debug APK built locally; **no new device run or `dist/` handoff build** was 
 resolve reuse, selected-format/output-path evidence, Room queue, foreground service, share target, picker and error UI
 are still outstanding. `--load-info-json` behavior has been researched, not yet implemented; upstream may re-extract
 on errors, so an unconditional "exactly one extraction" claim would be incorrect.
+
+### UI/UX side quest (research only)
+
+The owner explicitly requested `general` to research design skills while implementation continues. Findings and the
+screenshot checklist are in `docs/15-UI-UX-DESIGN-RESEARCH.md`, research row R28. Official Material 3 / Compose accessibility
+guidance comes first; adaptive and community skills have documented limitations. Nothing was installed or redesigned.
+Snaptube screenshots will be used for interaction inspiration only, with an original ClipHarbor identity.
+
+Code increments committed: `30f6666` (logging), `2e86113` (engine-version reporting). Documentation-only follow-up does
+not change the last tested application code; tests/lint/APK output is recorded above.

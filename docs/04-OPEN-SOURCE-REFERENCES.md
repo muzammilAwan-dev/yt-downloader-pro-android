@@ -47,7 +47,7 @@ allowlist can be reconciled instead of guessed.
 | Their behaviour | File | Android use |
 |---|---|---|
 | Strict allowlist: value flags + boolean flags, every other token must be an `http(s)` link, path arguments must sit in an allowed dir with an allowed extension, reject control characters / escaped quotes / unbalanced quotes / `..` / UNC | `Services/CommandValidator.cs` | Seed for `contracts/allowed-options.json`; on Android the untrusted input is a share intent or deep link, not a `ytdlp://` payload. Same three rules transfer: default deny, links only, paths constrained. |
-| `-N/--concurrent-fragments` (default 4) as the throttling bypass, instead of aria2c | `MainViewModel.cs`, README | We deliberately do **not** ship the GPL `aria2c` artifact, so this is the right knob: one extra flag, no dependency. Phase 1 setting, default 4. |
+| `-N/--concurrent-fragments` (default 4) rather than an additional downloader | `MainViewModel.cs`, README | Adopt bounded parallelism for DASH/native-HLS fragments without an aria2c dependency. **Not a universal throttling bypass** or extra connections for every HTTP download; primary-source semantics clarified in research R27. Phase 1 default 4; measure performance/battery on-device. |
 | Compatibility mode = force H.264/AAC | README, `YtDlpRunner.cs` | Already our default in `FormatPlanner`; theirs is a user switch. Keep ours default-on, expose a "best quality (any codec)" switch in Phase 1. |
 | Detecting the silent fallback to progressive itag 18 with `[info] <id>: Downloading N format(s): <ids>` and warning the user (PO-token/SABR withholding) | `Services/YtDlpRunner.cs` | This is exactly what our spike lacks: the Phase 0 log cannot prove which format was chosen. Phase 1: parse that line, log `format_ids=`, and surface "HD withheld" when it is a single low muxed id. |
 | Learning the merged filename from `[Merger] Merging formats into "<path>"` | same | Better than our timestamp-based `findOutputFiles()` heuristic; adopt in Phase 1. |
@@ -68,9 +68,10 @@ allowlist can be reconciled instead of guessed.
 
 ### Licensing note
 
-MIT → GPL-3.0 is compatible in this direction, so porting code (not just rules) is legal **with attribution**. The project
-rule stays "study, then write" unless the owner explicitly asks for a port; if any file is copied or closely derived, it
-must be recorded in `THIRD_PARTY_NOTICES.md` with the MIT notice. Their repo is not on the AGENTS.md never-copy list.
+The owner explicitly authorized freely reusing their desktop code on 15 Nov 2026. MIT → GPL-3.0 is compatible in this
+direction; if any file is copied or closely derived under its published license, record it in `THIRD_PARTY_NOTICES.md`
+with the MIT notice. No files were ported in the logging/version increments. Their repo is not on the AGENTS.md
+never-copy list; that prohibition still applies to the other named projects.
 
 ### Concrete adoption list (added to the Phase 1/2 backlog)
 

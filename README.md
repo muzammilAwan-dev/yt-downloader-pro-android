@@ -15,7 +15,7 @@ country — you are responsible for what you download.
 |---|---|
 | Environment setup | done on the owner's PC (`docs/dev-setup.md`) |
 | Phase 0 — engine spike on a real arm64 phone | **passed 15 Nov 2026** on an Infinix X682B (Android 10, arm64): 7/7 self-test, merged MP4 published via MediaStore. Evidence: `docs/evidence/phase0.md` |
-| Phase 1 — MVP (share target, picker, queue, notifications) | next |
+| Phase 1 — MVP (share target, picker, queue, notifications) | **in progress**: logging/version regressions fixed; 59 JVM tests and lint green. MVP UI/queue/service still pending (`docs/PROGRESS.md`) |
 | Phase 2 — parity (playlists, trim, audio, subs, cookies, updates) | not started |
 | Phase 3 — release (baseline profiles, a11y, signing, F-Droid metadata) | not started |
 
@@ -60,6 +60,7 @@ and replaced later.
 | `dist/` | local APK output (git-ignored) |
 
 Start with `AGENTS.md` (contribution rules), then `docs/01-PLAN.md`, then `docs/PROGRESS.md` for the current state.
+UI/UX resource research and the screenshot checklist: `docs/15-UI-UX-DESIGN-RESEARCH.md`.
 
 ## Contributing
 
