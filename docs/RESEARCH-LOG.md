@@ -145,6 +145,11 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   `ACTION_SEND` + `DEFAULT` + `text/plain` declares a text share target; validate action/type/payload and let the user
   confirm/edit before use. This app can handle it directly in its single activity without adding Compose Navigation.
   No `SEND_MULTIPLE`, binary streams, deep-link commands or external automation accepted in this increment.
+- **R49:** Controller design preserves existing task-bound, single-use replay and verified output evidence rather than
+  storing extraction JSON in screen state/history. A chooser older than five minutes is re-resolved, with renewed user
+  confirmation. Stream callback percentages are not aggregate video/audio/merge progress. Publication is a commit boundary;
+  no cancel button is offered once saving begins. Activity destruction/process death and full native cleanup remain outside
+  durable guarantees until the queue/service increment; this is explicitly a foreground-screen tester flow.
 
 ## Still unverified (carried forward)
 

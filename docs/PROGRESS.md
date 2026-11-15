@@ -905,3 +905,23 @@ lint XML: errors=0 warnings=7
 
 105 passed/one existing Windows symlink case skipped. Entry/picker foundation and bounded fallback regressions green.
 No new UI wired yet and `dist/app-debug.apk` remains the icon-only `b83d33c` build; not a Phase 1 tester handoff.
+
+Step 2: implemented an original offline-testable one-task home controller with explicit review/resolve/choose/download/
+publish states. Private replay remains bound to one task and closes on edit, dismissal, failure, cancellation and activity
+close. Expired chooser refreshes formats and requires confirmation again. New shares during work wait separately rather
+than replacing active input; duplicate taps are guarded. Completion reports actual selected IDs/height, not catalogue
+maxima. Publishing is a commit boundary with no user Cancel action. Native cleanup is still best-effort; failed/canceled
+staging files are not deleted while descendant ownership is uncertain. Fake-engine regressions added; verification pending.
+This controller is activity-lifetime, not a durable queue or foreground service. UI wiring is the next small increment.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 1m 12s
+54 actionable tasks: 18 executed, 36 up-to-date
+XML reports: suites=15 tests=116 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+```
+
+115 passed/one existing Windows symlink case skipped. Ten new fake-engine controller cases passed, including explicit
+confirmation, expiration, cancellation/no publish, deferred shares, duplicate taps and actual-height reporting.
+Still no new UI in `dist/`; no native/controller device run claimed.
