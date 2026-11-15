@@ -845,3 +845,34 @@ Unit tests executed: 98 passed and the existing Windows symlink-capability case 
 regression passed at six launcher sizes; original image hash/label/license checks remain green. Lint retains the known
 missing monochrome layer warning and six prior warnings. Debug APK built locally, but `dist/` still contains `69f343f`
 until the clean-source handoff helper runs. Native launcher correction has not yet been confirmed by the owner.
+
+Icon-padding tester handoff built from clean `b83d33c`; background completion received and verified:
+
+```
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
+
+testDebugUnitTest lintDebug:
+BUILD SUCCESSFUL in 1m 37s
+36 actionable tasks: 15 executed, 21 up-to-date
+
+assembleDebug:
+BUILD SUCCESSFUL in 16s
+38 actionable tasks: 3 executed, 35 up-to-date
+
+XML reports: suites=13 tests=99 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+APK bytes=67694988
+APK SHA256=0B5CA680D540484AFC978E8E09124A66A00B06B8F767F8F11BF3A69E9CF85DBC
+APK DEX contains expected gitSha=b83d33c
+Built and dist APK hashes match
+```
+
+Tests executed: 98 passed/one Windows symlink-capability case skipped. Generated BuildConfig matches the packaged stamp;
+SDK `aapt2 dump xmltree` confirms the packaged adaptive foreground includes an `inset` with normalized fraction 0.1667,
+then the original bitmap. `dist/app-debug.apk` is refreshed and supersedes the cropped `69f343f` candidate. Source fix
+was pushed non-force; remote SHA verified as `b83d33c7840d9a09e3cbc70479e9d8a10655f9c8`. The next documentation-only commit
+records the handoff without changing the APK.
+
+Owner: install over the current local debug build and send a launcher screenshot to validate this OEM's result. No need
+to repeat the video/self-test solely for this icon-wrapper change. Native appearance remains pending. First real Phase 1
+entry/picker UI is the next feature increment; no new gate requiring a repeated download test was introduced.
