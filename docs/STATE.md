@@ -12,8 +12,8 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - **Phase 1 (MVP): in progress.** Done and unit-tested: logging/redaction, engine-version reporting, task-private replay
   (`--load-info-json`), download evidence, home controller, Material 3 home + paste/share, eight standard quality tiers with private
   typed selection plan, YTDLP branding and icon. Phone-verified earlier (`ec146df`): resolve, 1080p select, merge, MediaStore publish, playback with sound.
-- Latest handoff: **`74ce7cf`** (standard-quality tester build). Helper run executed the tests: BUILD SUCCESSFUL, 138 tests (137 pass, 1 skipped:
-  Windows symlink), lint 0 errors / 7 known warnings, 96 offline selector checks PASS (yt-dlp 2025.11.12), `dist/app-debug.apk` stamped `74ce7cf`.
+- Latest tester: **`991a048`** (foreground milestone), `dist/app-debug.apk` embedded stamp verified; signature and copied SHA-256 match.
+  Helper checks: BUILD SUCCESSFUL in 1m 49s, 194 tests (193 pass / 1 skip), lint 0 errors / 7 known warnings; APK BUILD SUCCESSFUL in 14s.
 - Owner evidence for `74ce7cf` (R61): dark portrait standard picker with disabled QHD/4K; 1080×1920 `137+140` download,
   resolve replay reused, MP4 merge and 7,737,267-byte MediaStore save; later self-test 7/7. Only one quality download.
 - Still unverified: second preset, new file playback with sound, QHD/4K MKV playback; earlier `ec146df` playback remains confirmed.
@@ -28,13 +28,13 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 `.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 23s**.
 Tests executed: 194 total, 193 passed, 1 Windows symlink skip, 0 failures/errors; lint executed, 0 errors / 7 known warnings.
 12 new tests: 6 fake-Engine cancellation/session controls, 6 notification policy/action-codec controls. Initial placeholders failed 7/30.
-Late progress saving-notice regression failed 1/1 before the fence fix. Manifest requires private service/receiver and exactly 4 permissions.
+Late progress saving-notice regression failed 1/1 before the fence fix. Source manifest: private service/receiver and 4 Android permissions.
 Cancellation-first stays CANCELED even on timeout during cleanup; timeout-first keeps FGS_TIMEOUT. Platform behavior remains phone-untested.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
-Source base `8b1d149`; stamped foreground APK build is next, `dist/app-debug.apk` currently remains `74ce7cf`. Use Git for current HEAD.
+Helper reran checks and built `991a048`: 67,305,954 bytes, minSdk 24 / target 37 / arm64; APK also has the pre-existing AndroidX local signature permission.
 
 ## Next steps (do in order, one per `/next`)
-Owner cadence (R65): push verified increments; next meaningful reinstall is the foreground milestone (preparing stamped APK).
+Owner cadence (R65): push verified increments; foreground milestone APK `991a048` is ready for the next meaningful reinstall.
 Passing CLI checks is not phone verification. Existing phone checks and the major-feature-area gate remain open.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
@@ -46,7 +46,7 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [x] 1d. Task-only Android service admission/session attachment, basic progress/saving notification, `onTimeout` wiring; CLI checks green.
 - [x] 1e. Notification Cancel action and contextual Android 13+ notification permission UI (not a launch gate); CLI checks green.
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
-- [ ] 1f. OWNER: stamped foreground APK milestone: background/lock-screen download, notification reopen/Cancel, cleanup and playback with sound/logs.
+- [ ] 1f. OWNER: install `991a048`: background/lock-screen download, notification reopen/Cancel, cleanup and playback with sound/logs.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)

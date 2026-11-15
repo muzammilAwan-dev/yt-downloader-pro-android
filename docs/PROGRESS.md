@@ -1236,3 +1236,5 @@ Optional Android 13+ permission button re-reads app/channel access; callbacks ne
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 23s
 Tests executed: 194 total, 193 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
 No engine/planner/launcher-icon/dependency/permission-budget change. Prepare stamped APK; background/cancel/sound still require phone evidence.
+Helper stamped `991a048`: checks BUILD SUCCESSFUL in 1m 49s (194 total / 193 pass / 1 skip, lint 0 errors / 7 warnings); assembleDebug BUILD SUCCESSFUL in 14s.
+APK `dist/app-debug.apk`: 67,305,954 bytes; SHA-256 F753CE1DA2B42E025CA4BBEF2ABF34630C34B372724D46620AAC76D69906526F; embedded BuildConfig stamp/copy/signature verified, minSdk 24 / target 37 / arm64; private service/receiver, 4 Android permissions + pre-existing AndroidX local signature permission; phone checks pending.
