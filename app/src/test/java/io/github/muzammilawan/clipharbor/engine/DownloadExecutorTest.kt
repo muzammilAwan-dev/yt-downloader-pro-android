@@ -195,4 +195,32 @@ class DownloadExecutorTest {
         assertTrue(runner.internalIds.single().matches(Regex("[a-f0-9-]{36}")))
         assertEquals(runner.internalIds, runner.destroyed)
     }
+
+    @Test
+    fun workerIgnoringInterruptionStillCannotReportSuccessAfterCancellation() = runBlocking {
+        val directory = temporary.newFolder()
+        val inputs = temporary.newFolder()
+        val started = CountDownLatch(1)
+        val runner = Runner().apply {
+            action = { _, _, _ ->
+                started.countDown()
+                try { CountDownLatch(1).await() } catch (_: InterruptedException) { /* synthetic uncooperative runner */ }
+                success(directory)
+            }
+        }
+        val execution = EngineExecution(runner::destroy)
+        val snapshot = ResolvedSnapshot(url, "task", "{}")
+        val pending = async { DownloadExecutor(runner, execution, inputs).download(request(directory, snapshot), {}, {}) }
+        kotlinx.coroutines.yield()
+        assertTrue(started.await(5, TimeUnit.SECONDS))
+        assertTrue(execution.cancel("task"))
+        try {
+            withTimeout(5000) { pending.await() }
+            fail("Canceled runner result must not be publishable")
+        } catch (_: CancellationException) {
+            assertTrue(pending.isCancelled)
+        }
+        assertTrue(inputs.listFiles()!!.isEmpty())
+        assertFalse(execution.cancel("task"))
+    }
 }

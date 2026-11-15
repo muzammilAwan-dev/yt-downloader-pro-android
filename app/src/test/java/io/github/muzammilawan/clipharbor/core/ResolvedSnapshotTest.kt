@@ -5,6 +5,7 @@ import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -52,6 +53,23 @@ class ResolvedSnapshotTest {
             }
             assertTrue(directory.listFiles()!!.isEmpty())
         }
+    }
+
+    @Test
+    fun cleanupFailurePreservesCancellationAndIsReportedAsSuppressed() {
+        val directory = temporary.newFolder()
+        val cancellation = CancellationException("synthetic")
+        val thrown = assertThrows(CancellationException::class.java) {
+            snapshot().withFile(url, "task", directory) {
+                assertTrue(it.delete())
+                assertTrue(it.mkdir())
+                File(it, "synthetic-lock").writeText("fixture")
+                throw cancellation
+            }
+        }
+        assertSame(cancellation, thrown)
+        assertEquals(1, thrown.suppressed.size)
+        assertTrue(thrown.suppressed.single() is IOException)
     }
 
     @Test
@@ -128,6 +146,8 @@ class ResolvedSnapshotTest {
             "requested_formats" to listOf("137", "140"), "requested_downloads" to listOf("137+140"),
             "format_id" to "137+140", "url" to "stale", "height" to 1080, "http_headers" to mapOf("Cookie" to "private"),
             "filepath" to "old.mp4", "_filename" to "old.mp4", "__files_to_move" to mapOf("old" to "path"),
+            "request_data" to "stale-private-body", "hls_aes" to mapOf("key" to "stale-private-key"),
+            "extra_param_to_segment_url" to "stale-private-query", "has_drm" to true,
         )
         ReplayInfo.fieldsToDiscard(root.keys, hasFormatCatalog = true).forEach(root::remove)
         assertEquals(setOf("id", "title", "webpage_url", "formats"), root.keys)

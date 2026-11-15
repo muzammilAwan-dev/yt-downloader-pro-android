@@ -1,6 +1,6 @@
 {
   "_comment": "Allowlist of yt-dlp options the Android app may accept from UNTRUSTED input (share intents, pasted links, deep links). Default deny. Reconciled on 15 Nov 2026 against the desktop host's real validator (muzammilAwan-dev/yt-downloader-pro, host/YTDLPHost/Services/CommandValidator.cs, MIT) which the hand-off package could not see: same three rules - only http(s) links as bare arguments, paths constrained to an allowed directory with an allowed extension, control characters/escaped quotes/unbalanced quotes/.. /UNC rejected. Still not shipped as code; Phase 1 implements the validator with tests. Options the APP sets for itself are listed separately in engine_internal_options and must never be accepted from an intent.",
-  "version": 2,
+  "version": 3,
   "allowed_options": [
     "-f", "--format", "-S", "--format-sort",
     "-o", "--output", "--paths",
@@ -17,7 +17,7 @@
   ],
   "blocked_always": [
     "--exec", "--exec-before-download", "--batch-file", "--config-locations", "--plugin-dirs",
-    "--load-info-json", "--ffmpeg-location", "--cache-dir"
+    "--load-info-json", "--ffmpeg-location", "--cache-dir", "--no-clean-info-json", "--no-clean-infojson"
   ],
   "engine_internal_options": {
     "_comment": "Set by our own engine code only, never parsed from an intent. --load-info-json is deliberately in blocked_always for untrusted input (it makes yt-dlp read a local file) yet is the Phase 1 fix for the double extraction seen on the device, where download() re-resolved the URL and wasted ~18 s per item.",
@@ -25,11 +25,12 @@
       "--js-runtimes", "--ffmpeg-location", "--no-cache-dir",
       "--no-simulate", "--print", "--newline", "--progress",
       "--load-info-json", "--windows-filenames", "--no-mtime", "--no-playlist",
-      "-P", "--paths", "-o", "-N", "--merge-output-format"
+      "-P", "--paths", "-o", "-N", "--merge-output-format",
+      "--ignore-config", "--clean-info-json", "--dump-json", "-v", "-f"
     ]
   },
   "rules": [
-    "Non-option arguments must be http(s) URLs.",
+    "Non-option arguments must be full HTTPS URLs without embedded credentials; the desktop's http(s) rule does not authorize cleartext Android requests.",
     "Reject any option not in allowed_options (default deny).",
     "--cookies must point to the app's own temp cookie file; delete it when the task ends.",
     "--output / --paths must resolve inside the app-private download dir; publishing to MediaStore/SAF is done by the app, not by yt-dlp.",

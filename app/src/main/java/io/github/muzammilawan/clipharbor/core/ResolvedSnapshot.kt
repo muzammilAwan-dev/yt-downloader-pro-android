@@ -12,7 +12,10 @@ class ResolvedSnapshot internal constructor(
     private val clockMs: () -> Long = { System.nanoTime() / 1_000_000 },
 ) : Closeable {
     private var payload: ByteArray? = json.toByteArray(Charsets.UTF_8).also {
-        require(it.size <= MAX_BYTES) { "Resolved input exceeds size limit" }
+        if (it.size > MAX_BYTES) {
+            it.fill(0)
+            throw IllegalArgumentException("Resolved input exceeds size limit")
+        }
     }
     private val createdAt = clockMs()
 
@@ -32,16 +35,24 @@ class ResolvedSnapshot internal constructor(
             available
         }
         var file: File? = null
+        var failure: Throwable? = null
         try {
             check(directory.isDirectory || directory.mkdirs()) { "Cannot create private resolved-input directory" }
             file = File.createTempFile(PREFIX, SUFFIX, directory)
             file.outputStream().use { it.write(bytes) }
             bytes.fill(0)
             return block(file)
+        } catch (error: Throwable) {
+            failure = error
+            throw error
         } finally {
             bytes.fill(0)
             file?.let {
-                if (it.exists() && !it.delete()) throw IOException("Cannot delete private resolved input")
+                if (it.exists() && !it.delete()) {
+                    val cleanupError = IOException("Cannot delete private resolved input")
+                    // Never turn cancellation into a normal task failure merely because cleanup failed.
+                    if (failure == null) throw cleanupError else failure.addSuppressed(cleanupError)
+                }
             }
         }
     }
@@ -89,5 +100,9 @@ object ReplayInfo {
         "width", "height", "resolution", "fps", "filesize", "filesize_approx", "tbr", "abr", "vbr",
         "asr", "audio_channels", "quality", "source_preference", "preference", "language_preference",
         "dynamic_range", "stretched_ratio", "downloader_options", "cookies",
+        "hls_media_playlist_data", "hls_aes", "request_data", "extra_param_to_segment_url", "extra_param_to_key_url",
+        "player_url", "has_drm", "no_resume", "is_from_start", "is_dash_periods", "impersonate", "aspect_ratio",
+        "rows", "columns", "language", "page_url", "app", "play_path", "tc_url", "flash_version",
+        "rtmp_live", "rtmp_conn", "rtmp_protocol", "rtmp_real_time",
     )
 }

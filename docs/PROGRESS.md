@@ -595,3 +595,42 @@ lint XML: errors=0 warnings=6
 
 Tests executed; the new compatibility case confirms fake/alternative engines may resolve a task without supplying replay
 input. The one Windows symlink case remains skipped. Android code compiles; no native yt-dlp replay/device test performed.
+
+### Step 3e: final replay/cancellation safety pass
+
+- Expanded clearing of stale top-level transport fields (including request bodies, HLS key/query state and DRM flags),
+  retaining the selected catalog's own fields. Rechecked the pinned format/option source; research R39.
+- Failed temporary-input deletion is surfaced without replacing the primary cancellation/error. Oversized rejected input
+  bytes are cleared. Added a cleanup-failure regression and a runner that ignores interruption but must not return success
+  after task cancellation. Real descendant-process cleanup remains best-effort and unverified.
+- Reconciled internal options/HTTPS-only source policy in contract v3; disabled replay cleaning is explicitly blocked for
+  untrusted input. General intent-option parsing is still not shipped; these flags are set only by trusted engine code.
+- Final validation pending. This increment finishes the recommended engine groundwork, not the Phase 1 MVP. Next: validated
+  paste/share, selectable formats, durable Room queue, foreground notification/service and error/retry UI.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 48s
+54 actionable tasks: 16 executed, 38 up-to-date
+
+XML reports: suites=11 tests=91 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+
+Contract JSON valid; replay flags internal-only, disabled cleaning blocked
+```
+
+Tests executed: 90 passed, one Windows symlink-capability case skipped. JSON parse/internal-flag checks and
+`git diff --check` succeeded. No native/device replay, speed/battery measurement or complete process-tree cleanup proof.
+
+Implementation commits before this final pass: `9b30c66` evidence, `633cb43` private inputs, `e892d21` orchestration,
+`162b273` Android wiring. A local debug APK built, but no new install/handoff/tag/manual CI build was performed;
+`dist/app-debug.apk` still refers to Phase 0. Do not install that old file expecting these fixes.
+
+Future device regression checklist, when a new candidate APK is handed off:
+1. Resolve/download a small public HTTPS sample; confirm `resolveReuse=true` and `reusedResolve=true` in the log. These
+   mean a replay input was supplied, not a promise that upstream never re-extracted after an error.
+2. Confirm `selected_formats ids=... actualHeight=...` agrees with the player's media information (height may be unknown
+   for audio). Verify the published file plays with sound and is visible in Files/gallery.
+3. Exercise cancel/retry in the future queue UI and check logs/task-private input cleanup without sharing credentials.
+   Diagnostics still has no foreground service: keep the app foregrounded until the queue/service increment lands.
