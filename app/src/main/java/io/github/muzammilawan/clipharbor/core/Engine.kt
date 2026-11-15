@@ -80,7 +80,8 @@ data class EngineInfo(
         append("library=").append(libraryVersion ?: "?")
         append(" ytdlp=").append(ytdlpVersion ?: "?")
         append(" python=").append(pythonVersion ?: "?")
-        append(" ejs=").append(ejsVersion ?: "?")
+        // A missing version line does not prove presence, absence, or a particular bundled version.
+        append(" ejs=").append(ejsVersion ?: "unknown")
         append(" jsRuntime=").append(jsRuntime ?: "missing")
         append(" ffmpeg=").append(ffmpegVersion ?: "missing")
     }

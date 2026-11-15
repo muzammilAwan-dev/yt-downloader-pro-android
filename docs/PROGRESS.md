@@ -351,3 +351,26 @@ lint XML: errors=0 warnings=6
 An earlier invocation was interrupted by the user and is **not** counted as a completed verification run. The 6 lint
 warnings remain the Phase 0 informational warnings. Device regression testing of this increment is **not run**;
 `dist/app-debug.apk` still contains the previously delivered Phase 0 build.
+
+### Step 2: factual engine-version reporting
+
+- Normalize the library's parenthesized yt-dlp version at the engine boundary and in the verbose parser.
+- Parse EJS's actual upstream `Optional libraries: ... yt_dlp_ejs-<version>` spelling, as well as alternate explicit
+  version headers. A missing version is reported as `ejs=unknown`, not presumed bundled or missing.
+- Reject disabled, unavailable or explicitly unsupported JS-runtime header entries in the runtime self-test check.
+- Primary sources and limitations are recorded in `docs/RESEARCH-LOG.md` R25–R27.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 24s
+54 actionable tasks: 16 executed, 38 up-to-date
+
+XML reports: suites=8 tests=59 failures=0 errors=0 skipped=0
+lint XML: errors=0 warnings=6
+```
+
+The debug APK built locally; **no new device run or `dist/` handoff build** was performed. Phase 1 remains in progress:
+resolve reuse, selected-format/output-path evidence, Room queue, foreground service, share target, picker and error UI
+are still outstanding. `--load-info-json` behavior has been researched, not yet implemented; upstream may re-extract
+on errors, so an unconditional "exactly one extraction" claim would be incorrect.

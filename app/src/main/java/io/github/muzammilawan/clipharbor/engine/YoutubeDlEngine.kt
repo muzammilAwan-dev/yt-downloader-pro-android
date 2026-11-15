@@ -68,7 +68,8 @@ class YoutubeDlEngine(private val context: Context) : Engine {
             cached = cached.copy(
                 libraryVersion = LIBRARY_VERSION,
                 ytdlpVersion = cached.ytdlpVersion
-                    ?: runCatching { YoutubeDL.getInstance().version(context) }.getOrNull(),
+                    ?: runCatching { YoutubeDL.getInstance().version(context) }.getOrNull()
+                        ?.let(EngineInfoParser::normalizeVersion),
                 jsRuntime = cached.jsRuntime ?: bundledLib("libqjs.so")?.let { "quickjs (bundled)" },
                 ffmpegVersion = cached.ffmpegVersion ?: bundledLib("libffmpeg.zip.so")?.let { "bundled (libffmpeg)" },
                 pythonVersion = cached.pythonVersion ?: bundledLib("libpython.zip.so")?.let { "bundled (python)" },
