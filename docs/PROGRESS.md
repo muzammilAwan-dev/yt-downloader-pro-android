@@ -633,4 +633,55 @@ Future device regression checklist, when a new candidate APK is handed off:
 2. Confirm `selected_formats ids=... actualHeight=...` agrees with the player's media information (height may be unknown
    for audio). Verify the published file plays with sound and is visible in Files/gallery.
 3. Exercise cancel/retry in the future queue UI and check logs/task-private input cleanup without sharing credentials.
-   Diagnostics still has no foreground service: keep the app foregrounded until the queue/service increment lands.
+    Diagnostics still has no foreground service: keep the app foregrounded until the queue/service increment lands.
+
+### Latest phone log review and refreshed tester handoff (15 Nov 2026)
+
+- Reviewed the owner's three attached `app-20261115*.log` files. They are progressively longer snapshots of one session,
+  not three independent runs. Every header reports `gitSha=8cd9487`: the previous Phase 0 handoff. This does **not** validate
+  the replay, selected-format reporting, cleanup or cancellation changes through `5889eee`.
+- The old-build task resolved in 17,185 ms, reported 33 catalog formats and catalog maximum height 2560, then downloaded
+  video/audio streams, produced a 1,543,397-byte MP4 and logged successful MediaStore publishing. Actual selected IDs/height
+  are unreported, so neither 1080p nor 2560p output is established by this log.
+- Approximately 18.367 s elapsed between download start and first progress, with 20,598 ms reported for download/merge.
+  This is consistent with the old repeated-extraction path, not proof of where every millisecond was spent or a speed
+  comparison against the new adapter.
+- Self-test recorded seven `status=PASS` checks and `failures=0`. Later runtime evidence identifies Python 3.12.11,
+  QuickJS `quickjs-2025-04-26`, ffmpeg 7.1.1 and yt-dlp `(2025.11.12)`; EJS remains unknown. Startup placeholders precede
+  initialization and do not establish runtime failure. Old double-redaction and incomplete summary punctuation are not
+  evidence that the current logging fixes failed. No source URLs, media titles or account details copied into this record.
+- Playback with sound and gallery visibility still need the owner's confirmation. Current native replay/selection/final-file
+  checks remain pending; Phase 1 is still in progress.
+
+The direct PowerShell helper invocation was blocked by this PC's existing script policy. Used the already documented
+process-scoped invocation instead; no persistent execution-policy or environment changes:
+
+```
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
+
+testDebugUnitTest lintDebug:
+BUILD SUCCESSFUL in 1m 48s
+36 actionable tasks: 15 executed, 21 up-to-date
+
+assembleDebug:
+BUILD SUCCESSFUL in 8s
+38 actionable tasks: 3 executed, 35 up-to-date
+
+XML reports: suites=11 tests=91 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+APK bytes=67693493
+APK SHA256=95528855198DBE2F0632218B8C82D14749570840D15614D907C6FF4E692B3A4B
+APK DEX contains expected gitSha=5889eee
+Built and dist APK hashes match
+```
+
+Tests executed: 90 passed and the existing Windows symlink-capability case skipped. Generated `BuildConfig.java` confirms
+`GIT_SHA="5889eee"`; the packaged DEX contains that stamp. Built from clean source at `5889eee`, with no implementation
+changes during this handoff. `dist/app-debug.apk` is now refreshed and contains the engine fixes (supersedes the earlier
+old-artifact warnings). Version name/phase header remain `0.1.0-phase0`/0 until the Phase 1 UI increment; identify this
+candidate by **gitSha**, not version name. The following documentation commit only records the evidence.
+
+Owner handoff: copy the newly refreshed `dist/app-debug.apk` to the phone and install over the old local debug build.
+Keep the app foregrounded, download a small public HTTPS sample, run self-test and share the newest session log. Expect
+`gitSha=5889eee`, `resolveReuse=true`, `selected_formats ids=... actualHeight=... reusedResolve=true` and successful publish;
+report playback/audio/gallery results. Do not call native regression passed until the new phone evidence is received.
