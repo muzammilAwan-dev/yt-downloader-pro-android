@@ -1134,3 +1134,44 @@ PASS: 96 JVM-generated selectors, yt-dlp 2025.11.12; offline only
 contracts and retained share/replay/expiry/callback tests pass. No new native phone, rendered Compose/accessibility,
 MKV-playback or live extraction claim. Next: committed-source stamped helper refresh of `dist/app-debug.apk`, not the
 unstamped intermediate build. Keep the app open while downloading; durable queue/service/notifications remain unfinished.
+
+### Standard-quality tester handoff — `74ce7cf` (15 Nov 2026)
+
+Clean source `74ce7cfe0896c9bf110c000c0b38967d12c84fdf` pushed non-force; remote main SHA matched. Ran the standard
+helper with process-local `GRADLE_OPTS` daemon=false (existing value preserved), no persistent configuration/cache/
+SDK/dependency changes. Both invocations confirmed fresh single-use daemons. This helper attempt succeeded first time.
+
+```
+> $env:GRADLE_OPTS = "$env:GRADLE_OPTS -Dorg.gradle.daemon=false"
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
+testDebugUnitTest lintDebug:
+BUILD SUCCESSFUL in 1m 54s
+36 actionable tasks: 15 executed, 21 up-to-date
+assembleDebug:
+BUILD SUCCESSFUL in 30s
+38 actionable tasks: 3 executed, 35 up-to-date
+XML reports: suites=17 tests=138 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+APK bytes=67327136
+APK SHA256=AEC0EBBFF740CDDEB14EC473C7B3F8B80C8588E13D7702321E7B21F2247BBE64
+APK DEX contains gitSha=74ce7cf, preview version, standard quality labels and HomeScreenKt
+Packaged owner icon bytes equal unchanged source artwork
+Built and dist APK hashes match
+PASS: 96 JVM-generated selectors, yt-dlp 2025.11.12; offline only
+```
+
+Stamped unit tests executed in this helper, not merely UP-TO-DATE. 137 passed/one existing Windows symlink case skipped.
+Generated BuildConfig: versionCode 2, `0.1.0-phase1-preview`, `gitSha=74ce7cf`, stable package. `aapt2` verifies compiled
+SEND/text/plain/singleTask, cleartext=false, extracted native libraries, and unchanged normalized adaptive inset 0.1667.
+App-declared permission is still INTERNET; prior AndroidX signature permission/debug tooling components remain.
+
+`dist/app-debug.apk` now contains the standard picker/planner, replacing `ec146df`. Install over the current debug build;
+verify `gitSha=74ce7cf` in summary/log, try two available standard presets (including portrait media where convenient),
+check selected dimensions/audio and send a picker screenshot plus a **post-download** session log. High-resolution MKV
+playback still needs owner verification. Available tiers are based on reported formats; 1440 is QHD, 2160 is 4K, no
+upscaling/above-cap fallback. Owner's exact artwork and working native engine configuration are preserved.
+
+Limits remain explicit: native standard-plan/UI/merge/transfer and new MKV playback are phone-untested; no universal
+site/bot/login/decoder promise. Thumbnail embedding is separately deferred; Unicode-safe filename restrictions retained
+instead of ASCII-only restriction. No audio-only/exact-format picker, durable queue/foreground notifications or full
+native cancellation guarantee yet. Keep the app open. Following documentation-only commit does not change APK/stamp.

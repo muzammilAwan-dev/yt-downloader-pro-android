@@ -204,6 +204,11 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   lower merges retain MP4/MKV. Completion/logs use both selected dimensions and short-edge resolution, not a catalogue
   maximum or a falsely labelled portrait frame height. New controller fake tests cover portrait, MKV, unknown dimensions
   and unsupported catalogue. New Compose/native phone flow remains unverified; old owner audio evidence is not extended.
+- **R60:** Standard-quality `74ce7cf` helper succeeded with process-local fresh-daemon settings: 137 passing executed
+  stamped tests/one host skip, lint 0 errors/7 known warnings, debug APK built. Re-ran all 96 generated offline native
+  selectors. Verified source/dist SHA-256 equality, DEX/BuildConfig stamp and quality labels, exact source/artwork bytes
+  in APK, compiled share/cleartext/native extraction settings and unchanged adaptive inset. Phone standard-picker/native
+  download and high-resolution MKV playback remain unverified. No native/runtime/icon/dependency/permission update.
 
 ## Still unverified (carried forward)
 
@@ -213,4 +218,5 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
 - **Phase 0, answered on-device 15 Nov 2026** (R23): QuickJS does start (Android 10 / API 29, arm64), the default client order
   returned 1080p-class adaptive formats **with audio** and no withholding for the tested Shorts link, first-run unpack took 8.3 s,
   and the MediaStore publish landed in `Download/ClipHarbor` (`content://media/external/downloads/18406`). Still open: whether the
-  file plays with sound in the phone's player and appears in the gallery (human check), and behaviour on other videos/sites.
+  earlier file's gallery visibility and behaviour on other videos/sites. Owner confirmed latest `ec146df` download playback
+  with sound (R53); new `74ce7cf` standard-plan transfers/MKV playback need separate phone verification.
