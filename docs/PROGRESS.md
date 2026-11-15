@@ -46,6 +46,7 @@ C:\Users\Malku\dev\repos missing
 
 - [ ] **Phase 0 (gate)** — spike: YouTube URL resolves with yt-dlp + JS runtime, 1080p video + audio downloaded, merged, saved via
       MediaStore on a real arm64 phone. Deliverable: exact steps + report template. **STOP for owner's device report.**
+      *App side built and green on 15 Nov 2026 (see "Phase 0 — engine spike" below); the gate stays open until the owner runs it.*
 - [ ] **Phase 1 (MVP)** — share target/paste, format picker, Room staged queue, notification, error taxonomy
       (`contracts/errors.json`), `onTimeout` handling, unit tests.
 - [ ] **Phase 2 (parity)** — playlists, trim, audio formats, subtitles, cookie sign-in, site shortcuts/toggles, speed settings,
@@ -65,6 +66,11 @@ Every phase must ship with automated tests (fake `Engine`, validator, error mapp
 | 14 Nov 2026 | Printed install plan, waiting for the owner's single "yes" | Approved with "keep the repo at Documents" |
 | 14 Nov 2026 | Installed toolchain | See "Step 4 output" below |
 | 14 Nov 2026 | Generated wrapper + first `assembleDebug` | `BUILD SUCCESSFUL in 6m 51s` — see below |
+| 15 Nov 2026 | Phase 0 research (engine artifact, yt-dlp/EJS/PO tokens, Android 17, Jetpack versions) | `docs/RESEARCH-LOG.md` R14–R21 |
+| 15 Nov 2026 | Renamed app to ClipHarbor, package `io.github.muzammilawan.clipharbor` (owner's choice) | 46 tests green, commit `refactor: rename…` |
+| 15 Nov 2026 | Added youtubedl-android 0.18.1 + ffmpeg, arm64-only ABI, legacy native-lib packaging | `assembleDebug` green, APK 67,007,639 B (pre-code) |
+| 15 Nov 2026 | Implemented engine spike: diagnostics self-test, 1080p download+merge, MediaStore publish, redacted rotating log, Share log | `testDebugUnitTest lintDebug assembleDebug` green — outputs below |
+| 15 Nov 2026 | Built installable APK with `tools/build-debug.ps1` | `dist/app-debug.apk`, SHA-256 below |
 
 ## Step 4 output (install, 14 Nov 2026)
 
@@ -171,3 +177,107 @@ launchable-activity: name='io.github.ytdlpforandroid.MainActivity'
 ```
 
 Not yet installed on a phone: there was no device attached during setup. That happens with the Phase 0 checklist.
+
+> The outputs in this setup section are kept verbatim from 14 Nov 2026, i.e. **before** the 15 Nov rename: the package id
+> `io.github.ytdlpforandroid`, the label "yt-dlp for Android" and the `AppInfoTest` path are historical, not current.
+
+## Phase 0 — engine spike (15 Nov 2026)
+
+Name decided by the owner: **ClipHarbor**, package `io.github.muzammilawan.clipharbor` (docs/11 §2). The app name, label,
+package id and theme were renamed from the placeholder in one commit.
+
+### What exists now (app side — nothing installed on a phone yet)
+
+| Area | What | Where |
+|---|---|---|
+| Engine boundary | `Engine` + models, contract error codes (`contracts/errors.json`), error mapping from yt-dlp output, yt-dlp `-v` parser, format planner (H.264+AAC capped at 1080p) | `app/src/main/java/.../core/` |
+| Real engine | only class that touches youtubedl-android: init (Python/QuickJS/ffmpeg unpack), `-v --dump-json` resolve, download with `--merge-output-format mp4` + `--print after_move:filepath`, cancel | `.../engine/YoutubeDlEngine.kt` |
+| Diagnostics | 7 checks (engine unpack, JS runtime, ffmpeg, app-private storage, MediaStore insert, network, resolve of the pasted URL) → `SELFTEST RESULT:` line; screen has Run self-test, Download 1080p + merge, Share log, Copy summary, Clear logs, Verbose switch | `.../diagnostics/` |
+| Logging | rotating private log `files/logs/app-YYYYMMDD*.log` (≤5 × 2 MB), redaction of cookies/auth/PO tokens/signed-URL queries, debug-only public copy `Download/ClipHarbor-logs/`, FileProvider share; uncaught-exception hook is still Phase 1 | `.../log/` |
+| Publish | copy to `Download/ClipHarbor` through MediaStore with `IS_PENDING`; API 24–28 falls back to app-specific external storage (no storage permission allowed) | `.../publish/MediaStorePublisher.kt` |
+| Tests | 8 suites / 46 JVM tests with a scriptable fake `Engine` plus fake storage/network probes; no live-YouTube test in CI | `app/src/test/java/...` |
+
+### Command output (this machine, 15 Nov 2026)
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain
+
+BUILD SUCCESSFUL in 21s
+54 actionable tasks: 24 executed, 30 up-to-date
+
+test suites=8 tests=46 failures=0
+lint: 0 errors, 6 warnings
+```
+
+The 6 lint warnings, all deliberate or informational:
+
+1. `AndroidGradlePluginVersion` — Gradle 9.9.1 exists; 9.6.0 is the AGP 9.5.1 pairing.
+2. `NewerVersionAvailable` — Compose compiler plugin 2.4.21; must match AGP's bundled Kotlin 2.2.10.
+3./4. `NewerVersionAvailable` — coroutines 1.11.0; pinned 1.9.0 because that is the version already on the
+   classpath (Kotlin 2.2.10 metadata compatibility).
+5. `ChromeOsAbiSupport` — APK ships `arm64-v8a` only (deliberate: 67 MB instead of ~200 MB).
+6. `UsableSpace` — free-space number is a rough hint in the header, not an allocation decision (Phase 1 adds the
+   pre-flight check).
+
+APK (`tools/build-debug.ps1`, which re-ran the tests, lint and assemble):
+
+```
+1478925B801720356607FBFA478D76D79D045A98B45A334A22D10CBD65C90E5C  app-debug.apk
+dist/app-debug.apk = 67,693,493 bytes
+```
+
+Manifest/packaging audit of that APK (`aapt2 dump xmltree`):
+
+```
+package="io.github.muzammilawan.clipharbor"  minSdkVersion=24  targetSdkVersion=37
+extractNativeLibs=true      <- required: the engine reads libpython.zip.so/libffmpeg.zip.so by path
+usesCleartextTraffic=false
+uses-permission: android.permission.INTERNET
+uses-permission: io.github.muzammilawan.clipharbor.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+                (signature-level, generated by AndroidX for local broadcasts; not requested by us)
+native libs: lib/arm64-v8a/{libqjs.so, libpython.so, libpython.zip.so, libffmpeg.so, libffmpeg.zip.so, libffprobe.so}
+```
+
+Byte budget: yt-dlp zipapp 3.2 MB + Python payload 13.6 MB + ffmpeg payload 34 MB + QuickJS 0.9 MB.
+
+### Limits of this build (expected, not bugs)
+
+- **No foreground service/notification yet** (Phase 1): keep ClipHarbor in the foreground while the test downloads.
+- **No PO-token provider** (Phase 2 decision, docs/RESEARCH-LOG.md R17). If YouTube withholds HD, the self-test shows
+  `withheld=true` or a warning count and the download falls back; that result is exactly what Phase 0 must capture.
+- **Engine is 11 months behind upstream**: the Maven artifact bundles yt-dlp **2025.11.12**, upstream stable is
+  **2026.10.26**. The report records the actual version; extraction failures caused only by age are expected.
+- **Public log copy needs Android 10+**; on 7–9 use Share log (docs/13 §4).
+- UI strings are hardcoded English (i18n is Phase 3); only the app label is a resource.
+- The engine initialises when the screen opens, so the first launch spends a few seconds unpacking; the log records
+  `event=engine_init ms=…`.
+
+### On-device checklist (owner) — the Phase 0 gate
+
+1. Copy `dist\app-debug.apk` to the phone and install it (allow "install unknown apps" for Files). The package id is
+   new, so a previously installed placeholder APK is a separate app — uninstall it if it is in the way.
+2. Open **ClipHarbor**. Wait for the status "Engine ready." (first run unpacks the Python/ffmpeg payloads).
+3. Paste the URL of a **public video that offers 1080p** into the URL field.
+4. Tap **Run self-test**. Expect `SELFTEST RESULT: PASS (7/7 checks)`; any `FAIL` line names the failed check.
+5. Tap **Download 1080p + merge**. Expect "Saved: content://media/external/downloads/…".
+6. Open Files → Downloads → **ClipHarbor**: the file plays with audio; the player's info shows 1920×1080 (or the
+   highest offered; note the actual number).
+7. Get the log: it is already in Downloads → **ClipHarbor-logs** → `clipharbor-log-YYYYMMDD-HHMMSS.txt` (debug build),
+   or use **Share log**. Copy the whole file to the PC.
+8. Fill in the template below and send it with the log. Read it before sharing: the redactor strips cookies, auth
+   headers, PO tokens and signed-URL queries, but you are the last check.
+
+### Report template (copy/paste and fill)
+
+```
+app=ClipHarbor version=0.1.0-phase0 build=debug
+device=<manufacturer model> android=<version> api=<n> abi=arm64-v8a
+engine: library=<..> ytdlp=<..> python=<..> ejs=<..> jsRuntime=<..> ffmpeg=<..>
+SELFTEST RESULT: PASS|FAIL (n/m checks[, skipped=k])
+failed checks=<ids and details, or "none">
+resolve: title=<..> duration=<..>s formats=<n> maxHeight=<n> withheld=<true|false>
+download: saved=<uri or error code> file=<name> sizeMB=<n> container=<mp4|webm> elapsed=<mm:ss>
+player: resolution shown=<..> audio=<yes|no> visible in gallery=<yes|no>
+log file=<clipharbor-log-....txt, attached=yes|no>
+oddities=<thermal warnings, notification missing, UI stall, anything else>
+```

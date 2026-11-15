@@ -37,8 +37,11 @@ every primary document; confidence is stated honestly.
 ## C. Not verified (treat as unknown)
 
 1. That `youtubedl-android` + current yt-dlp returns 1080p on a real device today (Phase 0).
+   *15 Nov 2026: the app side is built and tested; the device half is still open (docs/PROGRESS.md checklist).*
 2. The bundled Python version in the library and whether the latest yt-dlp still supports it.
+   *15 Nov 2026: **answered from the artifact** — CPython 3.12 (see E.3).*
 3. Licenses of the FFmpeg, aria2c and QuickJS builds shipped with the library; whether F-Droid main accepts prebuilt binaries for this app.
+   *15 Nov 2026: FFmpeg = GPL build with x264; QuickJS present as MIT `libqjs.so`; aria2c not shipped. F-Droid acceptance is still open (Phase 3).*
 4. Whether any PO Token Provider plugin can run inside the embedded Python on Android.
 5. Contents of the desktop repo's source files, `CommandValidator`'s true allowlist, and the mac/linux branch.
 6. The decompiled Snaptube source beyond the classes named in doc 03; its runtime behaviour; its YouTube extraction method.
@@ -53,3 +56,18 @@ every primary document; confidence is stated honestly.
 
 Run `python3 tools/verify_handoff.py` (JSON validity, workflow structure, links, and a scan proving no decompiled Snaptube code is included).
 It does **not** prove the workflow runs on GitHub; no Actions runner was available here.
+
+## E. Phase 0 verification (15 Nov 2026, this machine unless stated)
+
+| # | Claim | How checked | Confidence |
+|---|---|---|---|
+| E1 | `io.github.junkfood02.youtubedl-android:{library,ffmpeg}:0.18.1` is the latest published version and the POM license is GPL-3.0 | Maven Central `maven-metadata.xml` + POM | High |
+| E2 | The artifacts carry native payloads for `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`; sizes 59.2 MB and 139.4 MB | downloaded both AARs and listed entries | High |
+| E3 | Bundled CPython is **3.12**; bundled yt-dlp is **2025.11.12** with `yt_dlp_ejs` and solver JS included | extracted `res/raw/ytdlp` (shebang + zip), read `yt_dlp/version.py`, `yt_dlp_ejs/*`; listed `libpython.zip.so` | High |
+| E4 | Upstream yt-dlp stable is **2026.10.26**; standalone `yt-dlp-ejs` is **0.8.0** | GitHub releases API | High |
+| E5 | The ffmpeg payload is a **GPL build** (`libx264.so.164`) and ships no LICENSE/COPYING; QuickJS is `libqjs.so` | extracted `libffmpeg.zip.so` | High |
+| E6 | PO-token requirements per client (`web`/`mweb`/`android`/`ios` = GVS token needed; `tv`/`web_embedded`/`android_vr` = not) | yt-dlp wiki, edited 12 Jul 2026 | High (state changes) |
+| E7 | Android 17 has no all-app change that blocks this app; Android 18 will stop implicit URI grants | developer.android.com behaviour-changes page | High |
+| E8 | `extractNativeLibs=true` is produced by `jniLibs.useLegacyPackaging = true` and legacy libs are compressed in the APK | `aapt2 dump xmltree` on the built APK + zip entry sizes | High (reproduced) |
+| E9 | The APK requests only `INTERNET` plus the AndroidX-generated signature permission; cleartext is off | same manifest dump | High (reproduced) |
+| E10 | 46 JVM tests and lint pass; APK builds | `gradlew testDebugUnitTest lintDebug assembleDebug`, `tools/build-debug.ps1` | High (reproduced) |

@@ -14,12 +14,13 @@ country — you are responsible for what you download.
 | Phase | State |
 |---|---|
 | Environment setup | done on the owner's PC (`docs/dev-setup.md`) |
-| Phase 0 — engine spike on a real arm64 phone | **in progress**; see `docs/01-PLAN.md` |
+| Phase 0 — engine spike on a real arm64 phone | **APK built 15 Nov 2026; waiting for the owner's device report** (checklist in `docs/PROGRESS.md`) |
 | Phase 1 — MVP (share target, picker, queue, notifications) | not started |
 | Phase 2 — parity (playlists, trim, audio, subs, cookies, updates) | not started |
 | Phase 3 — release (baseline profiles, a11y, signing, F-Droid metadata) | not started |
 
-The current app is a hello-world Compose screen used to prove the toolchain. It has no download functionality yet.
+The current app is the Phase 0 spike: a Diagnostics screen that unpacks the yt-dlp engine, runs a 7-check self-test,
+and can download 1080p video + audio, merge them and publish the result to `Download/ClipHarbor`.
 
 ## Build and test
 
