@@ -1273,3 +1273,12 @@ Official PO-token guide distinguishes Player/catalog and GVS/media checks: resol
 Phone media 403 cause remains unproven; newer engine may fix client handling but cannot guarantee removal of a sign-in/IP gate. No app/engine/login/APK change approved or made.
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 4s
 Tests/lint analyses UP-TO-DATE: existing reports 206 total / 205 passed / 1 skip / 0 failures/errors, lint 0 errors / 7 known warnings (not fresh execution).
+
+### Approved APK-only engine packaging investigation — 15 Nov 2026 (R72)
+Owner "ok go" recorded; runtime downloads/login/new permissions excluded. Library stays 0.18.1; official stable zipapp 2026.10.26 includes EJS 0.8.0.
+Asset SHA-256/API digest/signed checksum match; isolated GPG Good signature/VALIDSIG (upstream key, trust undefined). Requirements fit phone Python/QuickJS.
+Host-only offline version/EJS/path/replay-format-list smokes and 1,046-file Python 3.12 grammar check passed; Android engine/download behavior untested.
+Library copies only if absent: APK-only resource swap leaves old installed engine. Next: tests-first atomic process-wide pre-init installer + notices/version reporting.
+Evidence: docs/evidence/engine-refresh-2026.10.26.md. No app/dependency/permission/test/APK change; no proven 403 fix or reinstall yet.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 23s
+Tests/lint analyses UP-TO-DATE: reports 206 total / 205 passed / 1 skip / 0 failures/errors, lint 0 errors / 7 known warnings (not fresh execution).

@@ -337,6 +337,26 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Updating the engine is not guaranteed to fix a sign-in/IP gate; do not conflate the desktop's explicit gate with phone 403s.
   No engine/login/cookie/PO-token change approved or implemented; R70's narrow refresh recommendation remains a test candidate.
 
+- **R72 (15 Nov 2026, approved APK-only engine packaging investigation):** Owner said "ok go" to R70's narrow
+  pinned-bundle investigation; supersedes R70/R71's historical approval-pending language, not the no-runtime-code rule.
+  Maven metadata still latest/release library 0.18.1; official stable API still 2026.10.26. Downloaded official platform-independent
+  `yt-dlp` to approved temp only: 3,073,072 bytes, SHA-256 `e51e69e89489f199530f13d32a4342da3ddb2cf34842f364603a066db05afbf3`.
+  Matches API digest/signed SHA2-256SUMS; isolated Git GPG returned Good signature/VALIDSIG, exit 0, fingerprint
+  `AC0CBBE6848D6A873464AF4E57CF65933B5A7581`. Key from tagged upstream repository, trust undefined, no independent identity proof.
+  Zipapp vendors EJS 0.8.0/local solvers and lazy extractors, no native extensions; solver hashes match its pinned vendor table.
+  Python >=3.11 / QuickJS >=2023-12-09 (recommended >=2025-04-26) match existing phone 3.12.11/2025-04-26 by version;
+  native Android behavior remains untested. Host CPython 3.14 version/EJS-resource/ffmpeg-path/replay-format-list smokes passed;
+  1,046 Python files parsed with 3.12 grammar. Not a live download, Android-runtime or anti-bot success check.
+  Published library sources JAR confirms engine copy only if absent: resource-only APK upgrade leaves old installed zipapp.
+  Public path constants allow local pre-init replacement; updater version prefs can be stale. Recommend tests-first atomic,
+  hash-pinned process-wide installation before init; preserve native runtime/adapter runner/planner/replay/cancellation/logs.
+  Candidate licenses read: Unlicense yt-dlp/EJS, bundled Meriyah 6.1.4 ISC/Astring 1.9.0 MIT notices required in integration.
+  **Docs conflict:** R15/R24's historical runtime-updater plans are not authorized by this approval; APK-only supersedes them.
+  `THIRD_PARTY_NOTICES.md` still says QuickJS 2021-03-27, contrary to R23/R25/owner logs and current requirement checks;
+  recommend correcting that stale notice alongside integration (owner confirmation requested), not downgrading/bumping native code.
+  Sources, exact boundaries and next installer/device test plan: `docs/evidence/engine-refresh-2026.10.26.md`.
+  No app/dependency/permission/test/APK change in this investigation; verified asset is a test candidate, not a proven 403 fix.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports
