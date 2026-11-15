@@ -44,6 +44,12 @@ ClipHarbor colors/icon, intended audience, tablet scope and preferred queue acti
 
 ## Original design workflow (proposed, not yet implemented)
 
+**Screenshot status (15 Nov 2026):** all nine original 720×1640 images from the owner's first archive were visually
+reviewed. Image/flow observations are in `16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` §1; no competitor images/assets or personal
+feed details committed. The owner subsequently supplied a second archive path that is not currently present at that
+location; the second batch has not been reviewed. Website-login/browser behaviour also has separate owner-reported runtime
+evidence and REA research in doc 16; screenshots alone do not establish renderer implementation or session transfer.
+
 - Extract interaction principles from the owner's screenshots; do not trace layouts or reuse competitor code, assets,
   branding or identity. Snaptube is a reference, not the ClipHarbor design system.
 - Map Phase 1's share/paste → picker → durable queue → saved-file journey. Leave ads, discovery feeds and unrelated browser

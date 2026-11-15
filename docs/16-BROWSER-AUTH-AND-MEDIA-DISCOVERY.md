@@ -41,7 +41,9 @@ extractor registry and remote extractor JavaScript, media URLs with headers/expi
 
 Taken together, these findings are consistent with browser-assisted and custom extraction. They **do not establish**
 whether yt-dlp is absent, the exact cookies-to-download handoff, a working 2026 token implementation, or universal/bot-free
-downloads. Do not copy proprietary extractor code, scripts, endpoints, assets or branding. No 1DM analysis is necessary
+downloads. This describes the **initial retained-summary coverage**; the original-source follow-up in §7 now establishes
+WebView-cookie access during extraction and separate real token WebViews. Do not copy proprietary extractor code,
+scripts, endpoints, assets or branding. No 1DM analysis is necessary
 to formulate the public-platform feasibility tests below; request additional evidence only for a concrete unresolved gap.
 
 ### `explore` source trace (completed, coverage-limited)
@@ -76,7 +78,7 @@ Authentication/bot failure -> suggest website login             (owner observed)
 ```
 
 **Subsequent owner path correction:** the original REA is at `C:\Users\Malku\Documents\REA`; the owner-requested
-`explore` follow-up is now inspecting that directory's original reports. The earlier absence finding applied only to the
+`explore` follow-up inspected that directory's original reports (results in §7). The earlier absence finding applied only to the
 previous search scope and is no longer a reason to request another export before checking this supplied path.
 
 The owner also supplied `C:\Users\Malku\Downloads\screenshots 2.zip`. Its exact path was not present when read; a
@@ -218,5 +220,55 @@ Chromium isolation findings above were independently re-read on their primary pa
 
 `explore` completed the retained-evidence trace and documented the missing original-source scope in §1. The engineering
 goal is to adapt the working app's high-level browser/session/extraction/download flow, not dismiss it because a public
-API has limitations, and not claim its exact internals were already proven. The original export/path is the next evidence
-needed for that specific handoff, not a reason to demand 1DM analysis or halt unrelated Phase 1 work.
+API has limitations. The supplied original REA path then enabled the stronger trace in §7; no new 1DM analysis is required.
+
+## 7. Original REA follow-up: session access really reaches extraction
+
+Completed by `explore` at the owner's explicit request, after receiving `C:\Users\Malku\Documents\REA`. Relevant
+original topic reports and focused decompiled call sites were read; no target executed or new binary analysis performed.
+The parent independently re-read the cookie helper, extraction/authentication and bot branches, browser-to-picker action,
+HTTP cookie adapter and a real token-WebView constructor. Only paraphrased observations are recorded here.
+
+Original provenance: `C:\Users\Malku\Documents\REA\export\00-BRIEF.md:1–8` reports Snaptube 7.67.0, versionCode
+76761610, static JADX 1.5.6/Apktool 3.0.3 analysis. Source files below are relative to this exact owner-supplied root:
+`C:\Users\Malku\Documents\REA\reversed\jadx\sources`.
+
+| Observed boundary/behaviour | Original source references | Qualification |
+|---|---|---|
+| Actual browser and website sign-in | `com/snaptube/premium/fragment/VideoWebViewFragment.java:1085–1086,2055–2066`; `com/snaptube/premium/views/VideoEnabledWebView.java:103–111`; `com/snaptube/dataadapter/plugin/login/YTWebViewSignInPluginImpl.java:65–81,117–125,157–168` | Real WebView and website navigation; not proof of a third-party OAuth integration. Non-incognito browser setup enables third-party cookies; do not blindly inherit this setting. |
+| Cookie/session changes and continuations | `com/snaptube/dataadapter/plugin/login/YTLoginUtils.java:28–60`; `o/hsc.java:45–61`; `com/snaptube/premium/fragment/youtube/YouTubeLoginFragment.java:270–310,325–328` | Cookie-marker heuristic, flush and session-change event 1050. Login success may be reported despite later account-metadata failure; event is not server validation. |
+| Browser action -> cached media or page URL -> picker/extraction | `com/snaptube/premium/fragment/VideoWebViewFragment.java:1276–1318`; `com/snaptube/plugin/extension/nonlifecycle/root/ChooseFormatViewModel.java:184–201,249–266`; `o/yy3.java:101–128`; `com/snaptube/premium/extractor/BaseVideoUrlExtractor.java:100–126` | Context contains source/flags/extras; explicit cookie serialization into that context was not established. |
+| Shared browser cookies actually used by extraction | `o/nk4.java:65–82`; `com/snaptube/extractor/pluginlib/youtube/Parser.java:760–799,911–943,965–968,1611–1653` | Helper reads `CookieManager`; page requests use eligible cookies, supporting clients use cookie-derived account authorization. Adapt through our credential/Engine boundary, not by copying the private algorithm. |
+| WebView <-> HTTP cookie adapter | `com/snaptube/dataadapter/plugin/YouTubeCookieJar.java:90–127,178–194,205–216` | Browser cookies are used for handled requests and response cookies written back. Fixed-domain/path reconstruction loses attributes; do not copy it. |
+| Selected format -> persisted task -> worker | `o/qrc.java:150–181,293–330`; `o/vm2.java:109–134,182–196`; `o/hrc.java:408–465,542–570`; `o/vsb.java:171–201,372–393,773–783,805–831`; `o/otc.java:206–218` | Worker chooses requested format or applicable fallback. Media-to-format mapping itself does not prove account headers on all media requests. |
+| Headers reach HTTP transfer, media-URL cookie fallback | `o/rm2.java:374–390`; `com/wandoujia/download/rpc/InnerDownloadRequest.java:190–204`; `com/wandoujia/download/rpc/f.java:801–838,923–925`; `com/wandoujia/download/rpc/SingleThreadBlockDownloadTask.java:745–748,799–818`; `com/wandoujia/download/rpc/c.java:371–374` | Supplied headers and byte ranges reach requests; Cookie fallback queries the download URL. Some headers are persisted there; ClipHarbor must keep credentials out of history and audit redirects independently. |
+| Bot/age/other login-required classifications | `com/snaptube/extractor/pluginlib/youtube/Parser.java:228–269,1547–1567,1672–1682`; `com/snaptube/extractor/pluginlib/common/ExtractException.java:23–27`; `o/fxa.java:37–59`; `o/oe3.java:135–149`; `o/grc.java:30–56` | Distinct codes 101/102/103 and normalized login-required marker. Already-logged-in login-like errors need not yield the same sign-in recommendation. |
+| Login-state checks and cache invalidation | `com/snaptube/premium/youtube/LoginStateChecker.java:108–149,176–196,206–268`; `o/suc.java:22–29,65–68` | NOT_LOGIN / LOGIN_INVALID / LOGIN, short cache and session-change invalidation; some optimistic failure handling, not infallible validation. |
+| Branch-specific picker continuation | `com/snaptube/plugin/extension/nonlifecycle/youtube/YoutubeAllFormatFragment.java:780–806,980–995,1010–1052,1177–1198`; `com/snaptube/plugin/extension/nonlifecycle/youtube/YoutubeContentFragment.java:930–974,990–1015,1138–1169,1176–1189`; `com/snaptube/premium/controller/b.java:147–159,203–235` | Expired-login signal resumes **selected-format submission**, not a verified re-extraction refresh. Ordinary login-required dialog has no equivalent auto-retry proven in this trace. |
+| Failed-task recovery and display | `o/ura.java:143–144`; `o/g17.java:87–105,164–193,227–267,324–367`; `o/i29.java:119–149`; `o/dta.java:85–115,205–255`; APK resources: `C:\Users\Malku\Documents\REA\reversed\apktool\res\values\strings.xml:2173–2174`, `colors.xml:97` in the same directory | Expired-login recovery can invoke base retry, resetting task to PENDING. Generic red/sign-in wording supported; exact owner bot-message parser-to-display chain not reproduced. |
+| Real, separate PO-token WebViews and client/API routing | `com/snaptube/extractor/pluginlib/youtube/Parser.java:838–843,1018–1025,1036–1063`; `com/snaptube/extractor/pluginlib/youtube/potoken/PoTokenWebView.java:190–248,292–317,394–438`; `com/snaptube/extractor/pluginlib/youtube/potoken/BaseJsPatchPoTokenWebView.java:257–295,395–445` | Token generation is not inferred solely from class names anymore. Purpose/client-specific path; account login does not prove token generation or account binding. |
+| Token lifecycle, caches and bounded failures | `com/snaptube/extractor/pluginlib/youtube/potoken/a.java:64–153,160–181`; `com/snaptube/extractor/pluginlib/youtube/potoken/b.java:128–182,188–267`; `o/ec8.java:16–44`; `o/lsc.java:21–28,31–75` | Failure cap of three, generator reuse, differing lifetime/age checks. Cache hits precede later renewal logic; generator expiry is not proven per-entry token expiry. JADX-damaged renewal branches limit exact predicates. |
+
+Original topic cross-checks: `export/40-extractor-core-part01.md:9919,12709,13236`,
+`export/40-extractor-core-part02.md:10192,10298–10309`, `export/40-shell-routing-part01.md:13927`,
+`export/40-search-sites-part02.md:12654,12685` under `C:\Users\Malku\Documents\REA`. Native search interfaces are also
+present; the browser trace must not be generalized to every search surface.
+
+### Original ClipHarbor adaptation (proposed, unimplemented)
+
+1. Consented website session with explicit login/logout/account-change state. Treat cookie changes as a signal, not proof.
+2. URL-scoped, task-private credentials passed through a controlled Engine adapter; validate feature support/attributes.
+3. Cache resolved metadata against source, extraction configuration and **session generation**. Invalidate stale state
+   after a relevant verified session change; this generation scheme is our design, not a copied competitor mechanism.
+4. Persist user intent (source, desired format/quality, destination, state); keep cookies/auth headers/signed snapshots out
+   of Room/history/logs. Apply credentials only to allowed destinations and strip them on disallowed redirects.
+5. Distinguish login required, expired session, bot/age gate, expired media URL and token failure. Register an operation's
+   continuation before login, preserve cancellation, prevent duplicate submission and allow only bounded retry.
+6. Keep token-provider purpose, identifier/session binding, expiry, failure bounds and cleanup separate from login.
+   No copy of proprietary JavaScript, authorization algorithm, private endpoints or unsafe bridge/security settings.
+7. Test session changes, cancelled login, stale caches, duplicate events, redirect scoping, snapshot cleanup, token expiry
+   and redaction with fixtures/fake Engine. Real website login is an owner-operated compatibility check, not required CI.
+
+**Resolved:** browser cookies feed authenticated extraction; real token WebViews exist. **Still unverified:** reliable
+Google sign-in/download behaviour in our app, full redirect safety, account-bound token invalidation, decompiler-damaged
+renewal logic and universal/post-login bot immunity. No browser feature implemented or added to the Phase 1 gate.

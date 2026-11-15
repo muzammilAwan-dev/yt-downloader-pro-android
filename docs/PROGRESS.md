@@ -437,3 +437,31 @@ BUILD SUCCESSFUL in 23s
 
 Again, test/lint tasks reused their existing reports (59 tests, 0 failures/errors/skipped; lint 0 errors/6 warnings).
 This verifies the unchanged application tree remains buildable, **not** a browser feature or fresh device test.
+
+First authorized push completed: non-force `git push -u origin main` succeeded, and `git ls-remote origin refs/heads/main`
+matched `f6206241cee8e387675ebf66b4489ba5cb580aac`. Upstream is `origin/main`; working tree was clean and synchronized.
+Only `main` was pushed (no tags/other branches). GitHub Actions results were not checked. Original REA report follow-up
+is still running; no new Android code, APK or browser-login validation accompanied the push.
+
+### Original REA follow-up completed (15 Nov 2026)
+
+- `explore` traced the original reports and focused source under the owner's `Documents/REA` path; parent rechecked core
+  evidence. Doc 16 §7 and research R36 preserve source-line references without copying proprietary code/assets/endpoints.
+- **Confirmed statically:** actual browser website-session handling; extractor reads shared WebView cookies and uses
+  eligible authentication; selected-format task submission and header-capable transfer; branch-specific expired-login
+  continuations; separate real token-generating WebViews. This replaces the initial missing-source/token-inference gaps.
+- **Corrections/limits:** picker login continuation resumes submission, not a verified extraction refresh; ordinary login
+  recommendations are not proven automatic retry. Session markers/checks are heuristic. No complete redirect audit,
+  account-bound token invalidation, reliable renewal predicates or runtime bot immunity established.
+- Original adaptation: controlled task-credential boundary, session-generation-aware resolve cache, durable user intent,
+  scoped transfer, bounded/cancellable login recovery, independent token-provider lifecycle. No implementation added.
+- Second screenshot batch still unavailable at its supplied path. No new binary analysis, live login test or APK handoff.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 18s
+36 actionable tasks: 1 executed, 35 up-to-date
+```
+
+Application sources are unchanged; test/lint reports were reused. This is not new browser/login feature verification.

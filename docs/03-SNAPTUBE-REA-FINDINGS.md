@@ -1,9 +1,14 @@
 # 03. Snaptube REA findings (observations only, no source code)
 
-Source: user's `export.zip` (Snaptube Premium 7.67.0, versionCode 76761610, minSdk 21, targetSdk 35). I read `00-BRIEF.md`,
+Initial coverage: user's `export.zip` (Snaptube Premium 7.67.0, versionCode 76761610, minSdk 21, targetSdk 35). I read `00-BRIEF.md`,
 `SHARE.md`, `02-report-*`, and the deep-dive classes `FfmpegTaskScheduler`, `TaskInfo`, `TaskError`, `ExtractError`, `Format`,
 `AvailabilityChecker` (plus the deep-dive heading list). I did **not** read the 38 MB of decompiled app source or the `40-*` topic
 files. Static analysis only; nothing was executed. Class names under package `o` are R8-renamed and not meaningful.
+
+**Coverage expanded 15 Nov 2026:** the owner supplied `C:\Users\Malku\Documents\REA`. The owner-requested `explore`
+agent read relevant original reports and focused decompiled call sites; the parent rechecked core cookie/extraction,
+browser/picker and token-WebView evidence. Findings below in §5 and doc 16 §7 supersede the initial coverage gaps where
+explicitly stated. No competitor code copied, target executed or new binary analysis performed.
 
 Legal: `SHARE.md` warns this is decompiled third-party proprietary code. Use the ideas, not the code, names, icons, catalogs or endpoints.
 
@@ -82,6 +87,7 @@ same in a *local* log the user can share manually.
 
 **T10. PO-token exception classes exist** in a `youtube/potoken/exception` package (`BadWebViewException`, `PoTokenException`). [I] This
 suggests Snaptube generates PO tokens through a WebView, as NewPipe publicly does (PR #11955). Not verified by reading that code.
+**Superseded by §5:** actual separate token-generating WebViews and provider routing were inspected on 15 Nov.
 
 **T11. WorkManager is in the stack.** The application class implements the WorkManager configuration provider, so periodic and deferred
 work goes through WorkManager even though the main downloads use their own scheduler. Ours: WorkManager for everything.
@@ -89,8 +95,42 @@ work goes through WorkManager even though the main downloads use their own sched
 **T12. Foreground-service types declared:** dataSync, mediaPlayback, specialUse. Ours: dataSync (+ mediaProcessing only if conversion
 needs more than the dataSync budget; see doc 06).
 
-## 4. What the export cannot tell us
+## 4. Limits of the initial export read
 
 - How Snaptube's extractors beat YouTube in 2026 (the remote JS, `libvideo_v1.so`, obfuscated `o.*` classes are not in the chat files).
 - Whether its PO-token path is WebView-based (inference only).
 - Anything about runtime behaviour: no dynamic analysis was done.
+
+The WebView question was answered by the expanded static trace below. Runtime success in ClipHarbor, exact renewal
+branches obscured by decompiler errors, and complete redirect/security behaviour remain unverified.
+
+## 5. Expanded browser/session/extraction trace (15 Nov 2026)
+
+Source root: `C:\Users\Malku\Documents\REA\reversed\jadx\sources`. Original export brief identifies version 7.67.0
+and static JADX/Apktool provenance (`export/00-BRIEF.md:1–8`); this is report metadata, not a newly hashed/executed APK.
+Detailed source-line references and qualification are in `16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` §7, research R36.
+
+- **Real website browser/login:** `VideoEnabledWebView` is constructed; website sign-in and browser navigation observe
+  cookie-marker changes, flush cookies and emit a session-change event. The login-marker test is heuristic, not proof
+  that the server accepts every subsequent request. Native search interfaces also exist; not every search UI is proven
+  to be the website renderer.
+- **Authentication reaches extraction:** the parser reads the shared WebView cookie store, attaches eligible cookies
+  to page extraction and uses cookie-derived account authorization for supporting API clients. This is stronger evidence
+  than the original format-header inference. The extraction-context adapter was **not** shown explicitly serializing
+  cookies: downstream session access supplies authentication. A bidirectional WebView/HTTP cookie adapter also exists.
+- **Picker -> queue -> transfer:** cached metadata or source URL feeds extraction/picking, selected-format submission
+  creates/persists a task, and a worker selects media information/format before transfer. Supplied headers reach HTTP
+  transfer; if absent, a Cookie lookup uses the **media request URL**. This does not prove account credentials go to every
+  CDN or that redirects are safely scoped. Header persistence in that app must **not** be inherited by ClipHarbor.
+- **Bot/login classification and recovery:** bot, age and other login-required outcomes are distinguished. Expired-login
+  picker continuations resume **submission**, not a proven extraction refresh; a failed-task expired-login path requeues
+  after the session-change signal. Ordinary login-recommendation branches are not proven to auto-retry. The generic red
+  failure/sign-in wording is supported; the owner's exact bot-message display chain was not reproduced end-to-end.
+- **PO tokens are separate:** two principal providers create separate token WebViews; routing depends on client/API,
+  with caches, lifecycle handling and bounded generation failures. Cookie login is not proven to generate/invalidate
+  tokens or bind every token to the account. Generator lifetime is not equivalent to verified per-token cache expiry;
+  decompiler-damaged renewal branches prevent exact claims.
+
+Adapt boundaries and state transitions: consented session -> task-private credential context -> existing Engine -> picker
+and durable intent -> scoped transfer -> bounded authentication recovery. Use original implementation/tests; do not copy
+private authorization/token algorithms, remote JavaScript, unsafe bridges, disabled security checks or broad permissions.
