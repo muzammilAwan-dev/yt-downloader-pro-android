@@ -73,7 +73,7 @@ jobs:
           java-version: "17"
 
       - name: Set up Gradle (also validates the wrapper)
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Unit tests and Android lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug --stacktrace
@@ -124,7 +124,7 @@ jobs:
 
       - name: Set up Gradle
         if: steps.detect.outputs.present == 'true'
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Enable KVM for the emulator
         if: steps.detect.outputs.present == 'true'
@@ -168,7 +168,7 @@ jobs:
           java-version: "17"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Decode signing key (release only)
         if: ${{ inputs.variant == 'release' }}
