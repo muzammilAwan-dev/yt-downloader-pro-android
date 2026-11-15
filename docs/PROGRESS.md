@@ -1246,3 +1246,5 @@ Fixed UI/lifecycle actions (no text payload), resolve/download diagnostics, prog
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 33s
 Tests executed: 206 total, 205 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
 R68: full journal has no size cap, retains five private snapshots; rolling preview stays 5×2 MB. No engine/icon/dependency/permission change; refresh tester, native share/foreground checks still pending.
+Helper stamped `6bb477b`: checks BUILD SUCCESSFUL in 59s (206 total / 205 pass / 1 skip, lint 0 errors / 7 known warnings); assembleDebug BUILD SUCCESSFUL in 7s.
+APK `dist/app-debug.apk`: 67,308,714 bytes; SHA-256 74A9FA79B448A2E4792412678A8C82F3510F462BB74D2B9FDAC81E1B83DEEAE6; embedded stamp/copy/signature verified, minSdk 24 / target 37 / arm64, unchanged Android permissions + prior AndroidX signature permission; phone session-share/foreground checks pending.
