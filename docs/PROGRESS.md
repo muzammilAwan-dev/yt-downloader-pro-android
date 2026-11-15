@@ -876,3 +876,32 @@ records the handoff without changing the APK.
 Owner: install over the current local debug build and send a launcher screenshot to validate this OEM's result. No need
 to repeat the video/self-test solely for this icon-wrapper change. Native appearance remains pending. First real Phase 1
 entry/picker UI is the next feature increment; no new gate requiring a repeated download test was introduced.
+
+### Phase 1 entry/picker increment (15 Nov 2026)
+
+Owner's latest two screenshots confirm corrected launcher proportions on the Infinix and running `b83d33c`.
+This supersedes the pending icon-only visual check above. No personal screen details retained; playback with sound
+and Files/gallery visibility remain unconfirmed. The displayed screen is still the temporary Diagnostics spike.
+
+Step 1: added a bounded platform-free HTTPS paste/share validator. Shared titles are accepted only alongside exactly
+one web link; options/other extras never become commands. Input's object representation hides the URL. Added reported
+video+audio quality ceilings and conservative default selection; this increment is not an exact-itag/audio-only picker.
+Removed the engine planner's final unbounded `b` fallback so a chosen height cannot silently fall back above its ceiling.
+Offline regressions added; verification pending. No dependency/permission/engine upgrade or browser/login implementation.
+
+First check failed: `106 tests completed, 1 failed, 1 skipped; BUILD FAILED in 1m 31s`. The pre-existing selector
+test still expected the intentionally removed unbounded `/b` branch. Updated that assertion to require the bounded
+ending; the first background compiler had already read its old version. Full tests/lint/debug build rerun pending.
+
+Rerun executed:
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 1m 8s
+54 actionable tasks: 8 executed, 46 up-to-date
+XML reports: suites=14 tests=106 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+```
+
+105 passed/one existing Windows symlink case skipped. Entry/picker foundation and bounded fallback regressions green.
+No new UI wired yet and `dist/app-debug.apk` remains the icon-only `b83d33c` build; not a Phase 1 tester handoff.

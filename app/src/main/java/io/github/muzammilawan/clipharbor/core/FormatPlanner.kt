@@ -9,12 +9,12 @@ object FormatPlanner {
      * Prefers H.264 video + AAC audio (best chance of a device-playable MP4 after merging), capped at [maxHeight],
      * then falls back to any codecs, then to a single muxed stream.
      *
-     * Kept intentionally boring: Phase 0 only needs to prove that 1080p video + audio can be fetched and merged.
+     * Never fall back above the requested ceiling; missing compatible formats must fail visibly instead.
      */
     fun selector(maxHeight: Int): String {
         require(maxHeight > 0) { "maxHeight must be positive" }
         return "bv*[height<=$maxHeight][vcodec^=avc1]+ba[acodec^=mp4a]/" +
-            "bv*[height<=$maxHeight]+ba/b[height<=$maxHeight]/b"
+            "bv*[height<=$maxHeight]+ba/b[height<=$maxHeight]"
     }
 
     /**

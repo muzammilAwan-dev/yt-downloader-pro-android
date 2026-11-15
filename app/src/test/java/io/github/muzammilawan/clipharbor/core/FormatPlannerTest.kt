@@ -7,6 +7,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FormatPlannerTest {
+    @Test
+    fun everyFallbackRespectsTheRequestedHeight() {
+        for (height in listOf(360, 720, 1080, 2160)) {
+            val alternatives = FormatPlanner.selector(height).split('/')
+            assertEquals(3, alternatives.size)
+            alternatives.forEach { assertTrue(it.contains("[height<=$height]")) }
+        }
+    }
     private val formats = listOf(
         FormatInfo("137", "mp4", "avc1.640028", "none", height = 1080),
         FormatInfo("248", "webm", "vp9", "none", height = 1080, note = "1080p"),
@@ -20,7 +28,7 @@ class FormatPlannerTest {
     fun selectorPrefersH264AacCappedAtRequestedHeight() {
         val selector = FormatPlanner.selector(1080)
         assertTrue(selector.startsWith("bv*[height<=1080][vcodec^=avc1]+ba[acodec^=mp4a]"))
-        assertTrue(selector.contains("/b[height<=1080]/b"))
+        assertTrue(selector.endsWith("/b[height<=1080]"))
     }
 
     @Test

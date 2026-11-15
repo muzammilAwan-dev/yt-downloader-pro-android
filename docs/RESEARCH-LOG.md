@@ -132,6 +132,20 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Locally generated/read labelled before/after mask simulations (rounded square/circle/squircle) using existing Pillow;
   no package installed, source PNG modified or simulation presented as native rendering evidence.
 
+## 15 Nov 2026 — Phase 1 entry boundary
+
+- **R46:** Owner's latest launcher/app screenshots confirm corrected visible icon proportions and `b83d33c` running.
+  This resolves the owner-device visual check only, not playback/audio, file-browser visibility or universal OEM rendering.
+- **R47:** Reviewed current `MainActivity`, `Engine`, `DownloadExecutor`, `FormatPlanner`, manifest and fake-engine tests.
+  Existing `DownloadRequest.maxHeight` is a ceiling, not exact selected formats. The planner's unbounded final `/b`
+  could violate a user-selected cap; removed it and added regressions. First picker exposes only reported video+audio
+  ceilings, explicitly labels fallbacks and keeps actual output evidence separate. Strict bounded HTTPS validation is
+  shared by paste/share entry; only a URL is accepted, never arbitrary intent options. No new upstream API inferred.
+- **R48:** Rechecked Google's [receiving shared content guide](https://developer.android.com/training/sharing/receive):
+  `ACTION_SEND` + `DEFAULT` + `text/plain` declares a text share target; validate action/type/payload and let the user
+  confirm/edit before use. This app can handle it directly in its single activity without adding Compose Navigation.
+  No `SEND_MULTIPLE`, binary streams, deep-link commands or external automation accepted in this increment.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports
