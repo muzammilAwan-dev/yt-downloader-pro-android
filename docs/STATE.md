@@ -34,16 +34,18 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner supplied one complete file export (R69) and another session pasted in chat (R70); other native share targets remain unverified.
 - R72 packaging investigation: official stable yt-dlp 2026.10.26 zipapp + EJS 0.8.0 verified against signed SHA-256; existing
   Python 3.12.11/QuickJS 2025-04-26 meet tagged requirements. Library remains 0.18.1; host-only offline smokes passed.
-  Library does not replace an existing installed zipapp: next is tested local atomic pre-init installation + bundled notices.
-  No integration/new APK yet; Android runtime/download compatibility untested. See `docs/evidence/engine-refresh-2026.10.26.md`.
+  Local installer foundation now has 22 offline tests: size/hash verification, synced staging, failure/interruption preservation,
+  narrow cleanup/retry and cross-instance serialization. Atomic replacement is injected; no Android/adapter wiring or new APK yet.
+  Next: bundle payload/notices and process-wide pre-init gate/version reporting. Android runtime/download compatibility untested.
+  Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 15 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 23s** (R72 docs-only packaging investigation).
-Test task and lint analyses UP-TO-DATE: reports 206 total / 205 passed / 1 Windows symlink skip / 0 failures/errors, lint 0 errors / 7 known warnings.
-Last actual execution: helper BUILD SUCCESSFUL in 59s; earlier source checks BUILD SUCCESSFUL in 33s. No new logic/test/APK change in R69–R72.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 2m 6s** (local installer foundation).
+Fresh test/lint execution: 228 total / 227 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+22 installer tests first failed 22/22 against placeholder (BUILD FAILED in 46s), then passed (BUILD SUCCESSFUL in 9s); full suite above.
 12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
 Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
-Foreground cancellation-first/timeout-first and permission/service tests remain green. No engine/planner/icon/dependency/permission change.
+Foreground cancellation-first/timeout-first and permission/service tests remain green. No runner/planner/icon/dependency/permission change.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
 Helper reran checks and built `6bb477b`: 67,308,714 bytes, minSdk 24 / target 37 / arm64; 4 Android permissions + pre-existing AndroidX local signature permission.
 
@@ -62,7 +64,8 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
 - [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), stamped APK built.
 - [ ] 1f. `6bb477b` installed; media 403 also reproduced while visible on owner-reported stable Wi-Fi (R70), not fixed. Prioritize
-        approved APK-bundled engine-only spike (R72): pinned asset verified; next tests-first atomic installer, adapter init + notices.
+        approved APK-bundled engine-only spike (R72): pinned asset verified; local installer foundation tested, not wired into adapter.
+        Next bundle payload/licenses, Android atomic replacement and process-wide pre-init/version reporting; stamped tester after checks.
         Keep native runtime/planner/replay/cancellation/logs; no runtime downloads/login/new permissions. Android 10 baseline/minSdk 24.
         No reinstall yet; after reliable foreground transfers, retest background/lock. Cancel/cleanup/playback still open.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.

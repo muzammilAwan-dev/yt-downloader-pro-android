@@ -1282,3 +1282,13 @@ Library copies only if absent: APK-only resource swap leaves old installed engin
 Evidence: docs/evidence/engine-refresh-2026.10.26.md. No app/dependency/permission/test/APK change; no proven 403 fix or reinstall yet.
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 23s
 Tests/lint analyses UP-TO-DATE: reports 206 total / 205 passed / 1 skip / 0 failures/errors, lint 0 errors / 7 known warnings (not fresh execution).
+
+### Local verified-engine installer foundation — 15 Nov 2026
+Owner approved recommended path and stale QuickJS/runtime-updater doc corrections; THIRD_PARTY_NOTICES now matches phone QuickJS 2025-04-26/APK-only policy.
+22 new offline installer tests: clean/existing/corrupt payload, multi-buffer copy, actual staged hash, open/read/close/sync/promotion failures, interruption, retry/cleanup/concurrency.
+Tests first: 22/22 failed against placeholder, BUILD FAILED in 46s; implementation then BUILD SUCCESSFUL in 9s with 22/22 passing.
+Installer bounds bytes, flushes/syncs staging, hashes actual file and requires injected atomic replacement; never deletes old engine before promotion or clears native dirs.
+Cross-instance lock serializes installation only; adapter must gate once before execution. Not wired yet: old engine/APK unchanged, no Android native/power-loss/403 success claim.
+Next: bundle verified 2026.10.26/EJS 0.8.0/licenses, Android replacement + process-wide pre-init/version reporting, then stamped tester. No runtime downloads/new permissions.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 2m 6s
+Fresh reports: 228 total / 227 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Existing fake-Engine/replay/cancel/log tests green.
