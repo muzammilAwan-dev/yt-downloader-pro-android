@@ -117,6 +117,21 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   outline; outer appearance is launcher-dependent and needs a phone check. License shipped with the APK; no new image
   library installed or Android dependency added. No name/trademark clearance claimed.
 
+## 15 Nov 2026 — launcher visible-bounds correction
+
+- **R44:** Owner `69f343f` logs again show successful replay, actual 1080 video/audio and MP4 publish. Initial self-test
+  was 6 passes/1 skip without URL, not a failed resolve. Latest launcher screenshot shows visual cropping/oversizing.
+  Earlier resource test checked source symbol bounds, not AdaptiveIconDrawable's displayed viewport; that coverage was
+  insufficient. No media/account details retained and no phone playback/folder confirmation inferred.
+- **R45:** Read Android 10 [AdaptiveIconDrawable.java](https://github.com/aosp-mirror/platform_frameworks_base/blob/android10-release/graphics/java/android/graphics/drawable/AdaptiveIconDrawable.java)
+  lines 100–101, 243–244, 309–330: layers expand each visible edge by 25%, giving 1.5x size and 2/3 viewport scale.
+  [InsetDrawable.java](https://github.com/aosp-mirror/platform_frameworks_base/blob/android10-release/graphics/java/android/graphics/drawable/InsetDrawable.java)
+  lines 193–221 confirms XML fraction support. One-sixth inset per expanded-layer edge (16.67%) restores full desktop
+  image proportions without density-dependent dp padding or a new artwork asset. Added a visible-size regression;
+  actual OEM launcher rendering remains unverified. Primary source facts correct R43's incomplete rendering check.
+  Locally generated/read labelled before/after mask simulations (rounded square/circle/squircle) using existing Pillow;
+  no package installed, source PNG modified or simulation presented as native rendering evidence.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

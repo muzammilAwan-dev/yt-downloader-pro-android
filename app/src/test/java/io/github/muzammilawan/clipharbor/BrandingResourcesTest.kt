@@ -76,6 +76,28 @@ class BrandingResourcesTest {
     }
 
     @Test
+    fun adaptivePaddingPreservesDesktopScaleAtDifferentLauncherSizes() {
+        val adaptive = xml("res/drawable-anydpi-v26/ic_launcher.xml")
+        val foreground = adaptive.getElementsByTagName("foreground").item(0)
+        val inset = adaptive.getElementsByTagName("inset")
+        assertEquals(1, inset.length)
+        assertEquals(foreground, inset.item(0).parentNode)
+        val value = inset.item(0).attributes.getNamedItemNS(ANDROID, "inset").nodeValue
+        assertTrue("Padding must scale with launcher bounds, not device density", value.endsWith("%"))
+        val fraction = value.removeSuffix("%").toDouble() / 100
+        // Android 10 AdaptiveIconDrawable extends each edge by 25% of the visible size.
+        for (size in listOf(48, 72, 96, 144, 192, 256)) {
+            val layerSize = size * 1.5
+            val bitmapStart = -size * 0.25 + layerSize * fraction
+            val bitmapSize = layerSize * (1 - fraction * 2)
+            assertEquals("Desktop proportions at $size px", size.toDouble(), bitmapSize, 0.1)
+            assertEquals("Centered image at $size px", (size - bitmapSize) / 2, bitmapStart, 0.001)
+            assertTrue("Tile must not extend outside the viewport", bitmapStart >= 0)
+            assertTrue(bitmapStart + bitmapSize <= size)
+        }
+    }
+
+    @Test
     fun desktopIconLicenseIsIncludedInPackagedAssets() {
         val license = source("assets/licenses/ytdlp-desktop-icon-MIT.txt").readText()
         assertTrue(license.contains("MIT License"))

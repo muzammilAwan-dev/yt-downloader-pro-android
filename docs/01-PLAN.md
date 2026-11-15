@@ -47,6 +47,12 @@ re-verified, [I] my inference. Sources are in `10-VERIFICATION-LOG.md`.
 
 Time estimates are rough guesses for one part-time developer. [I]
 
+**Owner timing clarification (15 Nov 2026):** the first usable UI/UX is part of **Phase 1**, already authorized and in
+progress—not deferred to Phase 3. Replace the temporary Diagnostics-only entry with validated paste/share and the
+format picker first, then durable queue/progress/error screens with foreground notifications. Accessibility and visual
+checks accompany those increments; Phase 3 is the final release polish/audit. These are sequence commitments, not
+guaranteed calendar dates. Browser/login remains the separately scoped research described in doc 16.
+
 ## 5. Size, speed, battery: what the data says
 
 - `youtubedl-android` library AAR 0.16.0 was 39.1 MB on Maven. [V] YTDLnis's arm64-v8a APK was 36.1 MB on IzzyOnDroid

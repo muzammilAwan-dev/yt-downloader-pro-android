@@ -807,3 +807,41 @@ Install this refreshed APK over the old local debug build. Check YTDLP launcher 
 and playback/audio/gallery results; no automatic device install was attempted. Engine success is already evidenced on
 `5889eee`, but native branding/MediaStore folder appearance and cancellation remain untested. Phase 1 picker, validated
 share/paste, durable queue and foreground notification/service remain unfinished.
+
+### Launcher crop correction and current phone logs (15 Nov 2026)
+
+- New owner `app-20261115-094415*.log` snapshots identify `69f343f` and `app=YTDLP`. Self-test has six passes, zero failures
+  and a skipped resolve because no URL was entered; this is not 7/7 or a missing-runtime failure. The subsequent download
+  reports private replay, actual `299+140`/1080 selection, explicit final output and successful 2,706,320-byte MP4 publish.
+  Resolve took 21,132 ms; download/merge 7,349 ms. Runtime versions match the earlier run, including EJS 0.3.1. No source
+  URLs/media titles/account details retained. These logs do not expose the MediaStore folder name or prove playback.
+- Owner launcher screenshot shows oversized/cropped desktop artwork. Root cause: full bitmap filled AdaptiveIconDrawable's
+  expanded layers, 1.5x the visible viewport. Earlier source-pixel safe-zone tests passed but did not test visible scale.
+- Corrected only the adaptive wrapper: 16.67% inset per edge offsets that expansion while retaining the exact original
+  PNG and legacy icon. New regression models bounds at six launcher sizes and rejects the old missing-padding wrapper.
+  OEM mask still controls the outside shape; a circle cannot preserve every corner of a desktop rounded-square tile.
+  Screenshot/rendering on the phone is pending, not claimed fixed on-device.
+- UI/UX timing clarified: **Phase 1**, which is already authorized/in progress, delivers the first real paste/share,
+  format-picker, queue/progress/error UI. Diagnostics is temporary. Phase 3 is the final visual/accessibility/release
+  polish, not a reason to defer usable UI. Next implementation work after this small regression is Phase 1 entry/picker;
+  durable queue/foreground notifications follow. No guaranteed calendar delivery date or finished-MVP claim.
+- Verification pending; no engine update, new permission/dependency, source artwork redraw or additional UI scope.
+
+Previewed before/after approximate rounded-square, circle and squircle masks generated from the actual resource and
+XML inset in the approved local temp folder. Padded variants preserve the desktop symbol's relative size; unpadded
+variants visibly match the oversized tendency in the owner's screenshot. These are labelled simulations, not Android
+screenshots or proof of the owner's OEM launcher result. No preview/account/phone screenshot asset committed.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 18s
+54 actionable tasks: 19 executed, 6 from cache, 29 up-to-date
+XML reports: suites=13 tests=99 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+```
+
+Unit tests executed: 98 passed and the existing Windows symlink-capability case skipped. New adaptive-padding
+regression passed at six launcher sizes; original image hash/label/license checks remain green. Lint retains the known
+missing monochrome layer warning and six prior warnings. Debug APK built locally, but `dist/` still contains `69f343f`
+until the clean-source handoff helper runs. Native launcher correction has not yet been confirmed by the owner.
