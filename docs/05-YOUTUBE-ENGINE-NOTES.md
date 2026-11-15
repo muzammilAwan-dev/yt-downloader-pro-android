@@ -33,6 +33,18 @@ exact `--js-runtimes` value that worked. Check whether the library's bundled Pyt
 Desktop: cookies captured only when the user enables "Bypass Age & Bot issue"; Vimeo always (cannot download anonymously); analytics and
 consent cookies excluded; written to a temp file, deleted after the download, never persisted in history. Android: same rules (doc 02, section 6).
 
+**15 Nov clarification:** the preceding sentence describes desktop behaviour and its assumptions, not a guarantee that
+all Vimeo content needs login or that cookies eliminate every bot failure. The owner reports YouTube website login inside
+Snaptube's browser, recommended by a red message after bot errors. Treat this as website-session behaviour, not necessarily
+a third-party OAuth button. Adapt its high-level authentication-aware flow; exact session handoff is being traced from
+the original REA reports. Current yt-dlp guidance warns of account bans/rotating cookies and says YouTube OAuth login no
+longer works with yt-dlp. Cookies, PO tokens and EJS solve different problems.
+
+App-owned cookie transfer is a feasibility proposal: AndroidX `CookieManagerCompat.getCookieInfo` exposes URL-scoped
+attributes when `GET_COOKIE_INFO` is supported, unlike legacy `getCookie` header pairs. Google may reject embedded
+website sign-in, and Custom Tabs cannot supply their cookies to our engine. No login implementation or device test yet;
+see `16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` and architecture §6 for validated task copies, cleanup and import fallback.
+
 ## 4. Engine updates
 
 - `youtubedl-android` exposes `updateYoutubeDL` with STABLE or NIGHTLY channels. [V, README]

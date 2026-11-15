@@ -64,8 +64,10 @@ plugin faults). Lesson: three levels (status, user-facing reason, internal fault
 `DownloadError` + local log.
 
 **T6. Format model carries expiry.** Each format object stores download URL, headers map, MIME, codec, codec standard, quality, size,
-dimensions, `expireTime`, `timeToLive`, `availableAt`, a "playable" flag and a first-second offset. Lesson: persist expiry and headers
-with the chosen format; re-resolve when expired or on 403.
+dimensions, `expireTime`, `timeToLive`, `availableAt`, a "playable" flag and a first-second offset. Lesson: keep freshness and
+necessary headers together with the task-private chosen format; do not persist cookies/auth headers/signed URLs in history
+or logs. Re-resolving on expiry/403 is our proposed recovery, **not a branch verified by this summary**. A headers-capable
+model does not itself prove where account cookies come from or how they are passed to extraction and media transfer.
 
 **T7. ExtractError is tiny and generic.** OK, EXTRAS_REQUIRED, IO_EXCEPTION, NO_VIDEO, NOT_SUPPORTED, UNHANDLED_EXCEPTION, OTHER.
 EXTRAS_REQUIRED hints at "needs more input" (login/cookies/consent) as its own outcome. Ours maps these to LOGIN_REQUIRED etc.

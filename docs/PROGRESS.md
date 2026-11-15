@@ -414,3 +414,26 @@ BUILD SUCCESSFUL in 18s
 
 Gradle reused the existing unit-test/lint results; this is **not a fresh execution of 59 tests** or browser validation.
 No `assembleDebug` performed for this research-only increment and no new APK delivered.
+
+### Owner steering and repository connection
+
+- The owner supplied the original REA directory, `C:\Users\Malku\Documents\REA`. `explore` is now checking its original
+  reports; the previous missing-export result only covered the earlier search scope. Exact session dataflow still pending.
+- The second screenshot archive's supplied Downloads path is currently absent; direct case-insensitive screenshot-ZIP
+  lookup also returned no files. The second batch has **not** been visually reviewed.
+- The owner explicitly authorized connecting their new GitHub repository. `general` added `origin` at
+  `https://github.com/muzammilAwan-dev/yt-downloader-pro-android.git`; `git remote get-url origin` matched, and noninteractive
+  `git ls-remote origin` returned exit 0 with no refs (empty remote). Local branch `main`; initially nothing pushed, no remote
+  history merged and no credentials/global configuration changed. The owner subsequently authorized pushing code so far;
+  the push has not yet been run. This supersedes setup's no-remote instruction for the authorized connection/push.
+- Reconciled plan/engine notes with website-session research and corrected T6's ambiguous header-persistence lesson.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 23s
+36 actionable tasks: 1 executed, 35 up-to-date
+```
+
+Again, test/lint tasks reused their existing reports (59 tests, 0 failures/errors/skipped; lint 0 errors/6 warnings).
+This verifies the unchanged application tree remains buildable, **not** a browser feature or fresh device test.

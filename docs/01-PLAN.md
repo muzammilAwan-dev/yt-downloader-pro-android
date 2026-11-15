@@ -31,7 +31,7 @@ re-verified, [I] my inference. Sources are in `10-VERIFICATION-LOG.md`.
 | Queue | IDM-style concurrent, hot-swap speed | Persisted queue, concurrency 1-3, pause/resume/retry |
 | Speed | 4x/8x connections | `-N` fragments or aria2c, battery-aware default |
 | Trim, playlists, subs | yes | Phase 2 |
-| Login cookies | extension | WebView sign-in, temp cookie file |
+| Login cookies | extension | Research app-owned website session -> validated task-private cookie adapter; explicit import fallback. No guaranteed embedded Google sign-in; doc 16 |
 | Site toggles | `sites.js` | `contracts/sites.json` |
 | Telemetry | none | none |
 
@@ -59,7 +59,7 @@ Time estimates are rough guesses for one part-time developer. [I]
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | YouTube extraction breaks on Android (JS runtime, PO token, Python version) | High | Core feature | Phase 0 gate; `Engine` interface; nightly engine updates; clear error UI |
-| HD formats withheld (PO token/SABR) | High | 360p results | Let yt-dlp choose clients; cookie login; honest messaging; Phase 2+ provider research |
+| HD formats withheld (PO token/SABR) | High | 360p results | Let yt-dlp choose clients; distinguish cookies from PO tokens; honest messaging; Phase 2+ provider research (doc 16) |
 | License mistakes | Medium | Forced relicensing | GPL-3.0 from day one; THIRD_PARTY_NOTICES; no copied code |
 | Android developer verification limits installs | Medium | Distribution | Own signing key; decide on registration deliberately; multiple channels |
 | FGS limits kill long downloads | Medium | Lost progress | Persisted queue + `onTimeout` pause/resume |

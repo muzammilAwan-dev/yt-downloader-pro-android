@@ -75,6 +75,14 @@ Internal browsing/search -> optional website login             (owner observed)
 Authentication/bot failure -> suggest website login             (owner observed)
 ```
 
+**Subsequent owner path correction:** the original REA is at `C:\Users\Malku\Documents\REA`; the owner-requested
+`explore` follow-up is now inspecting that directory's original reports. The earlier absence finding applied only to the
+previous search scope and is no longer a reason to request another export before checking this supplied path.
+
+The owner also supplied `C:\Users\Malku\Downloads\screenshots 2.zip`. Its exact path was not present when read; a
+case-insensitive direct-Downloads screenshot-ZIP search also returned no entries. **Second screenshot batch not reviewed**;
+do not infer its contents from the first batch or count it as visual evidence.
+
 ## 2. yt-dlp is broader than social sites
 
 [Supported sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) and the
