@@ -520,3 +520,27 @@ lint XML: errors=0 warnings=6
 Unit tests executed. One symlink-escape test is skipped because this Windows host cannot create a symlink without extra
 privileges; canonical sibling/traversal confinement tests ran. No privilege escalation requested. Debug APK built locally;
 `dist/app-debug.apk` remains the previous Phase 0 handoff, and real engine marker output is not yet device-tested.
+
+### Step 3b: private, single-use replay-input foundation
+
+- Added a bounded in-memory snapshot with exact source/task binding, five-minute monotonic age limit and single use.
+  Raw JSON is not exposed in data-class strings/history. A temporary file exists only while the blocking worker uses it;
+  success, failure, cancellation and interruption release it. Startup cleanup only removes owned regular snapshots.
+- Replay field policy removes old merge/download selections, derived paths and top-level transport/format fields;
+  the full format catalog and its transport data are retained. Missing catalogs require a new resolve.
+- Added offline lifecycle, scope, stale-input, failure and sanitization-policy fixtures; engine/outcome types can carry
+  the opaque input. Android wiring and interruption-aware execution are still the next increment, not implemented yet.
+- Validation pending; no device login/download test, dependency/permission changes or APK handoff.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 58s
+54 actionable tasks: 16 executed, 38 up-to-date
+
+XML reports: suites=10 tests=80 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+```
+
+Tests executed, including 11 new snapshot/policy cases. The existing host-restricted symlink case remains skipped.
+This verifies the foundation, not Android replay integration, live authentication or process-tree termination.

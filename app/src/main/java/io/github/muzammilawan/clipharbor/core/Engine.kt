@@ -96,6 +96,8 @@ data class DownloadRequest(
     val outputDirectory: java.io.File,
     val processId: String,
     val mergeContainer: String = "mp4/mkv",
+    /** Optional single-use input from this task's resolve; never persist this in Room/history. */
+    val resolvedSnapshot: ResolvedSnapshot? = null,
 )
 
 data class DownloadOutcome(
@@ -113,6 +115,7 @@ data class ResolveOutcome(
     val media: MediaInfo,
     val engineInfo: EngineInfo,
     val debugTail: List<String>,
+    val resolvedSnapshot: ResolvedSnapshot? = null,
 )
 
 /** Stages from `contracts/errors.json`. */
