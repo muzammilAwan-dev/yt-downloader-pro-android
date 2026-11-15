@@ -7,6 +7,7 @@ class DownloadEvidence {
     private var finalPath: String? = null
     private var selectedIds: List<String> = emptyList()
     private var selectedHeight: Int? = null
+    private var selectedWidth: Int? = null
 
     @Synchronized
     fun accept(line: String) {
@@ -15,16 +16,19 @@ class DownloadEvidence {
             text.startsWith(FILE_MARKER) -> finalPath = text.removePrefix(FILE_MARKER)
             text.startsWith(SELECTION_MARKER) -> {
                 val fields = text.removePrefix(SELECTION_MARKER).split('\t')
-                if (fields.size != 2) return
+                if (fields.size !in 2..3) return
                 val ids = parseIds(fields[0]) ?: return
+                if (fields.size == 3 && fields.drop(1).any { it != "NA" && it.toIntOrNull()?.let { n -> n > 0 } != true }) return
                 selectedIds = ids
-                selectedHeight = fields[1].toIntOrNull()?.takeIf { it > 0 }
+                selectedWidth = if (fields.size == 3) fields[1].toIntOrNull()?.takeIf { it > 0 } else null
+                selectedHeight = fields.last().toIntOrNull()?.takeIf { it > 0 }
             }
             else -> {
                 val match = INFO_SELECTION.matchEntire(text) ?: return
                 selectedIds = parseIds(match.groupValues[1]) ?: return
                 // A later selection can be a fallback. Do not keep the previous selection's height.
                 selectedHeight = null
+                selectedWidth = null
             }
         }
     }
@@ -51,6 +55,9 @@ class DownloadEvidence {
     @Synchronized
     fun height(): Int? = selectedHeight
 
+    @Synchronized
+    fun width(): Int? = selectedWidth
+
     private fun parseIds(value: String): List<String>? =
         value.takeIf { it.length <= 256 && FORMAT_IDS.matches(it) }?.split('+')
 
@@ -58,7 +65,7 @@ class DownloadEvidence {
         const val FILE_MARKER = "CLIPHARBOR_FILE:"
         const val SELECTION_MARKER = "CLIPHARBOR_SELECTED:"
         const val FILE_PRINT = "after_move:${FILE_MARKER}%(filepath)s"
-        const val SELECTION_PRINT = "before_dl:${SELECTION_MARKER}%(format_id)s\t%(height)s"
+        const val SELECTION_PRINT = "before_dl:${SELECTION_MARKER}%(format_id)s\t%(width)s\t%(height)s"
 
         private val INFO_SELECTION = Regex("^\\[info]\\s+\\S+: Downloading \\d+ format\\(s\\): (\\S+)\\s*$")
         private val FORMAT_IDS = Regex("[A-Za-z0-9_.-]+(?:\\+[A-Za-z0-9_.-]+)*")

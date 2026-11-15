@@ -21,6 +21,27 @@ class DownloadEvidenceTest {
         assertEquals(1080, evidence.height())
     }
 
+    @Test fun recordsPortraitWidthAndHeightAndClearsBothOnFallback() {
+        val evidence = DownloadEvidence()
+        evidence.accept("${DownloadEvidence.SELECTION_MARKER}299+140\t1080\t1920")
+        assertEquals(1080, evidence.width())
+        assertEquals(1920, evidence.height())
+        evidence.accept("[info] synthetic: Downloading 1 format(s): 18")
+        assertEquals(null, evidence.width())
+        assertEquals(null, evidence.height())
+        evidence.accept("${DownloadEvidence.SELECTION_MARKER}18\t360")
+        assertEquals(null, evidence.width())
+        assertEquals(360, evidence.height())
+    }
+
+    @Test fun unknownDimensionsRemainUnknown() {
+        val evidence = DownloadEvidence()
+        evidence.accept("${DownloadEvidence.SELECTION_MARKER}v+140\tNA\tNA")
+        assertEquals(listOf("v", "140"), evidence.formatIds())
+        assertEquals(null, evidence.width())
+        assertEquals(null, evidence.height())
+    }
+
     @Test
     fun laterFallbackReplacesSelectionAndDoesNotReuseHeight() {
         val evidence = DownloadEvidence()

@@ -42,7 +42,9 @@ internal class DownloadExecutor(
         try {
             requireHttpsSource(request.url)
             require(request.mergeContainer in setOf("mp4", "mkv", "mp4/mkv")) { "Unsupported merge container" }
-            val selector = FormatPlanner.selector(request.maxHeight)
+            val plan = request.qualityPlan
+            require(plan == null || request.maxHeight == plan.quality.pixels) { "Quality ceiling does not match plan" }
+            val selector = plan?.let(FormatPlanner::selector) ?: FormatPlanner.selector(request.maxHeight)
             return execution.run(request.processId) { internalId ->
                 val directory = request.outputDirectory
                 check(directory.isDirectory || directory.mkdirs()) { "Cannot create staging directory" }
@@ -53,7 +55,7 @@ internal class DownloadExecutor(
                         add("-f" to selector)
                         add("--merge-output-format" to request.mergeContainer)
                         add("-P" to directory.absolutePath)
-                        add("-o" to FormatPlanner.outputTemplate())
+                        add("-o" to (plan?.let { FormatPlanner.outputTemplate(it.quality) } ?: FormatPlanner.outputTemplate()))
                         add("-N" to CONCURRENT_FRAGMENTS.toString())
                         listOf("--windows-filenames", "--no-playlist", "--no-mtime", "--newline", "--progress", "--no-simulate", "--clean-info-json")
                             .forEach { add(it to null) }
@@ -92,9 +94,18 @@ internal class DownloadExecutor(
                                 detail = "exit=0 but no verified final output", exitCode = response.exitCode, stderrTail = outputTail()),
                         )
                     }
+                    if (plan != null) {
+                        val width = evidence.width()
+                        val height = evidence.height()
+                        if (width == null || height == null || minOf(width, height) > plan.quality.pixels ||
+                            evidence.formatIds().none { it in plan.cappedIds }) {
+                            throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING,
+                                detail = "Selection evidence does not substantiate the quality ceiling", stderrTail = outputTail()))
+                        }
+                    }
                     return DownloadOutcome(
                         files, response.exitCode, (System.nanoTime() - started) / 1_000_000, outputTail(),
-                        evidence.formatIds(), evidence.height(), reusedResolve = snapshot != null,
+                        evidence.formatIds(), evidence.height(), reusedResolve = snapshot != null, selectedWidth = evidence.width(),
                     )
                 }
                 val result = request.resolvedSnapshot?.withFile(request.url, request.processId, snapshotDirectory, ::perform)

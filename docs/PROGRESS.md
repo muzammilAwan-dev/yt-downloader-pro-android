@@ -1061,3 +1061,21 @@ lint XML: errors=0 warnings=7
 127 passed/one existing host symlink skip. Also ran a no-network synthetic selector smoke check using the previously
 extracted pinned yt-dlp 2025.11.12 package: escaped-dot ID regex accepted, 1080×1920 VP9 selected over lower 720 H.264,
 1440×2560 excluded, AAC joined. Native Android and a full generated-selector matrix remain untested. No updated APK yet.
+
+Step 2: engine accepts the app-owned typed plan, applies its selector/quality filename, and reports selected width **and**
+height. Legacy two-column selection evidence remains readable; later fallback clears both dimensions. Standard-plan
+success requires known dimensions within the short-edge ceiling and a selected candidate ID; contradictory/missing
+evidence cannot become publishable success. Kept `-N 4`, `mp4/mkv`, Unicode-safe filenames and no-playlist. No thumbnail
+embedding/transcoding or forced `.mp4`. Four new JVM tests cover command wiring, evidence and fail-closed selection.
+Verification pending; UI is not wired to the new planner yet.
+
+Step-2 verification:
+```
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 1m 36s
+36 actionable tasks: 13 executed, 23 up-to-date
+XML reports: suites=17 tests=132 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+```
+131 passed/one existing host symlink skip. These are fake-runner/evidence checks, not a phone download. The optional
+no-network native selector checker is being prepared separately and is not counted as verified in this step.

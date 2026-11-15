@@ -98,6 +98,8 @@ data class DownloadRequest(
     val mergeContainer: String = "mp4/mkv",
     /** Optional single-use input from this task's resolve; never persist this in Room/history. */
     val resolvedSnapshot: ResolvedSnapshot? = null,
+    /** App-owned standard short-edge plan. Null retains the legacy diagnostics height ceiling. */
+    val qualityPlan: VideoQualityPlan? = null,
 )
 
 data class DownloadOutcome(
@@ -109,6 +111,7 @@ data class DownloadOutcome(
     val selectedFormatIds: List<String> = emptyList(),
     val selectedHeight: Int? = null,
     val reusedResolve: Boolean = false,
+    val selectedWidth: Int? = null,
 )
 
 data class ResolveOutcome(

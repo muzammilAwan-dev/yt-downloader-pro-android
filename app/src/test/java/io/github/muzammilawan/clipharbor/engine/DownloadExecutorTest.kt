@@ -4,6 +4,10 @@ import io.github.muzammilawan.clipharbor.core.DownloadEvidence
 import io.github.muzammilawan.clipharbor.core.DownloadRequest
 import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
+import io.github.muzammilawan.clipharbor.core.FormatInfo
+import io.github.muzammilawan.clipharbor.core.VideoQualities
+import io.github.muzammilawan.clipharbor.core.VideoQuality
+import io.github.muzammilawan.clipharbor.core.FormatPlanner
 import io.github.muzammilawan.clipharbor.testing.FakeEngine
 import java.io.File
 import java.io.IOException
@@ -83,6 +87,43 @@ class DownloadExecutorTest {
         assertEquals(listOf(url), runner.commands.single().urls)
         assertFalse(runner.commands.single().options.any { it.first == "--load-info-json" })
         assertFalse(runner.commands.single().toString().contains(url))
+    }
+
+    @Test fun standardPlanUsesCappedIdsQualityFilenameAndBothDimensions() = runBlocking {
+        val directory = temporary.newFolder()
+        val plan = VideoQualities.plan(listOf(FormatInfo("portrait", "mp4", "avc1", "mp4a", 1080, 1920)), VideoQuality.P1080)!!
+        val runner = Runner().apply { action = { _, _, _ ->
+            val file = File(directory, "synthetic_up-to-1080p.mp4").apply { writeText("fixture") }
+            EngineResponse(0, "${DownloadEvidence.SELECTION_MARKER}portrait\t1080\t1920\n${DownloadEvidence.FILE_MARKER}${file.absolutePath}", "")
+        } }
+        val outcome = DownloadExecutor(runner, EngineExecution(runner::destroy), temporary.newFolder())
+            .download(request(directory).copy(qualityPlan = plan), {}, {}).getOrThrow()
+        val options = runner.commands.single().options
+        assertEquals(FormatPlanner.selector(plan), options.single { it.first == "-f" }.second)
+        assertEquals(FormatPlanner.outputTemplate(plan.quality), options.single { it.first == "-o" }.second)
+        assertEquals("mp4/mkv", options.single { it.first == "--merge-output-format" }.second)
+        assertEquals(1080, outcome.selectedWidth)
+        assertEquals(1920, outcome.selectedHeight)
+        assertTrue(options.contains("--windows-filenames" to null))
+        assertFalse(options.any { it.first == "--embed-thumbnail" || it.first == "--restrict-filenames" })
+    }
+
+    @Test fun unsubstantiatedPlanCannotReturnPublishableSuccess() = runBlocking {
+        val directory = temporary.newFolder()
+        val plan = VideoQualities.plan(listOf(FormatInfo("v", "mp4", "avc1", "mp4a", 1280, 720)), VideoQuality.P720)!!
+        for (selection in listOf("v\t1920\t1080", "unlisted\t1280\t720", "v\tNA\t720")) {
+            val runner = Runner().apply { action = { _, _, _ ->
+                val file = File(directory, "synthetic.mp4").apply { writeText("fixture") }
+                EngineResponse(0, "${DownloadEvidence.SELECTION_MARKER}$selection\n${DownloadEvidence.FILE_MARKER}${file.absolutePath}", "")
+            } }
+            val result = DownloadExecutor(runner, EngineExecution(runner::destroy), temporary.newFolder())
+                .download(request(directory).copy(maxHeight = 720, qualityPlan = plan), {}, {})
+            assertEquals(ErrorCode.POST_PROCESS_FAILED, (result.exceptionOrNull() as EngineFailure).error.code)
+        }
+        val runner = Runner()
+        assertTrue(DownloadExecutor(runner, EngineExecution(runner::destroy), temporary.newFolder())
+            .download(request(directory).copy(qualityPlan = plan), {}, {}).isFailure)
+        assertTrue(runner.commands.isEmpty())
     }
 
     @Test
