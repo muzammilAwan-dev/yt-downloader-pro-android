@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class HomePhase { INITIALIZING, READY, RESOLVING, CHOOSING, DOWNLOADING, PUBLISHING, DONE, FAILED, CANCELED }
+enum class HomePhase { INITIALIZING, READY, RESOLVING, CHOOSING, DOWNLOADING, PUBLISHING, PAUSING, PAUSED, DONE, FAILED, CANCELED }
 
 data class HomeState(
     val phase: HomePhase = HomePhase.INITIALIZING,
@@ -40,8 +40,10 @@ data class HomeState(
     val status: String = "Preparing the bundled engine…",
     val saved: PublishedMedia? = null,
     val pendingUrl: String? = null,
+    val pauseReason: ErrorCode? = null,
 ) {
-    val busy: Boolean get() = phase in setOf(HomePhase.INITIALIZING, HomePhase.RESOLVING, HomePhase.DOWNLOADING, HomePhase.PUBLISHING)
+    val busy: Boolean get() = phase in setOf(HomePhase.INITIALIZING, HomePhase.RESOLVING, HomePhase.DOWNLOADING,
+        HomePhase.PUBLISHING, HomePhase.PAUSING)
     // Do not accidentally expose source/signed URLs or media titles when debugging an object.
     override fun toString(): String = "HomeState(phase=$phase)"
 }
@@ -70,6 +72,7 @@ class HomeController(
     private var job: Job? = null
     private var prepared: Prepared? = null
     @Volatile private var activeTask: String? = null
+    @Volatile private var timeoutTask: String? = null
     @Volatile private var closed = false
 
     private class Prepared(val task: String, val url: String, val snapshot: ResolvedSnapshot?, val createdAt: Long,
@@ -96,7 +99,7 @@ class HomeController(
         discardPrepared()
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
             title = null, qualities = emptyList(), selectedQuality = null, saved = null,
-            phase = HomePhase.READY, status = "Review the link, then find formats.") }
+            phase = HomePhase.READY, pauseReason = null, status = "Review the link, then find formats.") }
     }
 
     fun receiveShared(text: String) {
@@ -109,7 +112,7 @@ class HomeController(
                 } else {
                     discardPrepared()
                     mutable.update { it.copy(url = input.url, inputError = null, title = null,
-                        qualities = emptyList(), selectedQuality = null, saved = null,
+                        qualities = emptyList(), selectedQuality = null, saved = null, pauseReason = null,
                         phase = if (it.engineReady) HomePhase.READY else it.phase,
                         status = "Shared link ready. Review it before finding formats.") }
                 }
@@ -136,7 +139,7 @@ class HomeController(
         val task = newTaskId()
         activeTask = task
         mutable.update { it.copy(phase = HomePhase.RESOLVING, url = url, inputError = null,
-            saved = null, title = null, qualities = emptyList(), selectedQuality = null, progress = null,
+            saved = null, title = null, qualities = emptyList(), selectedQuality = null, progress = null, pauseReason = null,
             status = "Finding available video and audio formats…") }
         job = scope.launch {
             var snapshot: ResolvedSnapshot? = null
@@ -213,7 +216,9 @@ class HomeController(
                             admitted.progress(percent)
                         }
                     }
-                }, onLine = { if (!closed && activeTask == input.task) observer.line(input.task, it) }).getOrThrow()
+                }, onLine = {
+                    if (!closed && activeTask == input.task && timeoutTask != input.task) observer.line(input.task, it)
+                }).getOrThrow()
                 currentCoroutineContext().ensureActive()
                 val file = outcome.files.singleOrNull()?.takeIf { it.isFile && it.length() > 0 }
                     ?: throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING))
@@ -245,13 +250,16 @@ class HomeController(
                 canceled(input.task)
                 throw canceled
             } catch (error: Exception) {
-                fail(input.task, error, if (state.value.phase == HomePhase.PUBLISHING) Stage.PUBLISHING else Stage.DOWNLOADING)
+                if (timeoutTask != input.task) {
+                    fail(input.task, error, if (state.value.phase == HomePhase.PUBLISHING) Stage.PUBLISHING else Stage.DOWNLOADING)
+                }
             } finally {
                 try {
                     lease?.close()
                 } finally {
                     input.snapshot?.close()
                     activeTask = null
+                    finishTimeout(input.task)
                 }
             }
         }
@@ -267,10 +275,45 @@ class HomeController(
     }
 
     fun close() {
+        if (closed) return
         closed = true
-        activeTask?.let(engine::cancel)
-        job?.cancel()
-        discardPrepared()
+        try {
+            if (activeTask != timeoutTask) activeTask?.let(engine::cancel)
+        } finally {
+            job?.cancel()
+            discardPrepared()
+        }
+    }
+
+    /**
+     * Android-main-thread boundary for Service.onTimeout. Stop the service before any native cancel
+     * attempt, even for stale/closed tasks. Never join a worker here: its finally path owns cleanup.
+     * Unlike user Cancel, the platform may interrupt publication; do not report an uncommitted save.
+     */
+    fun onForegroundTimeout(taskId: String, stopService: () -> Unit): Boolean {
+        var interrupted = false
+        try { stopService() } finally { interrupted = pauseTimedOutTask(taskId) }
+        return interrupted
+    }
+
+    private fun pauseTimedOutTask(task: String): Boolean {
+        if (closed || activeTask != task || state.value.phase !in setOf(HomePhase.DOWNLOADING, HomePhase.PUBLISHING)) return false
+        timeoutTask = task
+        mutable.update { it.copy(phase = HomePhase.PAUSING, pauseReason = ErrorCode.FGS_TIMEOUT, progress = null,
+            status = "Android stopped background execution. Waiting for task cleanup…") }
+        try { engine.cancel(task) } finally { job?.cancel() }
+        return true
+    }
+
+    private fun finishTimeout(task: String) {
+        if (timeoutTask != task) return
+        timeoutTask = null
+        if (closed) return
+        mutable.update { it.copy(phase = HomePhase.PAUSED, pauseReason = ErrorCode.FGS_TIMEOUT, progress = null,
+            qualities = emptyList(), selectedQuality = null, saved = null,
+            status = "Paused: Android's background time limit was reached. Automatic rescheduling is not available yet. Find formats again to start a new attempt.") }
+        observer.event(task, Stage.DOWNLOADING.name, "paused", mapOf(
+            "code" to ErrorCode.FGS_TIMEOUT.name, "recovery" to "PAUSE_AND_RESCHEDULE", "rescheduled" to "false"))
     }
 
     private fun discardPrepared() {
@@ -279,7 +322,7 @@ class HomeController(
     }
 
     private fun canceled(task: String) {
-        if (!closed) {
+        if (!closed && timeoutTask != task) {
             observer.event(task, "ANY", "canceled")
             mutable.update { it.copy(phase = HomePhase.CANCELED, progress = null,
                 status = "Canceled. Native process cleanup is best-effort.") }

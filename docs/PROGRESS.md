@@ -1208,3 +1208,13 @@ Process-owned engine and flushed logger are reused; no Activity retained by task
 Tests executed: 154 total, 153 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
 Untested: real Application/Activity reconnection, diagnostics/share behavior on phone; no APK refresh, process-death durability or foreground guarantee.
 Next: service attachment + notification/cancel/timeout wiring; Main is still the only real owner, keep app open. Committed locally, not pushed.
+
+### Foreground timeout boundary — 15 Nov 2026
+Home stops the service callback before native cancellation; task-scoped PAUSING fences new work until cleanup, then PAUSED(FGS_TIMEOUT).
+Preserves timeout through publication/cancellation/cleanup errors; repeated/stale callbacks cannot cancel a newer task or double-release.
+Nine fake-Engine tests authored first; corrected fixture cancel Boolean signature, then baseline BUILD FAILED in 41s (8 failures, 1 control pass).
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 1m 35s
+Tests executed: 163 total, 162 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
+No permission/dependency/engine/planner/icon change or APK refresh; Android service/notification/onTimeout wiring remains unimplemented.
+Owner authorizes pushing this and the prior two verified increments; defer phone reinstalls until the working-service milestone, not every step.
+Next: real service session attachment + promotion/progress/cancel/timeout adapter; no automatic rescheduling until durable queue. Keep app open.

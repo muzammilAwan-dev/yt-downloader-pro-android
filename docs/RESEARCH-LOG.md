@@ -239,6 +239,15 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Engine/logger are application-owned; logger remains flushed/open across sessions so old cleanup cannot close a newer writer.
   Main is still the only real attachment; fake reconnect requires another owner. Service/notification/timeout wiring and phone behavior untested.
 
+- **R65 (15 Nov 2026):** Rechecked https://developer.android.com/develop/background-work/services/fgs/timeout:
+  API 35+ dataSync onTimeout must call stopSelf within seconds; it must not await native/task cleanup.
+  Preparing Home's timeout boundary before the Android adapter: stop-service callback first, task-scoped cancellation,
+  PAUSING until worker/replay cleanup, then PAUSED(FGS_TIMEOUT); stale callbacks must not cancel a newer task.
+  Contract recovery stays PAUSE_AND_RESCHEDULE, but Room/WorkManager do not exist yet: explicitly log rescheduled=false
+  and require fresh resolution + user confirmation for another attempt. No automatic resume or durability claim.
+  Owner now authorizes pushing verified increments and defers installation until a meaningful phone-testing milestone;
+  old phone checks remain unverified and the major-feature-area gate stays in place. No new permission/dependency.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports
