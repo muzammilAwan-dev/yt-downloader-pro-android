@@ -3,7 +3,6 @@ package io.github.muzammilawan.clipharbor
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -24,90 +23,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import androidx.lifecycle.lifecycleScope
-import io.github.muzammilawan.clipharbor.core.DownloadError
-import io.github.muzammilawan.clipharbor.core.Engine
 import io.github.muzammilawan.clipharbor.core.MediaEntry
-import io.github.muzammilawan.clipharbor.diagnostics.AndroidNetworkProbe
-import io.github.muzammilawan.clipharbor.diagnostics.AndroidStorageProbe
+import io.github.muzammilawan.clipharbor.core.SharedSessionOwner
 import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsScreen
 import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsState
-import io.github.muzammilawan.clipharbor.diagnostics.NetworkProbe
 import io.github.muzammilawan.clipharbor.diagnostics.ReportContextFactory
-import io.github.muzammilawan.clipharbor.diagnostics.SelfTestRunner
-import io.github.muzammilawan.clipharbor.diagnostics.StorageProbe
-import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
-import io.github.muzammilawan.clipharbor.feature.home.HomeController
-import io.github.muzammilawan.clipharbor.feature.home.HomeObserver
 import io.github.muzammilawan.clipharbor.feature.home.HomeScreen
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
 import io.github.muzammilawan.clipharbor.feature.home.YtdlpTheme
-import io.github.muzammilawan.clipharbor.log.AppLogger
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
-import io.github.muzammilawan.clipharbor.log.RotatingLog
-import io.github.muzammilawan.clipharbor.publish.MediaStorePublisher
-import java.io.File
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Single activity: Phase 1 link review/quality picker with separately accessible local diagnostics.
- * Activity-lifetime execution only until the durable queue/service increment.
+ * Attaches to a shared process-local session; no service/background protection is connected yet.
  */
 class MainActivity : ComponentActivity() {
-    private lateinit var engine: Engine
-    private lateinit var logger: AppLogger
-    private lateinit var storage: StorageProbe
-    private lateinit var network: NetworkProbe
-    private lateinit var publisher: MediaStorePublisher
-
-    private lateinit var home: HomeController
-    private val diagnostics = DiagnosticsState()
+    private lateinit var attachment: SharedSessionOwner.Attachment<DownloadSession>
+    private val session get() = attachment.value
+    private val engine get() = session.engine
+    private val logger get() = session.logger
+    private val storage get() = session.storage
+    private val home get() = session.home
+    private val diagnostics get() = session.diagnostics
     private var showDiagnostics by mutableStateOf(false)
-    @Volatile private var closing = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        engine = YoutubeDlEngine(applicationContext)
-        logger = AppLogger(this)
-        storage = AndroidStorageProbe(applicationContext)
-        network = AndroidNetworkProbe()
-        publisher = MediaStorePublisher(applicationContext)
-
-        val header = DiagnosticReport.header(
-            ReportContextFactory.build(this, engine.info(), logger.verbose, storage.freeSpaceMb()),
-        )
-        logger.startSession(header)
-        logger.event(
-            level = 'I',
-            event = "app_start",
-            stage = "APP",
-            fields = mapOf("build" to BuildConfig.BUILD_TYPE, "version" to BuildConfig.VERSION_NAME),
-        )
-
-        home = HomeController(engine, lifecycleScope, File(filesDir, "staging"), publish = { file ->
-            val mime = mimeTypeFor(file)
-            val uri = withContext(Dispatchers.IO) { publisher.publish(file, mime).getOrThrow() }
-            PublishedMedia(uri.toString(), file.name,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Downloads/${AppInfo.DISPLAY_NAME}"
-                else "App-specific downloads (removed if the app is uninstalled)", mime)
-        }, observer = object : HomeObserver {
-            override fun event(task: String?, stage: String, event: String, fields: Map<String, String>) {
-                if (closing) return
-                logger.event('I', event, task = task, stage = stage, fields = fields,
-                    message = if (event == "engine_init") engine.info().headerLine() else null)
-            }
-            override fun failure(task: String?, error: DownloadError) {
-                if (!closing) logFailure(task, error)
-            }
-            override fun line(task: String, line: String) {
-                if (closing) return
-                logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
-                    " V task=$task stage=DOWNLOADING event=ytdlp " + line)
-            }
-        })
-        receiveShare(intent)
+        attachment = (application as YtdlpApplication).sessions.attach()
+        // Do not replay the original share over a retained task; fresh process/session still prefills it.
+        if (savedInstanceState == null || home.state.value.url.isEmpty()) receiveShare(intent)
         home.initialize()
 
         setContent {
@@ -152,9 +97,10 @@ class MainActivity : ComponentActivity() {
                 externalBusy = ui.busy,
                 onUrlChange = { state.url = it },
                 onRunSelfTest = {
-                    lifecycleScope.launch {
-                        runSelfTest(state, "selftest-" + java.util.UUID.randomUUID())
-                        state.verbose = logger.verbose
+                    val current = session
+                    attachment.scope.launch {
+                        current.runSelfTest("selftest-" + java.util.UUID.randomUUID())
+                        current.diagnostics.verbose = current.logger.verbose
                     }
                 },
                 onShareLog = { shareLog(state) },
@@ -202,70 +148,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun runSelfTest(state: DiagnosticsState, taskId: String) {
-        if (state.busy || home.state.value.busy) return
-        state.busy = true
-        state.status = "Running self-test…"
-        logger.event('I', "start", task = taskId, stage = "SELFTEST")
-        val started = System.currentTimeMillis()
-        try {
-            val runner = SelfTestRunner(engine, storage, network, onLog = { logger.write(it) })
-            val validated = if (state.url.isBlank()) null else MediaEntry.pasted(state.url)
-            if (validated is MediaEntry.Input.Invalid) {
-                state.status = validated.message
-                return
-            }
-            val report = runner.run((validated as? MediaEntry.Input.Link)?.url)
-            logger.event(
-                level = 'I',
-                event = "done",
-                task = taskId,
-                stage = "SELFTEST",
-                fields = mapOf(
-                    "failures" to report.failures.toString(),
-                    "ms" to (System.currentTimeMillis() - started).toString(),
-                ),
-            )
-            state.report = report.reportText()
-            state.status = report.summaryLine()
-            state.engineLine = "engine: " + engine.info().headerLine()
-        } finally {
-            state.busy = false
-            state.logTail = logger.snapshot()
-        }
-    }
-
-    private fun logFailure(taskId: String?, error: DownloadError) {
-        logger.event(
-            level = 'E',
-            event = "fail",
-            task = taskId,
-            stage = error.stage.name,
-            fields = buildMap {
-                put("code", error.code.name)
-                put("retryable", error.retryable.toString())
-                error.exitCode?.let { put("exit", it.toString()) }
-            },
-            message = error.detail,
-        )
-        // Last lines of yt-dlp output for a failed task (docs/12 §4); already redacted by the log writer.
-        error.stderrTail.takeLast(200).forEach { line ->
-            logger.write(
-                RotatingLog.timestamp(System.currentTimeMillis()) +
-                    " E task=$taskId stage=${error.stage} event=ytdlp " + line,
-            )
-        }
-    }
-
-    private fun mimeTypeFor(file: File): String = when (file.extension.lowercase()) {
-        "mkv" -> "video/x-matroska"
-        "webm" -> "video/webm"
-        "m4a" -> "audio/mp4"
-        "mp3" -> "audio/mpeg"
-        "opus", "ogg" -> "audio/ogg"
-        else -> "video/mp4"
-    }
-
     private fun shareLog(state: DiagnosticsState) {
         val file = logger.newestLogFile()
         if (file == null) {
@@ -294,10 +176,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        closing = true
-        if (::home.isInitialized) home.close()
-        logger.event('I', "app_stop", stage = "APP")
-        logger.close()
+        if (::attachment.isInitialized) attachment.close()
         super.onDestroy()
     }
 }

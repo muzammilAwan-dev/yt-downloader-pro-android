@@ -230,6 +230,15 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Immediate entry before suspension can establish cleanup even for a canceled scope; ensureActive must precede admission.
   The real engine already switches download work to Dispatchers.IO; no dependency bump is needed.
 
+- **R64 (15 Nov 2026):** Checked https://developer.android.com/reference/android/app/Application: custom Application
+  uses application android:name; application-context-backed wiring is process-local, not durable queue storage.
+  Checked current https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-supervisor-job.html
+  and pinned https://raw.githubusercontent.com/Kotlin/kotlinx.coroutines/1.9.0/kotlinx-coroutines-core/common/src/Supervisor.kt:
+  SupervisorJob(parent = null) is available; replace the caller Job in the session context, do not inherit Activity cancellation.
+  Added same-thread attachment ownership and final-release cancellation; shared Home/diagnostics/publication retain no Activity.
+  Engine/logger are application-owned; logger remains flushed/open across sessions so old cleanup cannot close a newer writer.
+  Main is still the only real attachment; fake reconnect requires another owner. Service/notification/timeout wiring and phone behavior untested.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

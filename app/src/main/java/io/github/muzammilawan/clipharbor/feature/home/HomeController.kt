@@ -54,7 +54,7 @@ interface HomeObserver {
     fun line(task: String, line: String) {}
 }
 
-/** Activity-lifetime, one-task entry flow. Durable queue/foreground execution is a separate next increment. */
+/** One-task entry flow; the caller owns its scope. Durable queue/foreground execution is separate. */
 class HomeController(
     private val engine: Engine,
     private val scope: CoroutineScope,

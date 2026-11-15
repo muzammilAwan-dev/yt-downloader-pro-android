@@ -1198,3 +1198,13 @@ Tests executed: 147 total, 146 passed, 1 Windows symlink skip, 0 failures/errors
 Lint executed: 0 errors / 7 known warnings.
 Untested/unimplemented: Android service, notification/permission/cancel/onTimeout wiring and service-owned lifetime; no APK refresh or new phone claim.
 Next: Android adapter + session ownership; keep app open and finish the existing second-preset/audio phone check. This step committed locally, not pushed.
+
+### Shared session ownership — 15 Nov 2026
+Moved Home/diagnostics/publication wiring to application-context-backed sessions; Main attaches/releases instead of closing shared work directly.
+Independent SupervisorJob, same-thread/idempotent attachments; last owner cancels task/scope and releases private replay input.
+Seven offline tests authored first (six fake-Engine): shared/reconnected owners, final cleanup, independent scope and factory failure.
+Process-owned engine and flushed logger are reused; no Activity retained by task/self-test wiring. No icon/planner/permission/dependency change.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 30s
+Tests executed: 154 total, 153 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
+Untested: real Application/Activity reconnection, diagnostics/share behavior on phone; no APK refresh, process-death durability or foreground guarantee.
+Next: service attachment + notification/cancel/timeout wiring; Main is still the only real owner, keep app open. Committed locally, not pushed.
