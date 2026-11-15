@@ -1256,3 +1256,13 @@ No recorded Cancel/timeout/restart; root cause unresolved, sustained background/
 No app/test/engine/permission/APK change. Same-video 1080p visible 60s then background 30s, unchanged connection; ask transport/VPN/settings, Share without Clear.
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 30s
 Tests and lint analyses FROM-CACHE: reports 206 total / 205 passed / 1 skip / 0 failures/errors; lint report 0 errors / 7 known warnings (not fresh execution).
+
+### Visible-app HTTP 403 control and upstream investigation — 15 Nov 2026 (R70)
+Owner reports stable Wi-Fi; pasted startup-to-Share session has two fresh 299+140/1920×1080 attempts failing at 3.4% of 873.48 MiB without Activity pause/stop.
+Sanitized evidence now records both controls; all failures precede service destruction. R69's missing visible-app control/repeat-background recommendation superseded.
+Engine/replay/planner/dependencies unchanged 74ce7cf→6bb477b; no app regression established, not every interaction ruled out; earlier successful downloads/playback retained.
+Four 403 estimates near 29 MiB fit three upstream 10 MiB randomized HTTP chunks. Official old-default-client issue #15712 fixed in 2026.01.29; exact selected client/cause unproven.
+R70 recommends owner approval for pinned APK-bundled engine-freshness investigation, preserving Android 10/minSdk 24/planner/replay/cancellation; no runtime updater or login workaround.
+No app/test/permission/engine/APK change; current tester remains 6bb477b. Gate/phone checks stay open; no reinstall requested.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 2s
+Tests/lint analyses UP-TO-DATE: existing reports 206 total / 205 passed / 1 skip / 0 failures/errors, lint 0 errors / 7 known warnings (not fresh execution).

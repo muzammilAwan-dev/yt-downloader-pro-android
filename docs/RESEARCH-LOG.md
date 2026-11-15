@@ -300,6 +300,33 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Recommend same APK/video/1080p visible 60s then background 30s on unchanged connection; ask transport/VPN/settings, Share without Clear.
   No app change/engine update/power exemption; successful foreground milestone stays open. One startup-to-Share export received, not all share paths.
 
+- **R70 (15 Nov 2026, visible-app HTTP 403 control and regression comparison):** Owner reports stable Wi-Fi/other apps working;
+  pasted `6bb477b` session has two fresh `299+140` / 1920×1080 / 873.48 MiB attempts, each failing at 3.4% while Activity stays
+  resumed. Failures precede service destruction; no Cancel/timeout/restart. Sanitized UTC table/limits in
+  `docs/evidence/foreground-6bb477b.md`; paste has no independently hashed original file. Earlier successful downloads/playback stand.
+  **Supersedes R69's missing foreground control and visible-60s/background-30s recommendation:** backgrounding is not required
+  for media 403. Wi-Fi is owner-reported; this does not explain the earlier distinct NETWORK_OFFLINE/DNS failure or prove an IP stayed fixed.
+  Source diffs `74ce7cf` → `6bb477b`: unchanged engine directory, replay, core Engine/planner/qualities and dependency versions.
+  `ec146df` → `74ce7cf` changed DownloadExecutor's selector/output/evidence validation, not HTTP options/replay. Home admission/logging
+  changes remain; no app regression established or every interaction ruled out. Catalog transport fields are not stripped by replay.
+  Official tagged 2025.11.12 `_video.py` supplies 10 MiB HTTP chunks; `downloader/http.py` randomizes each to 95–100%, sends sequential
+  bounded Range requests and treats HTTP 403 as fatal (ordinary retries will not handle it). Four rounded byte estimates ~28.54–29.70 MiB
+  fit three chunks (28.5–30 MiB); traceback is connection establishment. No exact byte/request/header capture, so not a proven chunk cause.
+  Sources: https://github.com/yt-dlp/yt-dlp/blob/2025.11.12/yt_dlp/extractor/youtube/_video.py and sibling `downloader/http.py`.
+  `-N 4` is fragment concurrency, not direct HTTP chunk concurrency; no evidence justifies changing it. `74ce7cf`'s 7,737,267-byte save
+  was below one chunk, compatible with these larger-transfer failures; no claim about every earlier sample's size. Fresh manual resolve
+  also failed, so stale metadata/re-resolve alone is not demonstrated as the cause/fix. QuickJS/ffmpeg debug lines confirm runtime presence.
+  **Beyond an age warning:** https://github.com/yt-dlp/yt-dlp/issues/15712 documents old `android_sdkless` streams starting then 403;
+  maintainer comment 3819129364 says fixed in 2026.01.29, merged PR https://github.com/yt-dlp/yt-dlp/pull/15726. 2025.11.12 still uses
+  that default client; the owner's redacted log does not prove it supplied selected URLs or that a PO token is required.
+  Separate later `android_vr` issue https://github.com/yt-dlp/yt-dlp/issues/17456 (maintainer comment 5354789281) fixed in 2026.08.19;
+  not evidence to hard-code that older workaround. GitHub API recheck: latest stable 2026.10.26; tagged `_video.py` defaults
+  `tv_samsung`, `visionos`, `web`. Upstream fixes are facts; same-phone success with them is untested.
+  **Recommendation/decision:** prioritize a narrowly owner-approved pinned APK-bundled engine-freshness investigation before new
+  features or further background testing. Verify integrity/packaging/Python/EJS/QuickJS compatibility, keep Android 10/minSdk 24 and
+  existing planner/replay/cancellation. Gate remains closed pending approval; no runtime updater/remote components/login/PO-token work.
+  No app/test/engine/permission/APK change. No battery-setting cause or power exemption justified. Original current APK stays `6bb477b`.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

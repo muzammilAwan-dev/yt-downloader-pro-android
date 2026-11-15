@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R69);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R70);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -22,17 +22,19 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   New task-only dataSync service wiring retains a session before admission, promotes before Engine work, and connects Android onTimeout.
   Task-scoped immutable notification Cancel retains service/session through cleanup; stale/repeated actions are no-ops, saving is fenced.
   Optional Android 13+ Enable notifications button never starts/resumes work or gates Download. Service loss cancels the actual task Job.
-  `6bb477b` phone milestone **FAILED** (R69): progress continued after backgrounding, then NETWORK_OFFLINE / two media HTTP 403 failures;
-  each failure preceded service destruction. No recorded Cancel/timeout/restart; root cause unresolved. Sustained background/lock success, Cancel
-  and newer-API behavior remain unverified. No durability or automatic rescheduling. Evidence: `docs/evidence/foreground-6bb477b.md`.
+  `6bb477b` phone milestone **FAILED** (R69/R70): initial NETWORK_OFFLINE / two media 403s after backgrounding; two more media 403s
+  with app continuously visible on owner-reported stable Wi-Fi. Each failure preceded service destruction; no recorded Cancel/timeout/restart.
+  Four 403s near ~29 MiB fit three default HTTP chunks; cause/client unproven. Engine/replay/planner unchanged since working `74ce7cf`.
+  Old-default-client 403 fixes exist upstream (R70); recommend owner-approved APK-bundled engine-freshness investigation, not a runtime updater.
+  Sustained background/lock, Cancel/newer APIs remain unverified; no durability/rescheduling. Evidence: `docs/evidence/foreground-6bb477b.md`.
 - Full-session logging: fixed UI/lifecycle actions + available resolve/download diagnostics/progress/timings; emails/secrets redacted.
   Share snapshots the flushed startup-to-tap journal, not a rotating chunk; Clear/new process resets it. No silent truncation; R68 disk-space tradeoff.
-  Owner supplied one complete startup-to-Share export with all three attempts (R69); other native share targets remain unverified.
+  Owner supplied one complete file export (R69) and another session pasted in chat (R70); other native share targets remain unverified.
 
 ## Last recorded check — 15 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 30s** (R69 docs-only investigation).
-Test task and lint analyses FROM-CACHE: reports 206 total / 205 passed / 1 Windows symlink skip / 0 failures/errors, lint 0 errors / 7 known warnings.
-Last actual execution: helper BUILD SUCCESSFUL in 59s; earlier source checks BUILD SUCCESSFUL in 33s. No new logic/test/APK change in R69.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 2s** (R70 docs-only investigation).
+Test task and lint analyses UP-TO-DATE: reports 206 total / 205 passed / 1 Windows symlink skip / 0 failures/errors, lint 0 errors / 7 known warnings.
+Last actual execution: helper BUILD SUCCESSFUL in 59s; earlier source checks BUILD SUCCESSFUL in 33s. No new logic/test/APK change in R69/R70.
 12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
 Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
 Foreground cancellation-first/timeout-first and permission/service tests remain green. No engine/planner/icon/dependency/permission change.
@@ -53,8 +55,9 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [x] 1e. Notification Cancel action and contextual Android 13+ notification permission UI (not a launch gate); CLI checks green.
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
 - [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), stamped APK built.
-- [ ] 1f. OWNER: `6bb477b` installed; background/lock milestone failed (R69), not yet fixed. Same video/1080p visible 60s then background 30s;
-        report Wi-Fi/mobile/VPN/network changes and data/battery settings, Share without Clear. No reinstall yet. Cancel/cleanup/playback still open.
+- [ ] 1f. `6bb477b` installed; media 403 also reproduced while visible on owner-reported stable Wi-Fi (R70), not fixed. Prioritize
+        media-access investigation; OWNER approve narrowly scoped APK-bundled engine-freshness spike (gate), no runtime downloads.
+        No reinstall yet; after reliable foreground transfers, retest background/lock. Cancel/cleanup/playback still open.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)
