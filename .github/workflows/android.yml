@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload diagnostic reports (failures only)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-reports-unit-tests
           path: |
@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload diagnostic reports (failures only)
         if: failure() && steps.detect.outputs.present == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-reports-instrumented
           path: "**/build/reports/androidTests/"
@@ -203,7 +203,7 @@ jobs:
           sha256sum ./*.apk | tee SHA256SUMS.txt
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: yt-downloader-pro-android-${{ inputs.variant }}-${{ github.sha }}
           path: |
