@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- No permissions yet: this hello-world build proves the toolchain only.
-         Phase 0 adds INTERNET (and nothing else) when the engine is wired in. -->
+    <!-- INTERNET only: the permission budget in AGENTS.md allows INTERNET, ACCESS_NETWORK_STATE,
+         POST_NOTIFICATIONS, FOREGROUND_SERVICE and FOREGROUND_SERVICE_DATA_SYNC. Phase 0 needs network access;
+         notifications/FGS arrive with the real queue in Phase 1. -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="false"
@@ -11,7 +14,8 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.YtdlpAndroid">
+        android:theme="@style/Theme.ClipHarbor"
+        android:usesCleartextTraffic="false">
 
         <activity
             android:name=".MainActivity"

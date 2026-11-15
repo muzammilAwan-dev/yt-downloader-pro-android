@@ -16,6 +16,20 @@ android {
         versionName = "0.1.0-phase0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // The engine ships native payloads for arm64-v8a, armeabi-v7a, x86 and x86_64; the Phase 0 phone is arm64,
+        // and shipping one ABI keeps the APK near 50 MB instead of ~200 MB (docs/RESEARCH-LOG.md R14).
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+    }
+
+    packaging {
+        // youtubedl-android reads libpython.zip.so / libffmpeg.zip.so by path from nativeLibraryDir, so the native
+        // libraries must stay extracted (docs/RESEARCH-LOG.md R20).
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 
     buildTypes {
@@ -35,10 +49,16 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
+    implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.youtubedl.android.library)
+    implementation(libs.youtubedl.android.ffmpeg)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
