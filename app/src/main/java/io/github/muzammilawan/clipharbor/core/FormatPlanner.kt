@@ -17,6 +17,24 @@ object FormatPlanner {
             "bv*[height<=$maxHeight]+ba/b[height<=$maxHeight]"
     }
 
+    /** Resolution first, compatibility within that resolution, then strictly capped lower fallbacks. */
+    fun selector(plan: VideoQualityPlan): String {
+        fun ids(values: List<String>): String {
+            require(values.isNotEmpty() && values.size <= 512)
+            require(values.all { it.matches(Regex("[A-Za-z0-9_.-]{1,128}")) })
+            // Python-compatible regex escaping, not Kotlin Regex.escape (which emits Java-only \Q…\E).
+            return "[format_id~='^(?:${values.joinToString("|") { it.replace(".", "\\.") }})$']"
+        }
+        val best = ids(plan.bestIds)
+        val cap = ids(plan.cappedIds)
+        return "bv*$best[vcodec^=avc1]+ba[acodec^=mp4a]/" +
+            "b$best[vcodec^=avc1][acodec^=mp4a]/bv*$best+ba/b$best/bv*$cap+ba/b$cap"
+    }
+
+    /** A ceiling is labelled `up-to`, never falsely presented as the actual encoded resolution. */
+    fun outputTemplate(quality: VideoQuality): String =
+        "%(title).150B [%(id)s]_up-to-${quality.pixels}p.%(ext)s"
+
     /**
      * Output name inside the app-private working directory. `%(title).150B` truncates by bytes so long titles cannot
      * exceed filesystem limits; `--windows-filenames` (added by the engine) removes characters Android cannot store.

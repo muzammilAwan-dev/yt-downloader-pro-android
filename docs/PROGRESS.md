@@ -1035,3 +1035,29 @@ Still incomplete: exact-format/audio-only picker, durable Room queue, foreground
 error recovery. This is not finished Phase 1 or a release. New native UI/share/engine/cancel/open-file and light/dark,
 large-text/TalkBack/window-layout checks have not been run. Earlier owner phone engine/icon evidence remains valid only
 for those earlier builds; playback/audio/file-browser confirmation and complete native descendant cleanup remain open.
+
+### Standard quality presets — owner request (15 Nov 2026)
+
+Reviewed the five latest phone screenshots: dark Home, raw-height chooser, stream progress and saved-file state on
+`ec146df`. Owner confirms playback **with sound**; that owner-device check is now resolved for this download. The short
+attached log establishes 7/7 self-tests, not download timings/replay/publish. Gallery/file-browser visibility, native share,
+native cancellation cleanup, light theme, large text/TalkBack/adaptive-window verification remain outstanding.
+
+Step 1 implements offline quality planning: 144/240/360/480/720/1080/1440/2160p, QHD vs 4K labels, both-dimension short-edge
+ceilings and visible disabled missing tiers (no duplicate aliases for the same low stream). Nonstandard source dimensions
+are shown honestly. Unknown dimensions/unsafe IDs/video without audio are not advertised. Task-private ID whitelists
+enforce caps; resolution-first H.264/AAC preference and lower bounded fallback preserve audio. Added seven JVM regressions.
+Quality-aware filenames explicitly say `up-to` and retain the true output extension. Existing diagnostic height planner
+remains compatible for now; Home/engine integration and native offline selector checks are pending. Untested until run.
+
+Step-1 verification:
+```
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 1m 36s
+36 actionable tasks: 14 executed, 1 from cache, 21 up-to-date
+XML reports: suites=17 tests=128 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+```
+127 passed/one existing host symlink skip. Also ran a no-network synthetic selector smoke check using the previously
+extracted pinned yt-dlp 2025.11.12 package: escaped-dot ID regex accepted, 1080×1920 VP9 selected over lower 720 H.264,
+1440×2560 excluded, AAC joined. Native Android and a full generated-selector matrix remain untested. No updated APK yet.

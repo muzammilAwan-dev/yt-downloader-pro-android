@@ -165,6 +165,25 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   APK SHA-256, compiled share target and unchanged adaptive padding. 120 passed/one existing host symlink skip in XML;
   helper retry's test task was UP-TO-DATE, not another execution. Native UI/share/download/accessibility remain untested.
 
+## 15 Nov 2026 — Standard quality presets
+
+- **R53:** Reviewed all five owner screenshots and the attached `ec146df` self-test log. Screens show dark Home,
+  raw-height chooser, stream progress and saved selection; owner explicitly confirms audio playback. Log confirms
+  7/7 self-tests, 33 formats and catalogue maxHeight 1440, but contains no download/publish events. Do not infer download
+  timing or replay from it. Personal media titles, source URLs and screenshot copies are not committed.
+- **R54:** Rechecked pinned [yt-dlp 2025.11.12 sorting](https://raw.githubusercontent.com/yt-dlp/yt-dlp/2025.11.12/yt_dlp/utils/_utils.py)
+  and [selector/filter implementation](https://raw.githubusercontent.com/yt-dlp/yt-dlp/2025.11.12/yt_dlp/YoutubeDL.py):
+  `res` uses the shorter positive dimension; `-S res:N` alone is a preference, not a hard ceiling. Quoted `format_id~=`
+  regex filters are supported. App-owned, safe-ID whitelists derived from both known dimensions can cap portrait and
+  landscape video without trusting a resolution name or introducing unrestricted fallback. Highest reported resolution
+  is tried before codec compatibility/lower capped fallbacks. Native offline selector verification remains pending.
+- **R55:** Rechecked owner MIT desktop `host/YTDLPHost/Services/YtDlpRunner.cs` and supplied command. Adopt familiar
+  standard presets, bounded fragment concurrency and ceiling-aware filenames in original Kotlin. Keep bundled Android
+  FFmpeg/QuickJS, task replay and MediaStore publication, not desktop Windows paths/Deno. `mp4/mkv` describes merge
+  containers, not conversion; preserve `%(ext)s`. `--restrict-filenames` forces ASCII; keep existing Windows-safe Unicode
+  naming rather than needlessly stripping titles. Thumbnail embedding adds network/post-processing/dependency behavior;
+  defer it explicitly until separately Android-tested. No competitor code/assets copied or external design skill loaded.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports
