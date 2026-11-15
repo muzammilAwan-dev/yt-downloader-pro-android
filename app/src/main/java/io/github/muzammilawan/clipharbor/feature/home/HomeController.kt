@@ -1,6 +1,7 @@
 package io.github.muzammilawan.clipharbor.feature.home
 
 import io.github.muzammilawan.clipharbor.core.DownloadError
+import io.github.muzammilawan.clipharbor.core.DownloadForeground
 import io.github.muzammilawan.clipharbor.core.DownloadRequest
 import io.github.muzammilawan.clipharbor.core.Engine
 import io.github.muzammilawan.clipharbor.core.ErrorCode
@@ -16,6 +17,7 @@ import java.io.File
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -61,6 +63,7 @@ class HomeController(
     private val observer: HomeObserver = object : HomeObserver {},
     private val clockMs: () -> Long = { System.nanoTime() / 1_000_000 },
     private val newTaskId: () -> String = { UUID.randomUUID().toString() },
+    private val foreground: DownloadForeground = DownloadForeground.ActivityOnly,
 ) {
     private val mutable = MutableStateFlow(HomeState())
     val state = mutable.asStateFlow()
@@ -185,9 +188,16 @@ class HomeController(
         prepared = null
         activeTask = input.task
         mutable.update { it.copy(phase = HomePhase.DOWNLOADING, progress = null, status = "Downloading video and audio…") }
-        job = scope.launch {
+        // Enter the cleanup block before returning to the caller, even if the owner scope is canceled.
+        // Android admission starts from this explicit user action; engine work still dispatches to IO.
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             val directory = File(stagingRoot, input.task)
+            var lease: DownloadForeground.Lease? = null
             try {
+                currentCoroutineContext().ensureActive()
+                val admitted = foreground.acquire(input.task)
+                lease = admitted
+                currentCoroutineContext().ensureActive()
                 observer.event(input.task, Stage.DOWNLOADING.name, "start", mapOf(
                     "requestedResolution" to plan.quality.pixels.toString(), "qualityAxis" to "shortEdge",
                     "resolveReuse" to (input.snapshot != null).toString(),
@@ -196,8 +206,11 @@ class HomeController(
                     mergeContainer = if (plan.quality.pixels >= 1440) "mkv" else "mp4/mkv",
                     resolvedSnapshot = input.snapshot, qualityPlan = plan), onProgress = { event ->
                     event.percent?.takeIf { it.isFinite() && it in 0f..100f }?.toInt()?.let { percent ->
-                        mutable.update {
-                            if (!closed && activeTask == input.task && it.phase == HomePhase.DOWNLOADING) it.copy(progress = percent) else it
+                        if (!closed && activeTask == input.task && state.value.phase == HomePhase.DOWNLOADING) {
+                            mutable.update {
+                                if (!closed && activeTask == input.task && it.phase == HomePhase.DOWNLOADING) it.copy(progress = percent) else it
+                            }
+                            admitted.progress(percent)
                         }
                     }
                 }, onLine = { if (!closed && activeTask == input.task) observer.line(input.task, it) }).getOrThrow()
@@ -213,6 +226,7 @@ class HomeController(
                     "requestedResolution" to plan.quality.pixels.toString(), "qualityAxis" to "shortEdge",
                     "reusedResolve" to outcome.reusedResolve.toString()))
                 mutable.update { it.copy(phase = HomePhase.PUBLISHING, progress = null, status = "Saving the finished file…") }
+                admitted.publishing()
                 observer.event(input.task, Stage.PUBLISHING.name, "start")
                 currentCoroutineContext().ensureActive()
                 val saved = publish(file)
@@ -233,8 +247,12 @@ class HomeController(
             } catch (error: Exception) {
                 fail(input.task, error, if (state.value.phase == HomePhase.PUBLISHING) Stage.PUBLISHING else Stage.DOWNLOADING)
             } finally {
-                input.snapshot?.close()
-                activeTask = null
+                try {
+                    lease?.close()
+                } finally {
+                    input.snapshot?.close()
+                    activeTask = null
+                }
             }
         }
     }

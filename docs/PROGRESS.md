@@ -1188,3 +1188,13 @@ Lint: 0 errors / 7 known warnings; analysis FROM-CACHE, report generated.
 Static JSONC/command/contract/doc-index checks passed; full handoff checker blocked by missing PyYAML, not installed.
 Untested: OpenCode runtime/reload/permissions/free inference, second-preset/new-file playback and MKV/accessibility checks; APK/icon/engine unchanged.
 One reviewed docs/config change set committed; owner explicitly authorized a non-force push. Next: foreground service/progress/cancel notification.
+
+### Foreground admission foundation — 15 Nov 2026
+Added task-only admission/lease hooks to Home; wait before engine, bounded text-free progress, release after publication/success/failure/cancel.
+Nine fake-Engine tests added; ActivityOnly remains the default, with no permission/dependency/icon/engine change.
+Two test-first immediate/canceled-scope regressions: BUILD FAILED in 8s; one fix uses verified 1.9.0 UNDISPATCHED + ensureActive for replay cleanup.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 31s
+Tests executed: 147 total, 146 passed, 1 Windows symlink skip, 0 failures/errors.
+Lint executed: 0 errors / 7 known warnings.
+Untested/unimplemented: Android service, notification/permission/cancel/onTimeout wiring and service-owned lifetime; no APK refresh or new phone claim.
+Next: Android adapter + session ownership; keep app open and finish the existing second-preset/audio phone check. This step committed locally, not pushed.

@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R62);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R63);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -17,20 +17,24 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - Owner evidence for `74ce7cf` (R61): dark portrait standard picker with disabled QHD/4K; 1080×1920 `137+140` download,
   resolve replay reused, MP4 merge and 7,737,267-byte MediaStore save; later self-test 7/7. Only one quality download.
 - Still unverified: second preset, new file playback with sound, QHD/4K MKV playback; earlier `ec146df` playback remains confirmed.
+- Foreground foundation: tested task-only admission/progress/release hooks and immediate-cancel replay cleanup. Main still uses ActivityOnly;
+  Android service/notification/session ownership and timeout wiring are not implemented. Keep the app open.
 
 ## Last recorded check — 15 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 24s**.
-Tests FROM-CACHE: 138 total, 137 passed, 1 Windows symlink skip, 0 failures/errors; lint 0 errors / 7 known warnings (analysis FROM-CACHE).
-Static JSONC/command/contract/doc-index checks passed; full handoff checker blocked by absent PyYAML. OpenCode runtime/fallback checks untested.
-Source base `c496744`; this reviewed docs/config-only commit leaves the tester APK/stamp unchanged (`74ce7cf`). Use Git for current HEAD.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 31s**.
+Tests executed: 147 total, 146 passed, 1 Windows symlink skip, 0 failures/errors; lint executed, 0 errors / 7 known warnings.
+Nine new fake-Engine lifecycle tests; two test-first cancellation regressions failed before one root-cause fix, then full checks passed.
+OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
+Source base `57e00ab`; no APK rebuilt/copied this step, `dist/app-debug.apk` remains `74ce7cf`. Use Git for current HEAD.
 
 ## Next steps (do in order, one per `/next`)
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
 - [ ] 0b. OWNER: try a second available preset, confirm selected dimensions and playback with sound; send its post-download log.
         Agents may continue unrelated Phase 1 steps, but must not claim this or high-resolution MKV playback passed.
-- [ ] 1. Foreground service + notification with progress/cancel (manifest needs FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC,
-        POST_NOTIFICATIONS, all inside the permission budget) and `onTimeout` handling.
+- [x] 1a. Foreground admission boundary in Home (task-only lease, bounded progress, release through publication/terminal paths); fake-Engine tests green.
+- [ ] 1b. Android service + session ownership, progress/cancel notification (manifest needs FOREGROUND_SERVICE,
+        FOREGROUND_SERVICE_DATA_SYNC, POST_NOTIFICATIONS, inside the budget) and `onTimeout` handling. Still Activity-lifetime until wired.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)

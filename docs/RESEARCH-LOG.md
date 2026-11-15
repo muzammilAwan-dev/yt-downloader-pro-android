@@ -220,6 +220,16 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   the free model (owner approved this correction; same manual-fallback plan, no plugin). Official docs list both chosen free IDs and privacy terms;
   inference/reload/enforcement untested (`opencode` absent from PATH). Handoff script blocked by missing PyYAML; not installed.
 
+- **R63 (15 Nov 2026):** Rechecked https://developer.android.com/develop/background-work/services/fgs/launch and
+  /fgs/timeout: service start and successful foreground promotion are separate; API 35+ dataSync timeout requires prompt
+  stopSelf, not waiting for native cleanup. Current Home/private replay is Activity-owned, so this small increment adds
+  a typed, task-only admission/progress/release boundary with fake-Engine tests; Android service/session ownership,
+  notification permission/cancel and onTimeout wiring remain next. No new permission/dependency or background guarantee.
+  Also checked current CoroutineStart.UNDISPATCHED API docs and pinned 1.9.0 source:
+  https://raw.githubusercontent.com/Kotlin/kotlinx.coroutines/1.9.0/kotlinx-coroutines-core/common/src/CoroutineStart.kt.
+  Immediate entry before suspension can establish cleanup even for a canceled scope; ensureActive must precede admission.
+  The real engine already switches download work to Dispatchers.IO; no dependency bump is needed.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

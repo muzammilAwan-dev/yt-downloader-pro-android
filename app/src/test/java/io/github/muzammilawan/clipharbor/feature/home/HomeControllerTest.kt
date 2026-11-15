@@ -9,11 +9,13 @@ import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
 import io.github.muzammilawan.clipharbor.core.FormatInfo
 import io.github.muzammilawan.clipharbor.core.VideoQuality
+import io.github.muzammilawan.clipharbor.core.DownloadForeground
 import io.github.muzammilawan.clipharbor.engine.EngineFailure
 import io.github.muzammilawan.clipharbor.testing.FakeEngine
 import java.io.File
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -33,10 +35,27 @@ class HomeControllerTest {
     private var request: DownloadRequest? = null
     private var holdDownload = false
     private var holdPublish = false
+    private var failDownload = false
+    private var failPublish = false
     private var downloadedWidth: Int? = 640
     private var downloadedHeight: Int? = 360
     private val progressCallbacks = mutableListOf<(ProgressEvent) -> Unit>()
     private val publishing = CompletableDeferred<Unit>()
+    private val foregroundEvents = mutableListOf<String>()
+    private var foregroundGate: CompletableDeferred<Unit>? = null
+    private var rejectForeground = false
+    private val foreground = object : DownloadForeground {
+        override suspend fun acquire(taskId: String): DownloadForeground.Lease {
+            foregroundEvents += "acquire:$taskId"
+            foregroundGate?.await()
+            if (rejectForeground) throw IllegalStateException("synthetic start rejection with Cookie: secret")
+            return object : DownloadForeground.Lease {
+                override fun progress(percent: Int) { foregroundEvents += "progress:$percent" }
+                override fun publishing() { foregroundEvents += "publishing" }
+                override fun close() { foregroundEvents += "release:$taskId" }
+            }
+        }
+    }
     private val fake = FakeEngine()
     private val snapshot = ResolvedSnapshot(url, "task-1", "{\"formats\":[]}", clockMs = { now })
     private val engine = object : io.github.muzammilawan.clipharbor.core.Engine by fake {
@@ -47,8 +66,10 @@ class HomeControllerTest {
         override suspend fun download(request: DownloadRequest, onProgress: (ProgressEvent) -> Unit,
             onLine: (String) -> Unit): Result<DownloadOutcome> {
             this@HomeControllerTest.request = request
+            foregroundEvents += "engine"
             progressCallbacks += onProgress
             if (holdDownload) awaitCancellation()
+            if (failDownload) return Result.failure(EngineFailure(DownloadError(ErrorCode.NETWORK_TIMEOUT, Stage.DOWNLOADING)))
             onProgress(ProgressEvent(42f, 1, "synthetic"))
             request.outputDirectory.mkdirs()
             val file = File(request.outputDirectory, "synthetic.mp4").apply { writeText("synthetic bytes") }
@@ -59,9 +80,10 @@ class HomeControllerTest {
 
     private fun controller(scope: CoroutineScope) = HomeController(engine, scope, temporary.newFolder(), publish = { file ->
         publishes++
+        if (failPublish) throw EngineFailure(DownloadError(ErrorCode.NO_SPACE, Stage.PUBLISHING))
         if (holdPublish) publishing.await()
         PublishedMedia("content://test/1", file.name, "Downloads/YTDLP", "video/mp4")
-    }, clockMs = { now }, newTaskId = { "task-${++serial}" })
+    }, clockMs = { now }, newTaskId = { "task-${++serial}" }, foreground = foreground)
 
     @Test fun incomingShareOnlyPrefillsUntilUserConfirms() = runTest {
         val home = controller(this)
@@ -235,6 +257,7 @@ class HomeControllerTest {
         home.download(); runCurrent()
         home.close(); advanceUntilIdle()
         assertEquals(listOf("task-1"), fake.cancelledProcessIds)
+        assertEquals(1, foregroundEvents.count { it == "release:task-1" })
         assertEquals(0, publishes)
         assertThrows(IllegalStateException::class.java) {
             snapshot.withFile(url, "task-1", temporary.newFolder()) { error("must not run") }
@@ -292,6 +315,150 @@ class HomeControllerTest {
         home.download(); advanceUntilIdle()
         assertNull(request)
         assertEquals(0, publishes)
+        home.close()
+    }
+
+    @Test fun foregroundAdmissionPrecedesEngineAndReleaseFollowsPublication() = runTest {
+        holdPublish = true
+        foregroundGate = CompletableDeferred()
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        assertTrue(foregroundEvents.isEmpty()) // Resolving/choosing is not a download service.
+        home.download(); runCurrent()
+        assertNull(request)
+        assertEquals(listOf("acquire:task-1"), foregroundEvents)
+        foregroundGate!!.complete(Unit); runCurrent()
+        assertEquals(listOf("acquire:task-1", "engine", "progress:42", "publishing"), foregroundEvents)
+        assertEquals(HomePhase.PUBLISHING, home.state.value.phase)
+        home.cancel() // User cancel cannot undo the MediaStore commit boundary.
+        assertFalse(foregroundEvents.any { it.startsWith("release:") })
+        publishing.complete(Unit); advanceUntilIdle()
+        assertEquals("release:task-1", foregroundEvents.last())
+        home.close()
+        assertEquals(1, foregroundEvents.count { it == "release:task-1" })
+    }
+
+    @Test fun foregroundRejectionDoesNotDownloadPublishOrExposePrivateError() = runTest {
+        rejectForeground = true
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); advanceUntilIdle()
+        assertEquals(HomePhase.FAILED, home.state.value.phase)
+        assertNull(request)
+        assertEquals(0, publishes)
+        assertFalse(home.state.value.status.contains("secret"))
+        assertEquals(listOf("acquire:task-1"), foregroundEvents)
+        assertThrows(IllegalStateException::class.java) {
+            snapshot.withFile(url, "task-1", temporary.newFolder()) { error("must not run") }
+        }
+        home.close()
+    }
+
+    @Test fun cancelAfterAdmissionReleasesOnceAndIgnoresLateNotificationProgress() = runTest {
+        holdDownload = true
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); runCurrent()
+        home.cancel(); advanceUntilIdle()
+        assertEquals(HomePhase.CANCELED, home.state.value.phase)
+        assertEquals(listOf("acquire:task-1", "engine", "release:task-1"), foregroundEvents)
+        progressCallbacks.single()(ProgressEvent(99f, 0, "Cookie: secret"))
+        assertEquals(listOf("acquire:task-1", "engine", "release:task-1"), foregroundEvents)
+        assertEquals(0, publishes)
+        home.close()
+    }
+
+    @Test fun cancelWhileWaitingForAdmissionNeverStartsEngine() = runTest {
+        foregroundGate = CompletableDeferred()
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); runCurrent()
+        home.cancel(); advanceUntilIdle()
+        foregroundGate!!.complete(Unit); advanceUntilIdle()
+        assertEquals(HomePhase.CANCELED, home.state.value.phase)
+        assertNull(request)
+        assertEquals(0, publishes)
+        assertEquals(listOf("acquire:task-1"), foregroundEvents)
+        home.close()
+    }
+
+    @Test fun engineFailureReleasesForegroundWithoutPublishing() = runTest {
+        failDownload = true
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); advanceUntilIdle()
+        assertEquals(HomePhase.FAILED, home.state.value.phase)
+        assertEquals(0, publishes)
+        assertEquals(listOf("acquire:task-1", "engine", "release:task-1"), foregroundEvents)
+        home.close()
+    }
+
+    @Test fun publicationFailureStillReleasesForeground() = runTest {
+        failPublish = true
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); advanceUntilIdle()
+        assertEquals(HomePhase.FAILED, home.state.value.phase)
+        assertEquals(listOf("acquire:task-1", "engine", "progress:42", "publishing", "release:task-1"), foregroundEvents)
+        assertNull(home.state.value.saved)
+        home.close()
+    }
+
+    @Test fun foregroundProgressIsBoundedAndDoesNotReceiveEngineText() = runTest {
+        holdDownload = true
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); runCurrent()
+        listOf(Float.NaN, Float.POSITIVE_INFINITY, -1f, 101f).forEach {
+            progressCallbacks.single()(ProgressEvent(it, 0, "Cookie: secret"))
+        }
+        assertNull(home.state.value.progress)
+        assertEquals(listOf("acquire:task-1", "engine"), foregroundEvents)
+        progressCallbacks.single()(ProgressEvent(19.9f, 0, "https://example.invalid/?token=secret"))
+        assertEquals(19, home.state.value.progress)
+        assertEquals("progress:19", foregroundEvents.last())
+        assertFalse(foregroundEvents.any { it.contains("secret") || it.contains(url) })
+        home.close(); advanceUntilIdle()
+        assertEquals("release:task-1", foregroundEvents.last())
+    }
+
+    @Test fun immediateCancelCannotLeavePrivateInputInAnUnstartedCoroutine() = runTest {
+        foregroundGate = CompletableDeferred()
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download()
+        home.cancel() // No dispatcher turn between confirmation and cancellation.
+        advanceUntilIdle()
+        assertEquals(HomePhase.CANCELED, home.state.value.phase)
+        assertNull(request)
+        assertEquals(0, publishes)
+        assertThrows(IllegalStateException::class.java) {
+            snapshot.withFile(url, "task-1", temporary.newFolder()) { error("must not run") }
+        }
+        home.close()
+    }
+
+    @Test fun canceledOwnerScopeDoesNotAcquireForegroundOrLeakPrivateInput() = runTest {
+        val owner = Job()
+        val home = controller(CoroutineScope(coroutineContext + owner))
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        owner.cancel()
+        home.download(); advanceUntilIdle()
+        assertEquals(HomePhase.CANCELED, home.state.value.phase)
+        assertTrue(foregroundEvents.isEmpty())
+        assertNull(request)
+        assertThrows(IllegalStateException::class.java) {
+            snapshot.withFile(url, "task-1", temporary.newFolder()) { error("must not run") }
+        }
         home.close()
     }
 }
