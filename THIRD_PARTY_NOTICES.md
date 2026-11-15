@@ -14,10 +14,12 @@ files yet (tracked as item C.3 in `docs/10-VERIFICATION-LOG.md`).
 | QuickJS / QuickJS-ng | JavaScript runtime for yt-dlp's EJS support (`jni/*/libqjs.so`) | MIT | Present in `library` 0.18.1 as `libqjs.so`, report line `quickjs-2021-03-27` (unversioned build); include the MIT text in the release package (Phase 3) |
 | AndroidX / Jetpack Compose / Room / WorkManager / DataStore | UI, storage, background work | Apache-2.0 | `TODO(verify)` via the generated license report (Phase 3) |
 | Kotlin standard library | language runtime | Apache-2.0 | `TODO(verify)` |
+| Owner's [yt-downloader-pro](https://github.com/muzammilAwan-dev/yt-downloader-pro) desktop icon | YTDLP Android launcher artwork | MIT, copyright (c) 2026 Muhammad Muzammil | Owner authorized reuse 15 Nov 2026; local LICENSE read. Original ICO's 256x256 PNG frame reused unchanged; full notice shipped in `app/src/main/assets/licenses/ytdlp-desktop-icon-MIT.txt` |
 
 Also not bundled by this repository, but part of the product story: the desktop project
 [yt-downloader-pro](https://github.com/muzammilAwan-dev/yt-downloader-pro) is MIT and separate; no source code is shared
-between the two repositories.
+between the two repositories. The owner's supplied launcher artwork is now shared with explicit permission and the MIT
+notice above; no desktop source-code port is included in this branding change.
 
 ## Rules for contributors
 

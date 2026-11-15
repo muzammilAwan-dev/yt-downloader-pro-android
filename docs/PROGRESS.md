@@ -739,3 +739,30 @@ lint XML: errors=0 warnings=6
 Tests executed: 93 passed, one existing Windows symlink case skipped. Storage branding constants are tested and the
 Android wiring compiles; no new phone MediaStore run performed. The owner requested this build continue in the background;
 results above were recorded only after its completion notification.
+
+Branding step 3: reuse the owner's supplied ICO's largest PNG frame losslessly (256x256, unchanged image bytes),
+replacing the placeholder download arrow. Legacy API 24-25 bitmap and API 26+ adaptive wrapper use the same artwork;
+the Android launcher determines the outer mask. The primary red symbol fits the inner 66dp safe zone at 108dp layer scale.
+Packaged the desktop MIT copyright/permission notice and added four offline label/artwork/layer/license resource checks.
+No monochrome themed layer added; OEM launcher appearance remains untested. Verification pending.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 2m 4s
+54 actionable tasks: 26 executed, 28 up-to-date
+XML reports: suites=13 tests=98 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+APK contains exact desktop MIT notice
+Owner MIT copyright and full license retained in packaged asset
+```
+
+Tests executed: 97 passed, one existing Windows symlink case skipped. New seventh lint warning is
+`MonochromeLauncherIcon`: normal adaptive icon works but no distinct themed monochrome layer is provided yet. No
+warning suppression, dependency upgrade or claim of final launcher appearance. Exact asset/license resource checks ran;
+the full MIT text was compared against the local owner LICENSE and against the built APK's packaged asset.
+
+Branding documentation: updated README, identity/UX guide, local handoff/log-folder guide and AGENTS identity note.
+Preserved historical ClipHarbor evidence and other-app naming restrictions; owner's current YTDLP decision supersedes
+only the prior display-name/no-"yt" preference. These documentation changes were present during the successful build
+above and introduce no executable code. A clean-source stamped `dist/` handoff is the final step.

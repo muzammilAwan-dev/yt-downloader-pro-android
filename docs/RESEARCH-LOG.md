@@ -108,6 +108,14 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   copyright (c) 2026 Muhammad Muzammil. ICO inventory has seven sizes from 16 to 256 px, largest frame PNG-compressed.
   Reuse only this owner-selected asset with license/attribution; do not replace it with a competitor asset or imply
   upstream endorsement. Android package id remains stable; icon rendering and public-name availability unverified.
+- **R43:** Read Google's [adaptive icon guidance](https://developer.android.com/develop/ui/views/launch/icon_design_adaptive)
+  on 15 Nov 2026: bitmap layers and inline foreground/background drawables are supported; 108dp layers have a central
+  66dp safe zone, with launcher-controlled masks. Preserved the supplied desktop tile rather than inventing a replacement;
+  legacy bitmap/adaptive wrapper share its exact 256px PNG frame (SHA-256
+  `0221f46a21d1d739eaf4d68d5364f127049b14201d28764f4d444e4d7178e5ea`). Previewed extracted artwork locally; primary opaque
+  red symbol bounds scale to x=31.22..76.36/y=26.16..81.42dp within the safe zone. Original tile includes its own rounded
+  outline; outer appearance is launcher-dependent and needs a phone check. License shipped with the APK; no new image
+  library installed or Android dependency added. No name/trademark clearance claimed.
 
 ## Still unverified (carried forward)
 
