@@ -40,7 +40,9 @@ import io.github.muzammilawan.clipharbor.log.LogRedactor
 import io.github.muzammilawan.clipharbor.log.RotatingLog
 import io.github.muzammilawan.clipharbor.publish.MediaStorePublisher
 import java.io.File
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Single activity (docs/02 §1). Phase 0 renders the diagnostics spike: self-test, a 1080p+audio download with merge,
@@ -270,7 +272,9 @@ class MainActivity : ComponentActivity() {
 
             state.status = "Publishing to Downloads/ClipHarbor…"
             logger.event('I', "start", task = taskId, stage = Stage.PUBLISHING.name)
-            val published = publisher.publish(file)
+            val published = withContext(Dispatchers.IO) {
+                publisher.publish(file, mimeTypeFor(file))
+            }
             if (published.isFailure) {
                 fail(state, taskId, published.exceptionOrNull())
                 return
@@ -281,9 +285,9 @@ class MainActivity : ComponentActivity() {
                 event = "ok",
                 task = taskId,
                 stage = Stage.PUBLISHING.name,
-                fields = mapOf("uri" to uri.toString()),
+                fields = mapOf("uri" to uri.toString(), "mime" to mimeTypeFor(file)),
             )
-            state.status = "Saved: $uri\nFile in staging: ${file.absolutePath}"
+            state.status = "Saved ${file.name} to Downloads/ClipHarbor ($uri)"
             workingDir.deleteRecursively()
         } finally {
             runningTaskId = null
@@ -315,6 +319,15 @@ class MainActivity : ComponentActivity() {
             )
         }
         state.status = "Failed: ${error.code.name}. See the log (Share log) for details."
+    }
+
+    private fun mimeTypeFor(file: File): String = when (file.extension.lowercase()) {
+        "mkv" -> "video/x-matroska"
+        "webm" -> "video/webm"
+        "m4a" -> "audio/mp4"
+        "mp3" -> "audio/mpeg"
+        "opus", "ogg" -> "audio/ogg"
+        else -> "video/mp4"
     }
 
     private fun shareLog(state: DiagnosticsState) {

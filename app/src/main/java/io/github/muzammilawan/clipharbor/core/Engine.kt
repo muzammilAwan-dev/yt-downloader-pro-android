@@ -94,7 +94,7 @@ data class DownloadRequest(
     val maxHeight: Int = 1080,
     val outputDirectory: java.io.File,
     val processId: String,
-    val mergeContainer: String = "mp4",
+    val mergeContainer: String = "mp4/mkv",
 )
 
 data class DownloadOutcome(

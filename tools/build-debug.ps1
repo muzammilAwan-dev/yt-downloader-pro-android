@@ -3,13 +3,18 @@
 param([switch]$SkipTests)
 $ErrorActionPreference = "Stop"
 
+$gitSha = "unknown"
+try { $gitSha = (& git rev-parse --short HEAD 2>$null) } catch { $gitSha = "unknown" }
+if (-not $gitSha) { $gitSha = "unknown" }
+$gitProp = "-PgitSha=$gitSha"
+
 function Run-Gradle([string[]]$gradleArgs) {
     & .\gradlew.bat @gradleArgs
     if ($LASTEXITCODE -ne 0) { throw "Gradle failed (exit $LASTEXITCODE): $($gradleArgs -join ' ')" }
 }
 
-if (-not $SkipTests) { Run-Gradle @("testDebugUnitTest", "lintDebug", "--stacktrace") }
-Run-Gradle @("assembleDebug", "--stacktrace")
+if (-not $SkipTests) { Run-Gradle @("testDebugUnitTest", "lintDebug", $gitProp, "--stacktrace") }
+Run-Gradle @("assembleDebug", $gitProp, "--stacktrace")
 
 New-Item -ItemType Directory -Force -Path dist | Out-Null
 Get-ChildItem -Path app\build\outputs\apk\debug -Filter *.apk | ForEach-Object {

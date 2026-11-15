@@ -150,6 +150,7 @@ class YoutubeDlEngine(private val context: Context) : Engine {
                 .addOption("--no-playlist")
                 .addOption("--no-mtime")
                 .addOption("--newline")
+                .addOption("--progress")
                 .addOption("--print", "after_move:filepath")
                 .addOption("--no-simulate")
 
