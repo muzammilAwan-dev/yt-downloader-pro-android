@@ -103,6 +103,10 @@ data class DownloadOutcome(
     val exitCode: Int,
     val elapsedMs: Long,
     val outputTail: List<String>,
+    /** Actual yt-dlp selection, not inferred from the initial format list. Empty/null means unreported. */
+    val selectedFormatIds: List<String> = emptyList(),
+    val selectedHeight: Int? = null,
+    val reusedResolve: Boolean = false,
 )
 
 data class ResolveOutcome(

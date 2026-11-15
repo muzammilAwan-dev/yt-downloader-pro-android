@@ -492,3 +492,31 @@ BUILD SUCCESSFUL in 15s
 
 Unit-test and lint analysis/report tasks were UP-TO-DATE; this reused existing results, not a fresh execution of tests or
 browser authentication verification. No `assembleDebug` or new APK performed for this documentation-only increment.
+
+### Step 3a: explicit download-evidence foundation
+
+- Added a platform-free parser for app-owned selected-format/final-path markers and standard yt-dlp selected-format lines.
+  Final paths must be absolute, canonical, inside the current staging directory, nonempty regular media files.
+- No timestamp/directory-scanning fallback: unrelated files, merger-only evidence, partial files and metadata are rejected.
+  Actual height remains unknown when unreported; a later selection clears the earlier height.
+- Added outcome fields and offline regression fixtures. Parser is not yet wired into the Android engine; that follows
+  after pinned upstream API/print/load-info verification. No dependency, permission or browser changes.
+- Verification pending for this foundation increment; no new device run or APK handoff.
+
+Initial verification: `testDebugUnitTest` executed and `assembleDebug` completed, but the overall command **FAILED in
+1m 58s**: lint reported 3 `NewApi` errors for `File.toPath`/`Path.startsWith` on minSdk 24, plus the existing 6 warnings.
+Replaced NIO path checks with canonical-parent walking; no minSdk bump, desugaring dependency or lint suppression.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 23s
+54 actionable tasks: 15 executed, 39 up-to-date
+
+XML reports: suites=9 tests=69 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+```
+
+Unit tests executed. One symlink-escape test is skipped because this Windows host cannot create a symlink without extra
+privileges; canonical sibling/traversal confinement tests ran. No privilege escalation requested. Debug APK built locally;
+`dist/app-debug.apk` remains the previous Phase 0 handoff, and real engine marker output is not yet device-tested.
