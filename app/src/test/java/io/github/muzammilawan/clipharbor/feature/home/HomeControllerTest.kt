@@ -31,16 +31,19 @@ class HomeControllerTest {
     private var request: DownloadRequest? = null
     private var holdDownload = false
     private var holdPublish = false
+    private val progressCallbacks = mutableListOf<(ProgressEvent) -> Unit>()
     private val publishing = CompletableDeferred<Unit>()
     private val fake = FakeEngine()
     private val snapshot = ResolvedSnapshot(url, "task-1", "{\"formats\":[]}", clockMs = { now })
     private val engine = object : io.github.muzammilawan.clipharbor.core.Engine by fake {
         override suspend fun resolveForTask(url: String, processId: String) = fake.resolve(url).map {
-            it.copy(resolvedSnapshot = snapshot)
+            it.copy(resolvedSnapshot = if (processId == "task-1") snapshot
+                else ResolvedSnapshot(url, processId, "{\"formats\":[]}", clockMs = { now }))
         }
         override suspend fun download(request: DownloadRequest, onProgress: (ProgressEvent) -> Unit,
             onLine: (String) -> Unit): Result<DownloadOutcome> {
             this@HomeControllerTest.request = request
+            progressCallbacks += onProgress
             if (holdDownload) awaitCancellation()
             onProgress(ProgressEvent(42f, 1, "synthetic"))
             request.outputDirectory.mkdirs()
@@ -193,5 +196,39 @@ class HomeControllerTest {
         home.initialize(); advanceUntilIdle()
         assertTrue(home.state.value.engineReady)
         home.close()
+    }
+
+    @Test fun lateProgressFromCanceledTaskCannotOverwriteNewTask() = runTest {
+        holdDownload = true
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); runCurrent()
+        home.cancel(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); runCurrent()
+        assertEquals(2, progressCallbacks.size)
+        progressCallbacks.first()(ProgressEvent(99f, 0, "late old progress"))
+        assertNull(home.state.value.progress)
+        progressCallbacks.last()(ProgressEvent(15f, 0, "current progress"))
+        assertEquals(15, home.state.value.progress)
+        home.close(); advanceUntilIdle()
+        progressCallbacks.last()(ProgressEvent(80f, 0, "late after close"))
+        assertEquals(15, home.state.value.progress)
+        assertEquals(0, publishes)
+    }
+
+    @Test fun closingActiveDownloadCancelsAndClosesPrivateChooserInput() = runTest {
+        holdDownload = true
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); runCurrent()
+        home.close(); advanceUntilIdle()
+        assertEquals(listOf("task-1"), fake.cancelledProcessIds)
+        assertEquals(0, publishes)
+        assertThrows(IllegalStateException::class.java) {
+            snapshot.withFile(url, "task-1", temporary.newFolder()) { error("must not run") }
+        }
     }
 }

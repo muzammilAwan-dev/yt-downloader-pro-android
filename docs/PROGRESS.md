@@ -968,3 +968,23 @@ lint XML: errors=0 warnings=7
 separate Diagnostics compile; share-target resource contracts pass. Native UI/share/download/open-file and rendered
 accessibility tests remain unrun. Next small step labels the build as a Phase 1 preview, hardens late-callback teardown,
 then refreshes `dist/` from clean committed source. No complete Phase 1/queue/service/release claim.
+
+Step 4: versionCode 2 / `0.1.0-phase1-preview`, diagnostic `phase=1-preview` (package unchanged). Added compiled metadata
+regression. Hardened reader-thread callback ownership so a canceled task cannot update the next task or write lines after
+controller close; activity teardown suppresses observer writes before closing its session logger. Added late-progress/
+close/no-publish regressions and made fake re-resolves return fresh task-bound inputs. This does not prove full native
+process-tree cleanup. Final verification pending; no engine/SDK/dependency update or permission addition.
+
+Step-4 verification executed:
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 2m 7s
+54 actionable tasks: 24 executed, 30 up-to-date
+XML reports: suites=16 tests=121 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+```
+
+120 passed/one existing Windows symlink case skipped. New preview metadata and late-callback/close tests passed.
+Phone rendering/share/download/playback/accessibility still unrun. `dist/` is not refreshed until the stamped clean-source
+helper completes; no incorrect icon-only APK presented as containing the new UI.

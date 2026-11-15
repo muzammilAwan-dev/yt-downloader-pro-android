@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var home: HomeController
     private val diagnostics = DiagnosticsState()
     private var showDiagnostics by mutableStateOf(false)
+    @Volatile private var closing = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,11 +94,15 @@ class MainActivity : ComponentActivity() {
                 else "App-specific downloads (removed if the app is uninstalled)", mime)
         }, observer = object : HomeObserver {
             override fun event(task: String?, stage: String, event: String, fields: Map<String, String>) {
+                if (closing) return
                 logger.event('I', event, task = task, stage = stage, fields = fields,
                     message = if (event == "engine_init") engine.info().headerLine() else null)
             }
-            override fun failure(task: String?, error: DownloadError) = logFailure(task, error)
+            override fun failure(task: String?, error: DownloadError) {
+                if (!closing) logFailure(task, error)
+            }
             override fun line(task: String, line: String) {
+                if (closing) return
                 logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
                     " V task=$task stage=DOWNLOADING event=ytdlp " + line)
             }
@@ -289,6 +294,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        closing = true
         if (::home.isInitialized) home.close()
         logger.event('I', "app_stop", stage = "APP")
         logger.close()

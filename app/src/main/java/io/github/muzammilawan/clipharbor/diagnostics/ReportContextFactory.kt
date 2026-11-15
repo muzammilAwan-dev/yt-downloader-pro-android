@@ -54,5 +54,5 @@ object ReportContextFactory {
         return manager.areNotificationsEnabled()
     }
 
-    const val PHASE = "0"
+    const val PHASE = "1-preview"
 }

@@ -12,8 +12,8 @@ android {
         applicationId = "io.github.muzammilawan.clipharbor"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0-phase0"
+        versionCode = 2
+        versionName = "0.1.0-phase1-preview"
 
         buildConfigField("String", "GIT_SHA", "\"${(findProperty("gitSha") as String?) ?: "unknown"}\"")
 

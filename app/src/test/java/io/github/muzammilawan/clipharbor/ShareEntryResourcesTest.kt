@@ -10,6 +10,11 @@ import org.w3c.dom.Element
 
 /** Offline manifest contract only; Android share resolution and rendered UI still need a device check. */
 class ShareEntryResourcesTest {
+    @Test fun previewBuildIsNotMislabeledAsThePhase0Spike() {
+        assertEquals(2, BuildConfig.VERSION_CODE)
+        assertEquals("0.1.0-phase1-preview", BuildConfig.VERSION_NAME)
+        assertEquals("1-preview", io.github.muzammilawan.clipharbor.diagnostics.ReportContextFactory.PHASE)
+    }
     private val module = sequenceOf(File("."), File("app")).first { File(it, "src/main/AndroidManifest.xml").isFile }
     private val manifest = DocumentBuilderFactory.newInstance().apply {
         isNamespaceAware = true

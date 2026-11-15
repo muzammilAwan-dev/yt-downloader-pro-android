@@ -155,6 +155,10 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   reflected. No external design skill installed/loaded. Review noted missing heading/focus handling and unverified render/
   accessibility/contrast, basic column rather than reviewed wireframes/tokens, and absent audio-only/queue/library.
   Added headings/keyboard dismissal; no claim of TalkBack, large-font, light/dark rendering or end-to-end phone success.
+- **R51:** Static teardown review found that reader callbacks needed explicit task/closed guards: cancellation of a
+  coroutine alone does not prove library reader threads stopped. Added volatile ownership/close visibility, callback
+  gates and fake late-callback tests; activity observers suppress post-close writes. No complete descendant/native
+  process-cleanup guarantee inferred. Build/report metadata explicitly marks the new UI as a Phase 1 preview.
 
 ## Still unverified (carried forward)
 

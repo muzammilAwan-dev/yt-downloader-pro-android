@@ -28,7 +28,8 @@ originally came from untested reference notes. Windows helper/Gradle builds are 
 Debug APKs are signed automatically with a local debug key, so they install normally. Always build the same way: test, then build, then copy to `dist\`. Helper scripts: `tools/build-debug.ps1`
 (Windows) and `tools/build-debug.sh` (macOS/Linux). On this PC script execution is disabled; use the already-tested,
 process-scoped invocation `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1` instead of
-changing a persistent execution policy. Identify each phone log by `gitSha`, not the unchanged phase-spike version name.
+changing a persistent execution policy. Identify each phone log by `gitSha`, not the version name alone. The first UI
+preview now uses `0.1.0-phase1-preview` / versionCode 2; it is not the full completed Phase 1.
 
 ## 3. Get it onto the phone and install
 
@@ -45,7 +46,7 @@ Tester (debug) builds write two copies:
    On Android 7-9 (minSdk 24 means these exist) a public write needs a storage permission that the permissions budget forbids: there, skip the public copy and rely on **Share log**.
    *Implemented in Phase 0 as `log/MediaStoreLogMirror.kt` (5 sessions). After the owner rename, new logs use
    `Download/YTDLP-logs`; older files in `Download/ClipHarbor-logs` are not migrated or deleted.*
-3. The same file is available from **Settings -> Diagnostics -> Share log** (share sheet), and **Run self-test** writes its result block into the current session file.
+3. The same file is available from **Home -> Diagnostics & local logs -> Share log** (share sheet), and **Run self-test** writes its result block into the current session file.
 
 Public-folder trade-off: files in Downloads are not private. Redaction (doc 12 section 4) still applies, and the public copy is **debug/tester builds only**; release builds log to the private folder and export
 only when you tap Share log.
@@ -59,3 +60,14 @@ Fallback with a cable: `adb pull /sdcard/Download/YTDLP-logs/ .` [K] or `adb log
 ```
 edit/ask AI -> .\tools\build-debug.ps1 -> adb install -r dist\*.apk (or copy to phone) -> open app -> Run self-test / use feature -> grab log from Downloads -> give to AI
 ```
+
+## 6. First Phase 1 UI preview phone checks (not yet run)
+
+- Install the newly handed-off, stamped APK over the previous local debug build; confirm the stamp in Copy summary/log.
+- Open Home, paste one HTTPS link and tap **Find formats**. Choose a reported **Up to …p** video+audio height limit,
+  then tap **Download video + audio**. A lower actual selection is possible and must be reported honestly.
+- Keep the app open: this preview is activity-lifetime only, without durable queue or foreground notifications.
+- After saving on Android 10+, tap **Open saved file**; confirm picture/sound and find it under Downloads/YTDLP.
+- Share one text link from another app to YTDLP. It must only prefill for review, not begin extraction or a download.
+- If convenient, send Home/picker screenshots (redact personal URLs/titles), light/dark or larger-text observations,
+  and the newest exported log. Native share/UI/engine/cancel/open-file checks are not implied by JVM tests or compilation.

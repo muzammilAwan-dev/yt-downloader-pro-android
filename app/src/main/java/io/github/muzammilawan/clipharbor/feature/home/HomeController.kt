@@ -62,8 +62,8 @@ class HomeController(
     val state = mutable.asStateFlow()
     private var job: Job? = null
     private var prepared: Prepared? = null
-    private var activeTask: String? = null
-    private var closed = false
+    @Volatile private var activeTask: String? = null
+    @Volatile private var closed = false
 
     private class Prepared(val task: String, val url: String, val snapshot: ResolvedSnapshot?, val createdAt: Long)
 
@@ -184,9 +184,11 @@ class HomeController(
                 val outcome = engine.download(DownloadRequest(input.url, height, directory, input.task,
                     resolvedSnapshot = input.snapshot), onProgress = { event ->
                     event.percent?.takeIf { it.isFinite() && it in 0f..100f }?.toInt()?.let { percent ->
-                        mutable.update { if (it.phase == HomePhase.DOWNLOADING) it.copy(progress = percent) else it }
+                        mutable.update {
+                            if (!closed && activeTask == input.task && it.phase == HomePhase.DOWNLOADING) it.copy(progress = percent) else it
+                        }
                     }
-                }, onLine = { observer.line(input.task, it) }).getOrThrow()
+                }, onLine = { if (!closed && activeTask == input.task) observer.line(input.task, it) }).getOrThrow()
                 currentCoroutineContext().ensureActive()
                 val file = outcome.files.singleOrNull()?.takeIf { it.isFile && it.length() > 0 }
                     ?: throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING))
@@ -248,6 +250,7 @@ class HomeController(
     }
 
     private fun fail(task: String?, throwable: Throwable, stage: Stage) {
+        if (closed) return
         val error = (throwable as? EngineFailure)?.error ?: DownloadError(ErrorCode.UNAVAILABLE, stage, detail = throwable.message)
         observer.failure(task, error)
         discardPrepared()
