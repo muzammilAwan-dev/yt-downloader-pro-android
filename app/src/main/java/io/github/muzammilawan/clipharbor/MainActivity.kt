@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
                         ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text
                     if (text != null) home.receiveShared(text.take(MediaEntry.MAX_INPUT_CHARS + 1).toString())
                     else home.receiveShared("")
-                }, onResolve = { if (!state.busy) home.resolve() }, onSelectHeight = home::selectHeight,
+                }, onResolve = { if (!state.busy) home.resolve() }, onSelectQuality = home::selectQuality,
                 onDownload = { if (!state.busy) home.download() }, onCancel = home::cancel,
                 onRetryEngine = { if (!state.busy) home.initialize() },
                 onPendingLink = home::usePendingLink, onOpenFile = ::openSaved,

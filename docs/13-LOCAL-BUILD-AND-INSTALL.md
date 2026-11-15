@@ -61,13 +61,21 @@ Fallback with a cable: `adb pull /sdcard/Download/YTDLP-logs/ .` [K] or `adb log
 edit/ask AI -> .\tools\build-debug.ps1 -> adb install -r dist\*.apk (or copy to phone) -> open app -> Run self-test / use feature -> grab log from Downloads -> give to AI
 ```
 
-## 6. First Phase 1 UI preview phone checks (not yet run)
+## 6. Phase 1 preview phone checks
 
 - Install the newly handed-off, stamped APK over the previous local debug build; confirm the stamp in Copy summary/log.
-- Open Home, paste one HTTPS link and tap **Find formats**. Choose a reported **Up to …p** video+audio height limit,
-  then tap **Download video + audio**. A lower actual selection is possible and must be reported honestly.
+- Open Home, paste one HTTPS link and tap **Find formats**. Choose an available standard video+audio preset
+  (144/240/360/480/720/1080/1440/2160p), then tap **Download video + audio**. Missing tiers must be disabled, not fake
+  promises. 1440 is QHD; 2160 is 4K. The cap uses the shorter edge, including portrait video. No upscaling.
+- Try a lower preset and a higher available one on the same source; compare the selected dimensions in completion/logs.
+  Nonstandard source sizes are shown honestly; lower bounded fallbacks are possible. High-resolution merges use MKV,
+  lower merges prefer MP4/MKV, and filenames retain the true extension with an `up-to-…p` ceiling tag.
 - Keep the app open: this preview is activity-lifetime only, without durable queue or foreground notifications.
 - After saving on Android 10+, tap **Open saved file**; confirm picture/sound and find it under Downloads/YTDLP.
 - Share one text link from another app to YTDLP. It must only prefill for review, not begin extraction or a download.
 - If convenient, send Home/picker screenshots (redact personal URLs/titles), light/dark or larger-text observations,
   and the newest exported log. Native share/UI/engine/cancel/open-file checks are not implied by JVM tests or compilation.
+
+Owner confirmed first-preview `ec146df` playback with sound and supplied dark Home/picker/progress/saved screenshots.
+The new standard-presets UI/native transfer and MKV playback still need their own phone check. This remains an
+activity-lifetime preview, not finished Phase 1. Thumbnail embedding and audio-only/exact-format selection are not included.

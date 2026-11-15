@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
+import io.github.muzammilawan.clipharbor.core.VideoQuality
 
 @Composable
 fun YtdlpTheme(content: @Composable () -> Unit) {
@@ -62,7 +63,7 @@ fun HomeScreen(
     onUrlChange: (String) -> Unit,
     onPaste: () -> Unit,
     onResolve: () -> Unit,
-    onSelectHeight: (Int) -> Unit,
+    onSelectQuality: (VideoQuality) -> Unit,
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onRetryEngine: () -> Unit,
@@ -111,22 +112,26 @@ fun HomeScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("2 · Choose video quality", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
                         Text(state.title.orEmpty(), style = MaterialTheme.typography.titleSmall)
-                        Text("Video + audio · H.264/AAC preferred; other codecs may be used.", style = MaterialTheme.typography.bodySmall)
+                        Text("Video + audio · Best reported resolution first; H.264/AAC preferred.", style = MaterialTheme.typography.bodySmall)
                         Column(Modifier.selectableGroup()) {
-                            state.heights.forEach { height ->
-                                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).selectable(
-                                    selected = state.selectedHeight == height, enabled = enabled,
-                                    role = Role.RadioButton, onClick = { onSelectHeight(height) }),
+                            state.qualities.forEach { choice ->
+                                val canChoose = enabled && choice.available
+                                Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).selectable(
+                                    selected = state.selectedQuality == choice.quality, enabled = canChoose,
+                                    role = Role.RadioButton, onClick = { onSelectQuality(choice.quality) }),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    RadioButton(selected = state.selectedHeight == height, onClick = null, enabled = enabled)
-                                    Text("Up to ${height}p", modifier = Modifier.padding(start = 12.dp))
+                                    RadioButton(selected = state.selectedQuality == choice.quality, onClick = null, enabled = canChoose)
+                                    Column(Modifier.weight(1f).padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
+                                        Text(choice.quality.label, style = MaterialTheme.typography.titleSmall)
+                                        Text(choice.detail, style = MaterialTheme.typography.bodySmall)
+                                    }
                                 }
                             }
                         }
-                        Text("These are reported height limits, not exact format promises. A lower quality may be selected; the saved result reports the actual selection.",
+                        Text("Presets cap the shorter edge, including portrait video. No upscaling; a lower resolution may be used. The saved result reports selected dimensions. High-resolution merges use MKV.",
                             style = MaterialTheme.typography.bodySmall)
-                        Button(onClick = onDownload, enabled = enabled && state.selectedHeight != null,
+                        Button(onClick = onDownload, enabled = enabled && state.selectedQuality != null,
                             modifier = Modifier.fillMaxWidth()) { Text("Download video + audio") }
                         OutlinedButton(onClick = onCancel, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text("Dismiss selection") }
                     }

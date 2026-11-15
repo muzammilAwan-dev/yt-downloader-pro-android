@@ -199,6 +199,11 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
 - **R58:** Executed corrected JVM checks (133 pass/one host skip, lint 0 errors/7 known warnings), then the optional native
   checker against the existing pinned 2025.11.12 package. All 96 Kotlin-generated selectors passed orientation, codec,
   audio, muxed and bounded/no-fallback cases. This is offline selector evidence, not FFmpeg/live-site/Android execution.
+- **R59:** Integrated typed plans into Home rather than exposing raw frame heights/format commands. UI receives only
+  standard choices and dimension summaries; task-private plans/IDs/replay remain controller-owned. QHD/4K merges use MKV,
+  lower merges retain MP4/MKV. Completion/logs use both selected dimensions and short-edge resolution, not a catalogue
+  maximum or a falsely labelled portrait frame height. New controller fake tests cover portrait, MKV, unknown dimensions
+  and unsupported catalogue. New Compose/native phone flow remains unverified; old owner audio evidence is not extended.
 
 ## Still unverified (carried forward)
 

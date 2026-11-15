@@ -7,6 +7,8 @@ import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.ProgressEvent
 import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
+import io.github.muzammilawan.clipharbor.core.FormatInfo
+import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.engine.EngineFailure
 import io.github.muzammilawan.clipharbor.testing.FakeEngine
 import java.io.File
@@ -31,6 +33,8 @@ class HomeControllerTest {
     private var request: DownloadRequest? = null
     private var holdDownload = false
     private var holdPublish = false
+    private var downloadedWidth: Int? = 640
+    private var downloadedHeight: Int? = 360
     private val progressCallbacks = mutableListOf<(ProgressEvent) -> Unit>()
     private val publishing = CompletableDeferred<Unit>()
     private val fake = FakeEngine()
@@ -48,7 +52,8 @@ class HomeControllerTest {
             onProgress(ProgressEvent(42f, 1, "synthetic"))
             request.outputDirectory.mkdirs()
             val file = File(request.outputDirectory, "synthetic.mp4").apply { writeText("synthetic bytes") }
-            return Result.success(DownloadOutcome(listOf(file), 0, 1, emptyList(), listOf("18"), 360, true))
+            return Result.success(DownloadOutcome(listOf(file), 0, 1, emptyList(), listOf("18"), downloadedHeight, true,
+                selectedWidth = downloadedWidth))
         }
     }
 
@@ -87,13 +92,17 @@ class HomeControllerTest {
         home.download()
         assertNull(request)
         home.resolve(); advanceUntilIdle()
-        assertEquals(listOf(1080, 720, 360), home.state.value.heights)
-        assertEquals(1080, home.state.value.selectedHeight)
-        home.selectHeight(9999)
-        assertEquals(1080, home.state.value.selectedHeight)
-        home.selectHeight(720)
+        assertEquals(VideoQuality.entries.reversed(), home.state.value.qualities.map { it.quality })
+        assertEquals(listOf(VideoQuality.P1080, VideoQuality.P720, VideoQuality.P360),
+            home.state.value.qualities.filter { it.available }.map { it.quality })
+        assertEquals(VideoQuality.P1080, home.state.value.selectedQuality)
+        home.selectQuality(VideoQuality.P2160)
+        assertEquals(VideoQuality.P1080, home.state.value.selectedQuality)
+        home.selectQuality(VideoQuality.P720)
         home.download(); advanceUntilIdle()
         assertEquals(720, request!!.maxHeight)
+        assertEquals(VideoQuality.P720, request!!.qualityPlan!!.quality)
+        assertEquals("mp4/mkv", request!!.mergeContainer)
         assertSame(snapshot, request!!.resolvedSnapshot)
         assertEquals(HomePhase.DONE, home.state.value.phase)
         assertTrue(home.state.value.status.contains("360p"))
@@ -109,7 +118,7 @@ class HomeControllerTest {
         home.editUrl(url); home.resolve(); advanceUntilIdle()
         home.editUrl("https://example.invalid/other")
         assertEquals(HomePhase.READY, home.state.value.phase)
-        assertTrue(home.state.value.heights.isEmpty())
+        assertTrue(home.state.value.qualities.isEmpty())
         assertThrows(IllegalStateException::class.java) {
             snapshot.withFile(url, "task-1", temporary.newFolder()) { error("must not run") }
         }
@@ -230,5 +239,59 @@ class HomeControllerTest {
         assertThrows(IllegalStateException::class.java) {
             snapshot.withFile(url, "task-1", temporary.newFolder()) { error("must not run") }
         }
+    }
+
+    @Test fun portraitResultUsesShortEdgeQualityAndReportsBothDimensions() = runTest {
+        fake.resolveResult = Result.success(FakeEngine.SAMPLE_RESOLVE.copy(media = FakeEngine.SAMPLE_MEDIA.copy(
+            formats = listOf(FormatInfo("18", "mp4", "avc1", "mp4a", 720, 1280)))))
+        downloadedWidth = 720; downloadedHeight = 1280
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        assertEquals(VideoQuality.P720, home.state.value.selectedQuality)
+        home.download(); advanceUntilIdle()
+        assertEquals(720, request!!.qualityPlan!!.quality.pixels)
+        assertTrue(home.state.value.status.contains("720 × 1280 (720p short edge)"))
+        assertFalse(home.state.value.status.contains("1280p"))
+        home.close()
+    }
+
+    @Test fun highQualityMergesUseMkvWithoutPretendingToTranscode() = runTest {
+        fake.resolveResult = Result.success(FakeEngine.SAMPLE_RESOLVE.copy(media = FakeEngine.SAMPLE_MEDIA.copy(
+            formats = listOf(FormatInfo("18", "webm", "vp9", "opus", 2560, 1440)))))
+        downloadedWidth = 2560; downloadedHeight = 1440
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        assertEquals(VideoQuality.P1440, home.state.value.selectedQuality)
+        home.download(); advanceUntilIdle()
+        assertEquals("mkv", request!!.mergeContainer)
+        assertEquals(VideoQuality.P1440, request!!.qualityPlan!!.quality)
+        home.close()
+    }
+
+    @Test fun unknownDownloadedDimensionsAreNotInferredFromChoice() = runTest {
+        downloadedWidth = null; downloadedHeight = null
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.download(); advanceUntilIdle()
+        assertTrue(home.state.value.status.contains("dimensions not fully reported"))
+        assertFalse(home.state.value.status.contains("1080p"))
+        home.close()
+    }
+
+    @Test fun unsupportedCatalogueDoesNotCreateADownloadableChooser() = runTest {
+        fake.resolveResult = Result.success(FakeEngine.SAMPLE_RESOLVE.copy(media = FakeEngine.SAMPLE_MEDIA.copy(
+            formats = listOf(FormatInfo("orphan", "mp4", "avc1", "none", 1280, 720)))))
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        assertEquals(HomePhase.FAILED, home.state.value.phase)
+        assertNull(home.state.value.selectedQuality)
+        home.download(); advanceUntilIdle()
+        assertNull(request)
+        assertEquals(0, publishes)
+        home.close()
     }
 }

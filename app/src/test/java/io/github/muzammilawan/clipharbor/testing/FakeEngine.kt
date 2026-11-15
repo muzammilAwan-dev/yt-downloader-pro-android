@@ -61,10 +61,10 @@ class FakeEngine(
         )
 
         val SAMPLE_FORMATS = listOf(
-            FormatInfo("137", ext = "mp4", vcodec = "avc1.640028", acodec = "none", height = 1080, fps = 30),
-            FormatInfo("136", ext = "mp4", vcodec = "avc1.4d401f", acodec = "none", height = 720, fps = 30),
+            FormatInfo("137", ext = "mp4", vcodec = "avc1.640028", acodec = "none", width = 1920, height = 1080, fps = 30),
+            FormatInfo("136", ext = "mp4", vcodec = "avc1.4d401f", acodec = "none", width = 1280, height = 720, fps = 30),
             FormatInfo("140", ext = "m4a", vcodec = "none", acodec = "mp4a.40.2", approxBytes = 3_000_000),
-            FormatInfo("18", ext = "mp4", vcodec = "avc1.42001E", acodec = "mp4a.40.2", height = 360),
+            FormatInfo("18", ext = "mp4", vcodec = "avc1.42001E", acodec = "mp4a.40.2", width = 640, height = 360),
         )
 
         val SAMPLE_MEDIA = MediaInfo(

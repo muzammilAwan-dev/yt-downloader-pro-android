@@ -74,6 +74,9 @@ wireframes or complete typography/spacing token system has been delivered. Phase
 
 Owner-requested `@explore` static review confirmed alignment and noted missing heading/focus handling plus unverified
 contrast/adaptive/render/accessibility checks. Headings and keyboard dismissal were added; TalkBack focus/traversal,
-large-text/window resizing and rendered light/dark/phone flows remain untested. Quality options are reported video+audio
-height ceilings, not an exact-format or audio-only picker. Queue/library destinations, foreground notifications and
+large-text/window resizing remain untested. Latest owner `ec146df` screenshots establish basic dark Home/chooser/progress/
+saved rendering and owner confirms audio; they do not establish light theme, native share or accessibility coverage.
+The next quality increment replaces raw heights with eight standard short-edge presets and disabled missing tiers,
+source dimensions and resolution-first codec-compatible bounded planning. New preset rendering remains phone-untested.
+This is not an exact-format or audio-only picker. Queue/library destinations, foreground notifications and
 session-aware login remain unfinished. See `PROGRESS.md` for executed JVM/lint/build results and subsequent phone evidence.

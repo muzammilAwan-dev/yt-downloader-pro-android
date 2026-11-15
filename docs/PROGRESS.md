@@ -1111,3 +1111,26 @@ PASS: 96 JVM-generated selectors, yt-dlp 2025.11.12; offline only
 133 passed/one existing host skip; no new lint/compiler warning. All 96 actual Kotlin-generated selectors passed pinned
 yt-dlp sorting/selection with synthetic formats, audio preservation and strict caps. This does not test Android native
 execution, FFmpeg merging or live extraction. Optional tool uses the existing extracted package; no package installed.
+
+Step 4: Home now shows all eight standard tiers with source-derived availability, disabled absent tiers and honest best
+reported dimensions. Default prefers available 1080 or the highest lower tier. Selection passes a private typed plan into
+the engine; plans/IDs/replay never enter UI history. QHD/4K merges use MKV following the owner's desktop rule; lower merges
+keep MP4/MKV fallback without conversion. Completion/logging distinguish selected width/height/short-edge resolution from
+the requested preset. Added fake-controller portrait/MKV/unknown-dimension tests and updated fixture widths; existing share,
+expiry, duplicate-tap and teardown tests retained. Compose rendering/phone download are untested until owner checks;
+full JVM/lint/debug-build verification pending. No permission, dependency, icon or native runtime change.
+
+Step-4 executed verification:
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 2m 15s
+54 actionable tasks: 16 executed, 38 up-to-date
+XML reports: suites=17 tests=138 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+> python tools/check-quality-selectors.py --package <existing verified pinned zip> --fixtures app/build/reports/quality-selectors.xml
+PASS: 96 JVM-generated selectors, yt-dlp 2025.11.12; offline only
+```
+137 passed/one existing Windows symlink skip, seven known lint warnings, debug build successful. New Home/controller
+contracts and retained share/replay/expiry/callback tests pass. No new native phone, rendered Compose/accessibility,
+MKV-playback or live extraction claim. Next: committed-source stamped helper refresh of `dist/app-debug.apk`, not the
+unstamped intermediate build. Keep the app open while downloading; durable queue/service/notifications remain unfinished.
