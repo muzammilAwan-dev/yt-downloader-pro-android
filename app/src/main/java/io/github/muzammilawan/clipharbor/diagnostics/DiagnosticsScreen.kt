@@ -45,12 +45,12 @@ fun DiagnosticsScreen(
     state: DiagnosticsState,
     onUrlChange: (String) -> Unit,
     onRunSelfTest: () -> Unit,
-    onDownload: () -> Unit,
     onShareLog: () -> Unit,
     onCopySummary: () -> Unit,
     onClearLogs: () -> Unit,
     onVerboseChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    externalBusy: Boolean = false,
 ) {
     Column(
         modifier = modifier
@@ -62,7 +62,7 @@ fun DiagnosticsScreen(
         Text(AppInfo.DISPLAY_NAME, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(AppInfo.FULL_NAME, style = MaterialTheme.typography.bodyMedium)
         Text(
-            "Unofficial, free and open source. Powered by yt-dlp. Phase 0 engine spike.",
+            "Unofficial, free and open source. Powered by yt-dlp. Local diagnostics.",
             style = MaterialTheme.typography.bodySmall,
         )
         SelectionContainer {
@@ -75,17 +75,17 @@ fun DiagnosticsScreen(
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Video URL") },
             singleLine = true,
-            enabled = !state.busy,
+            enabled = !state.busy && !externalBusy,
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onRunSelfTest, enabled = !state.busy) { Text("Run self-test") }
-            Button(onClick = onDownload, enabled = !state.busy) { Text("Download 1080p + merge") }
+            Button(onClick = onRunSelfTest, enabled = !state.busy && !externalBusy) { Text("Run self-test") }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onShareLog) { Text("Share log") }
-            OutlinedButton(onClick = onCopySummary) { Text("Copy summary") }
-            OutlinedButton(onClick = onClearLogs, enabled = !state.busy) { Text("Clear logs") }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onShareLog, modifier = Modifier.fillMaxWidth()) { Text("Share log") }
+            OutlinedButton(onClick = onCopySummary, modifier = Modifier.fillMaxWidth()) { Text("Copy summary") }
+            OutlinedButton(onClick = onClearLogs, enabled = !state.busy && !externalBusy,
+                modifier = Modifier.fillMaxWidth()) { Text("Clear logs") }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Switch(checked = state.verbose, onCheckedChange = onVerboseChange)

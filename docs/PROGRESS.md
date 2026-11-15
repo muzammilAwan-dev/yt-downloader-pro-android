@@ -925,3 +925,46 @@ lint XML: errors=0 warnings=7
 115 passed/one existing Windows symlink case skipped. Ten new fake-engine controller cases passed, including explicit
 confirmation, expiration, cancellation/no publish, deferred shares, duplicate taps and actual-height reporting.
 Still no new UI in `dist/`; no native/controller device run claimed.
+
+Step 3: wired an original Material 3 home screen into the single activity. Owner artwork/red-accent light/dark themes,
+bounded-width scrolling/safe/keyboard insets, review/paste action, reported video+audio quality chooser, stream progress,
+honest errors, cancel-before-save and content-URI saved-file opening are implemented. Diagnostics is separate and retains
+self-test/share/copy/clear logs. Self-test and download controls are mutually gated. Removed the temporary direct-1080
+diagnostics path rather than keeping two download owners. `ACTION_SEND` text/plain routes to the existing singleTask
+activity, validates payload and only prefills; all other extras/actions/types are ignored. No new permission/dependency.
+API 24–28 location is explicitly app-specific; saved-file opening is currently offered for MediaStore content URIs only.
+
+At the owner's `@explore` request, ran a read-only static design-alignment check. It confirmed researched Material/state/
+interaction principles are used, but no external design skill was installed/loaded. Addressed heading semantics and IME
+dismissal in this increment; picker/error focus announcements, contrast, large text, TalkBack, keyboard, rendered themes
+and adaptive-window checks remain unverified. This is a basic first usable preview, not final visual polish or the reviewed
+wireframe/token process. No competitor assets/code copied. Offline share resource checks added; full verification pending.
+
+Initial UI check succeeded in 1m 44s. After tightening direct callback/self-test gating, reran all checks:
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 1m 39s
+54 actionable tasks: 15 executed, 39 up-to-date
+XML reports: suites=16 tests=118 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=9
+```
+
+117 passed/one existing Windows symlink case skipped. Two new style warnings (optional modifier ordering and use of
+String.toUri) corrected; final rerun pending. These are JVM/resource tests and successful Compose compilation, not
+rendered Compose/share-sheet/real-engine phone verification. No fresh stamped `dist/` handoff yet.
+
+Final step-3 rerun after the style fixes:
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 2m 6s
+54 actionable tasks: 16 executed, 38 up-to-date
+XML reports: suites=16 tests=118 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+```
+
+117 passed/one existing Windows symlink case skipped; lint is back to the seven known warnings. Home/picker and
+separate Diagnostics compile; share-target resource contracts pass. Native UI/share/download/open-file and rendered
+accessibility tests remain unrun. Next small step labels the build as a Phase 1 preview, hardens late-callback teardown,
+then refreshes `dist/` from clean committed source. No complete Phase 1/queue/service/release claim.

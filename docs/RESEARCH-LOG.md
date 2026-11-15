@@ -150,6 +150,11 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   confirmation. Stream callback percentages are not aggregate video/audio/merge progress. Publication is a commit boundary;
   no cancel button is offered once saving begins. Activity destruction/process death and full native cleanup remain outside
   durable guarantees until the queue/service increment; this is explicitly a foreground-screen tester flow.
+- **R50:** Owner requested `@explore` design alignment review. Read-only specialist compared new HomeScreen/controller
+  against docs 15/16: Material, original review/quality/save states, separate pending shares and honest login limits are
+  reflected. No external design skill installed/loaded. Review noted missing heading/focus handling and unverified render/
+  accessibility/contrast, basic column rather than reviewed wireframes/tokens, and absent audio-only/queue/library.
+  Added headings/keyboard dismissal; no claim of TalkBack, large-font, light/dark rendering or end-to-end phone success.
 
 ## Still unverified (carried forward)
 

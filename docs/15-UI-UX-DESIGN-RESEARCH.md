@@ -64,3 +64,16 @@ These are original interaction principles, not permission to copy layouts, add c
   component/state map. Handle empty/loading/error/recovery, saving, cancellation, notification denial and local diagnostics.
 - Verify rendered Compose across themes/window sizes, large text, TalkBack, keyboard focus and real-device flows.
   Research is not proof that any design or implementation passes these checks.
+
+## First implementation status (15 Nov 2026)
+
+`feature/home/HomeScreen.kt` now implements a basic original Material 3 link-review/video-quality/download/save flow,
+with the owner's icon, red-accent system light/dark palettes and separately accessible Diagnostics. Screen and controller
+use the reviewed interaction principles; no external design skill has been installed or loaded, and no reviewed pair of
+wireframes or complete typography/spacing token system has been delivered. Phase 1 is not final visual polish.
+
+Owner-requested `@explore` static review confirmed alignment and noted missing heading/focus handling plus unverified
+contrast/adaptive/render/accessibility checks. Headings and keyboard dismissal were added; TalkBack focus/traversal,
+large-text/window resizing and rendered light/dark/phone flows remain untested. Quality options are reported video+audio
+height ceilings, not an exact-format or audio-only picker. Queue/library destinations, foreground notifications and
+session-aware login remain unfinished. See `PROGRESS.md` for executed JVM/lint/build results and subsequent phone evidence.
