@@ -248,6 +248,22 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Owner now authorizes pushing verified increments and defers installation until a meaningful phone-testing milestone;
   old phone checks remain unverified and the major-feature-area gate stays in place. No new permission/dependency.
 
+- **R66 (15 Nov 2026):** Checked current Android docs: https://developer.android.com/develop/background-work/services/fgs/launch,
+  https://developer.android.com/develop/background-work/services/fgs/service-types#data-sync and
+  https://developer.android.com/develop/ui/views/notifications/notification-permission: dataSync covers downloads/local processing,
+  requires FOREGROUND_SERVICE + FOREGROUND_SERVICE_DATA_SYNC, has no runtime prerequisite; POST_NOTIFICATIONS is not a launch gate.
+  Android 13+ denied/unrequested permission hides drawer notices (Task Manager still shows FGS); prompt/control UI is a following increment.
+  Owner clarified Android 10+ support: API 29 remains the primary phone baseline; minSdk stays 24, not 33. ServiceCompat guards pre-29 types,
+  channels are API 26+, notification permission checks API 33+, onTimeout(int,int) API 35+; these are conditional paths, not a new minimum.
+  Checked https://developer.android.com/reference/androidx/core/app/ServiceCompat and https://developer.android.com/reference/android/app/Service:
+  promote in onStartCommand, stopForeground(REMOVE) + stopSelfResult latest delivered start, START_NOT_STICKY; stale hosts cannot demote newer work.
+  Checked https://developer.android.com/develop/ui/views/notifications/build-notification: low-importance channel, generic ongoing progress,
+  immutable explicit Activity PendingIntent, no URL/title/cookie data. Existing AndroidX APIs only; owner's launcher icon remains unchanged.
+  Checked https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/with-timeout-or-null.html:
+  bounded await uses a child coroutine and has cancellation/resource races; capture actual task Job outside it, await Unit, retain session
+  through promotion/cancel/timeout and enqueue release after Home's cleanup. Coalesce worker updates; failed starts log only fixed safe errors.
+  Android service/notification behavior is compiled/offline-tested only, not device evidence; no durability, automatic rescheduling or wake lock.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

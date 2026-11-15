@@ -1218,3 +1218,13 @@ Tests executed: 163 total, 162 passed, 1 Windows symlink skip, 0 failures/errors
 No permission/dependency/engine/planner/icon change or APK refresh; Android service/notification/onTimeout wiring remains unimplemented.
 Owner authorizes pushing this and the prior two verified increments; defer phone reinstalls until the working-service milestone, not every step.
 Next: real service session attachment + promotion/progress/cancel/timeout adapter; no automatic rescheduling until durable queue. Keep app open.
+
+### Task-only foreground service admission — 15 Nov 2026
+Service retains shared session before launch, promotes before Engine work; bounded admission, actual-Job cancellation and cleanup-fenced release.
+Generic ongoing progress/saving notification opens Home; non-exported dataSync service connects API 35+ timeout with prompt stop, preserves FGS_TIMEOUT.
+19 new offline tests (18 fake-Engine/session, 1 direct lease); original 11 failed against placeholder (BUILD FAILED in 10s), then implemented.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 27s
+Tests executed: 182 total, 181 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
+R66: Android 10/API 29 stays primary phone baseline, minSdk 24 unchanged; Android 13+ permission is conditional, not the minimum or FGS launch gate.
+No dependency/engine/planner/launcher-icon change or APK refresh; push verified increment. No phone/durability/automatic-restart/wake-lock claim.
+Next: notification Cancel + contextual permission UI, then stamped APK phone milestone. Keep app open until that verification; old phone gates remain open.

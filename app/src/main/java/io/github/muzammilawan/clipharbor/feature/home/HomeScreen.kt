@@ -172,7 +172,7 @@ fun HomeScreen(
                     }
                 }
             }
-            Text("Phase 1 preview · Keep the app open while downloading. Durable queue and foreground notifications are not included yet.",
+            Text("Phase 1 preview · Foreground service is not phone-verified yet; keep the app open. Notification controls, Android 13+ permission prompt and durable queue are still pending.",
                 style = MaterialTheme.typography.bodySmall)
             OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Diagnostics & local logs") }
             Text("Unofficial · Free and open source · ${AppInfo.ENGINE_CREDIT}", style = MaterialTheme.typography.bodySmall)

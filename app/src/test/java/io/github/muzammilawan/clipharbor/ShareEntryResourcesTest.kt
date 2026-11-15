@@ -38,11 +38,20 @@ class ShareEntryResourcesTest {
         assertFalse(payload.hasAttributeNS(android, "scheme"))
     }
 
-    @Test fun entryIncrementAddsNoPermissionOrExportedService() {
+    @Test fun foregroundServiceIsPrivateAndPermissionsStayWithinTheTaskOnlyBudget() {
         val permissions = manifest.getElementsByTagName("uses-permission")
-        assertEquals(1, permissions.length)
-        assertEquals("android.permission.INTERNET", (permissions.item(0) as Element).getAttributeNS(android, "name"))
-        assertEquals(0, manifest.getElementsByTagName("service").length)
+        assertEquals(4, permissions.length)
+        assertEquals(setOf("android.permission.INTERNET", "android.permission.FOREGROUND_SERVICE",
+            "android.permission.FOREGROUND_SERVICE_DATA_SYNC", "android.permission.POST_NOTIFICATIONS"),
+            (0 until permissions.length).map { (permissions.item(it) as Element).getAttributeNS(android, "name") }.toSet())
+        val services = manifest.getElementsByTagName("service")
+        assertEquals(1, services.length)
+        val service = services.item(0) as Element
+        assertEquals(".download.DownloadService", service.getAttributeNS(android, "name"))
+        assertEquals("false", service.getAttributeNS(android, "exported"))
+        assertEquals("dataSync", service.getAttributeNS(android, "foregroundServiceType"))
+        assertFalse(service.hasAttributeNS(android, "process"))
+        assertEquals(0, service.getElementsByTagName("intent-filter").length)
         assertEquals("false", (manifest.getElementsByTagName("application").item(0) as Element)
             .getAttributeNS(android, "usesCleartextTraffic"))
     }

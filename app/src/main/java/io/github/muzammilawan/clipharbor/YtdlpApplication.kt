@@ -3,7 +3,11 @@ package io.github.muzammilawan.clipharbor
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import androidx.core.content.ContextCompat
 import io.github.muzammilawan.clipharbor.core.DownloadError
+import io.github.muzammilawan.clipharbor.core.DownloadForeground
 import io.github.muzammilawan.clipharbor.core.Engine
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.SharedSessionOwner
@@ -15,6 +19,8 @@ import io.github.muzammilawan.clipharbor.diagnostics.ReportContextFactory
 import io.github.muzammilawan.clipharbor.diagnostics.SelfTestRunner
 import io.github.muzammilawan.clipharbor.diagnostics.StorageProbe
 import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
+import io.github.muzammilawan.clipharbor.download.DownloadService
+import io.github.muzammilawan.clipharbor.download.ForegroundAdmission
 import io.github.muzammilawan.clipharbor.feature.home.HomeController
 import io.github.muzammilawan.clipharbor.feature.home.HomeObserver
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
@@ -27,7 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Process-local wiring only. No service is connected yet: keep the app open. */
+/** Process-local session and service wiring. No durable queue or process-death recovery. */
 class YtdlpApplication : Application() {
     private val engine: Engine by lazy { YoutubeDlEngine(this) }
     private val storage: StorageProbe by lazy { AndroidStorageProbe(this) }
@@ -45,9 +51,24 @@ class YtdlpApplication : Application() {
 
     val sessions: SharedSessionOwner<DownloadSession> by lazy {
         SharedSessionOwner(Dispatchers.Main.immediate, create = { scope ->
-            DownloadSession(this, scope, engine, logger, storage, network)
+            DownloadSession(this, scope, engine, logger, storage, network, foreground)
         }, stop = DownloadSession::close)
     }
+
+    val foreground: ForegroundAdmission by lazy {
+        val main = Handler(Looper.getMainLooper())
+        ForegroundAdmission(retain = { task ->
+            val attached = sessions.attach()
+            object : ForegroundAdmission.Owner {
+                override fun timeout() { attached.value.home.onForegroundTimeout(task) {} }
+                override fun close() { attached.close() }
+            }
+        }, start = { task ->
+            ContextCompat.startForegroundService(this, DownloadService.intent(this, task))
+        }, stopPending = { stopService(DownloadService.intent(this)) }, dispatch = { action -> main.post { action() } })
+    }
+
+    internal fun foregroundEvent(event: String) { logger.event('I', event, stage = "FGS") }
 }
 
 /** Home, diagnostics and publication share a session scope without retaining an Activity. */
@@ -58,6 +79,7 @@ class DownloadSession(
     val logger: AppLogger,
     val storage: StorageProbe,
     private val network: NetworkProbe,
+    foreground: DownloadForeground,
 ) {
     private val appContext = context.applicationContext
     private val publisher = MediaStorePublisher(appContext)
@@ -84,7 +106,7 @@ class DownloadSession(
             logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
                 " V task=$task stage=DOWNLOADING event=ytdlp " + line)
         }
-    })
+    }, foreground = foreground)
 
     init { logger.event('I', "session_start", stage = "APP") }
 
