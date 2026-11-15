@@ -1,7 +1,10 @@
 # Progress log
 
-Re-read `AGENTS.md` and this file after any context reset. Every claim below is either backed by pasted command output or marked
-**untested**. Rules: small steps (~5 files), then build/test, then commit.
+**Append-only history. Do not read this file in full** (about 19k tokens): current state and next steps are in `docs/STATE.md`;
+after a context reset re-read `AGENTS.md` and `docs/STATE.md` only, and `grep` or `tail` this file for a specific step.
+Every claim below is either backed by pasted command output or marked **untested**. New entries: at most 10 lines, with a
+3-line check summary instead of full Gradle output (raw evidence for a phase gate goes in `docs/evidence/`).
+Rules: small steps (~5 files), then build/test, then commit.
 
 ## Environment setup (docs/14-AGENT-SETUP-TASK.md) — in progress
 
@@ -1175,3 +1178,13 @@ Limits remain explicit: native standard-plan/UI/merge/transfer and new MKV playb
 site/bot/login/decoder promise. Thumbnail embedding is separately deferred; Unicode-safe filename restrictions retained
 instead of ASCII-only restriction. No audio-only/exact-format picker, durable queue/foreground notifications or full
 native cancellation guarantee yet. Keep the app open. Following documentation-only commit does not change APK/stamp.
+
+### Owner workflow review + phone evidence — 15 Nov 2026
+Reviewed owner agent/config/docs/Dependabot edits; narrowed shell grants/default-denied reviewer, corrected handoff and owner-approved /models guidance.
+R61: `74ce7cf` portrait picker and 1080×1920 audio/video MP4 merge/MediaStore save confirmed; only one quality download, self-test 7/7.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 24s
+Tests FROM-CACHE: 138 total, 137 passed, 1 skipped, 0 failures/errors (not freshly executed).
+Lint: 0 errors / 7 known warnings; analysis FROM-CACHE, report generated.
+Static JSONC/command/contract/doc-index checks passed; full handoff checker blocked by missing PyYAML, not installed.
+Untested: OpenCode runtime/reload/permissions/free inference, second-preset/new-file playback and MKV/accessibility checks; APK/icon/engine unchanged.
+One reviewed docs/config change set committed; owner explicitly authorized a non-force push. Next: foreground service/progress/cancel notification.

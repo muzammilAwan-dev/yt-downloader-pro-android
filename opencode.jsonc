@@ -1,0 +1,131 @@
+// OpenCode PROJECT config for YTDLP (Android). Safe to commit: it contains no keys and no personal paths.
+//
+// Where things live (OpenCode merges user-level and project config; project wins on conflicts):
+//   USER level   %USERPROFILE%\.config\opencode\opencode.json : the `agentrouter` provider and its API key, plus your MCP servers (browse, rea).
+//   PROJECT level  this file : model choice, agents, permissions, shared commands (.opencode/commands).
+// Never put the API key in this file. In the user-level file use  "apiKey": "{env:AGENTROUTER_API_KEY}"  and set that
+// environment variable (OpenCode substitutes {env:NAME} in config; shell-style $NAME is NOT expanded).
+//
+// Written in the "V1" key shape (agent / permission / plugin). The current schema still accepts these keys (marked
+// deprecated) and OpenCode 2 normalizes them in memory, so one file works on both major versions.
+// Sources: https://opencode.ai/docs/migrate-v1/ and https://opencode.ai/config.json (checked 15 Nov 2026).
+//
+// FALLBACK: OpenCode has NO built-in automatic model fallback (open request anomalyco/opencode#7602).
+// When the primary is rate-limited or down: select a free model with /models in the same session.
+// The build-free agents are optional profiles; in V2 an already selected session model takes precedence, so verify the model.
+// The session and the instructions carry over. Free models are rate-limited per IP and are "free for a limited time";
+// /models is the authoritative list.
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Primary: GPT-6.1 Sol through AgentRouter (provider id `agentrouter`, defined in your user-level config).
+  // On another machine or a fresh account that provider will not exist: add it there first, or switch to a free model.
+  "model": "agentrouter/gpt-6.1-sol",
+
+  // Always loaded, survives compaction. Keep it short. AGENTS.md is loaded automatically.
+  "instructions": ["docs/STATE.md"],
+
+  "agent": {
+    // Free fallback 1: OpenCode Zen's free DeepSeek V4.1 Flash. Per the Zen docs its provider keeps zero retention and does not
+    // train on your data. No API key needed; free models load on first launch of `opencode`.
+    "build-free": {
+      "description": "Build agent on a FREE model (opencode/deepseek-v4.1-flash-free). Use when the primary is rate-limited or down; keep steps even smaller.",
+      "mode": "primary",
+      "model": "opencode/deepseek-v4.1-flash-free"
+    },
+    // Free fallback 2: also zero retention / no training per the Zen docs. Use when fallback 1 is rate-limited.
+    "build-free-2": {
+      "description": "Build agent on a second FREE model (opencode/glm-5.3-flash-free).",
+      "mode": "primary",
+      "model": "opencode/glm-5.3-flash-free"
+    },
+    // Read-only second pair of eyes. Invoke with /review or @reviewer. Inherits the primary model.
+    "reviewer": {
+      "description": "Read-only reviewer: checks a diff against AGENTS.md rules, contracts/*.json and the permission budget.",
+      "mode": "subagent",
+      "prompt": "You are a read-only code reviewer for YTDLP, an unofficial GPL-3.0 Android front end for yt-dlp. Review the change you are pointed at (default: `git diff HEAD~1`, or `git diff` if the tree is dirty). Check it against AGENTS.md (Never rules, permission budget, GPL-only code, no cookies persisted, redacted logs, no cleartext), contracts/errors.json, contracts/allowed-options.json and the open items in docs/STATE.md. Report findings ranked: crash or data loss, then security/privacy, then YouTube-extraction breakage, then missing tests, then style. Give file:line for each. Say `none found` when there is nothing real. Do not edit files and do not claim anything builds or passes unless you ran the command and saw the output.",
+      "permission": {
+        "*": "deny",
+        "glob": "allow",
+        "grep": "allow",
+        "read": {
+          "*": "allow",
+          "*.env": "deny",
+          "*.env.*": "deny",
+          "local.properties": "deny",
+          "keystore.properties": "deny",
+          "*.jks": "deny",
+          "*.keystore": "deny"
+        },
+        "bash": {
+          "*": "deny",
+          "git diff": "allow",
+          "git diff HEAD~1": "allow",
+          "git diff --check": "allow",
+          "git diff --stat": "allow",
+          "git log -5 --oneline": "allow",
+          "git status --short": "allow",
+          "git status --short --branch": "allow"
+        }
+      }
+    }
+  },
+
+  // Rules: the LAST matching pattern wins, so broad rules come first. Patterns cover Windows (gradlew.bat, PowerShell)
+  // and Linux/macOS (./gradlew).
+  "permission": {
+    "edit": "allow",
+    "webfetch": "allow",
+    // Outside-project access asks unless already approved (OpenCode 2 would otherwise allow it).
+    // This is an approval guard, not a sandbox; the clean-room rule in AGENTS.md also applies to shell/MCP tools.
+    "external_directory": "ask",
+    "read": {
+      "*": "allow",
+      "*.env": "ask",
+      "*.env.*": "ask",
+      "*.env.example": "allow",
+      "local.properties": "ask",
+      "keystore.properties": "deny",
+      "*.jks": "deny",
+      "*.keystore": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git show*": "allow",
+      "git branch": "allow",
+      "git branch --show-current": "allow",
+      "git add *": "allow",
+      "git commit *": "allow",
+      "git push *": "ask",
+      "git push --force*": "deny",
+      "git push -f*": "deny",
+      "git reset --hard*": "deny",
+      "git clean *": "deny",
+      ".\\gradlew.bat testDebugUnitTest lintDebug --console=plain": "allow",
+      "./gradlew testDebugUnitTest lintDebug --console=plain": "allow",
+      ".\\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain": "allow",
+      "./gradlew testDebugUnitTest lintDebug assembleDebug --console=plain": "allow",
+      "powershell -NoProfile -ExecutionPolicy Bypass -File .\\tools\\build-debug.ps1": "allow",
+      "python tools/verify_handoff.py": "allow",
+      "python3 tools/verify_handoff.py": "allow",
+      "adb devices*": "allow",
+      "adb install *": "ask",
+      "rm -rf *": "deny",
+      "Remove-Item *": "ask"
+    }
+  },
+
+  // Gradle writes thousands of files; do not watch them.
+  "watcher": {
+    "ignore": ["app/build/**", "build/**", ".gradle/**", ".kotlin/**", "dist/**", ".idea/**"]
+  }
+
+  // OPTIONAL, not enabled: the Superpowers skills plugin (brainstorming, TDD, plans, review).
+  // It adds a lot of process text to every session; fine on GPT-6.1 Sol, heavy on the free Flash models.
+  // OpenCode 2 runs a new plugin API, so check that your OpenCode version supports it before enabling.
+  // Install per https://github.com/obra/superpowers (docs/README.opencode.md), then verify by asking "Tell me about your superpowers".
+  // , "plugin": ["superpowers@git+https://github.com/obra/superpowers.git#v5.0.3"]
+}

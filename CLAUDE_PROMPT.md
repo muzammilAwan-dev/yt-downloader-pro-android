@@ -1,5 +1,8 @@
 # Prompt for Claude (web chat). Paste everything below the line into a new chat and attach this zip.
 
+> Note (15 Nov 2026): written on 14 Nov when the product was called ClipHarbor; it is now **YTDLP** (see `AGENTS.md`). Setup, Phase 0 and the naming
+> choice are done. Attach `docs/STATE.md` too, and treat the Phase 0 and Step -1 parts below as history.
+
 ---
 
 You are the lead Android engineer for a free, open-source, ad-free, no-telemetry app: **an unofficial Android version of yt-dlp** (a clean front-end and alternative to apps like

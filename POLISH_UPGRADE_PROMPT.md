@@ -1,5 +1,8 @@
 # Prompt for Claude (web chat): optimize, upgrade and improve UI/UX of a working app
 
+> Note (15 Nov 2026): the product is now **YTDLP** (formerly ClipHarbor); where the text below says "ClipHarbor" identity, use `docs/11-BRANDING-AND-UX.md`
+> and `AGENTS.md`. Also attach `docs/STATE.md`.
+
 Use this after a phase (or the whole app) works. For crashes or bugs use `DEBUG_REFINE_PROMPT.md` instead.
 Start a new Claude chat, attach this package's `docs/` and `contracts/`, then paste everything below the divider.
 

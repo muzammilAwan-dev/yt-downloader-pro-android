@@ -27,5 +27,12 @@ Thumbs.db
 # Python tooling
 __pycache__/
 *.pyc
-# opencode local state (keep AGENTS.md)
-.opencode/
+# opencode: commit .opencode/commands, agents and skills (shared workflow); ignore only local state
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
+.opencode/bun.lockb
+
+# Local OpenCode config may hold an API key: never commit it (the shared project config is opencode.jsonc)
+/opencode.json

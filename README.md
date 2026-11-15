@@ -62,8 +62,34 @@ and replaced later.
 | `tools/` | build/check helpers (PowerShell; `.sh` variants for other machines) |
 | `dist/` | local APK output (git-ignored) |
 
-Start with `AGENTS.md` (contribution rules), then `docs/01-PLAN.md`, then `docs/PROGRESS.md` for the current state.
-UI/UX resource research and the screenshot checklist: `docs/15-UI-UX-DESIGN-RESEARCH.md`.
+Start with `AGENTS.md` (contribution rules), then `docs/STATE.md` (current state, short), then `docs/01-PLAN.md`.
+`opencode.jsonc` and `.opencode/commands/` hold the shared AI-agent workflow (`/next`, `/verify`, `/review`, `/handoff`).
+
+## Documentation index
+
+| File | What |
+|---|---|
+| `docs/STATE.md` | current state and next steps (short, kept current) |
+| `docs/PROGRESS.md` | append-only history with pasted command output; search it, do not read it whole |
+| `docs/RESEARCH-LOG.md` | dated research findings `R1`, `R2`, ... with sources |
+| `docs/01-PLAN.md` | plan, scope, phases, risks |
+| `docs/02-ARCHITECTURE.md` | architecture and state machine |
+| `docs/03-SNAPTUBE-REA-FINDINGS.md` | observations from the owner's static analysis of a competitor (ideas only, no code) |
+| `docs/04-OPEN-SOURCE-REFERENCES.md` | open-source prior art and the owner's desktop app |
+| `docs/05-YOUTUBE-ENGINE-NOTES.md` | yt-dlp, JS runtime, PO-token notes |
+| `docs/06-ANDROID-PLATFORM-NOTES.md` | foreground services, storage, notifications |
+| `docs/07-LICENSE-AND-DISTRIBUTION.md` | licensing and distribution channels |
+| `docs/08-DESKTOP-CONTRACT.md` | what the desktop app does that Android must match |
+| `docs/09-TEST-STRATEGY.md` | test strategy |
+| `docs/10-VERIFICATION-LOG.md` | which facts are verified and how |
+| `docs/11-BRANDING-AND-UX.md` | naming, identity, UX principles |
+| `docs/12-AUTOMATED-TESTS-AND-DEEP-LOGGING.md` | tests, diagnostics screen, log format |
+| `docs/13-LOCAL-BUILD-AND-INSTALL.md` | build on the PC, install on the phone |
+| `docs/14-AGENT-SETUP-TASK.md` | the one-time environment setup (done 14 Nov 2026) |
+| `docs/15-UI-UX-DESIGN-RESEARCH.md` | UI/UX research and screenshot checklist |
+| `docs/16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` | browser/login research (not implemented) |
+| `docs/dev-setup.md` | exact toolchain versions and re-creation steps |
+| `docs/AGENT-AUDIT-2026-11-15.md` | audit of the agent setup, with sources and open decisions |
 
 ## Contributing
 

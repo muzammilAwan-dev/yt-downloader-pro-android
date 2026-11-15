@@ -9,3 +9,12 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      androidx:
+        patterns:
+          - "androidx.*"
+    ignore:
+      # Kotlin must match the version bundled with AGP (gradle/libs.versions.toml comment); bump it together with AGP by hand.
+      - dependency-name: "org.jetbrains.kotlin.*"
+      # Pinned to the version already on the classpath for Kotlin 2.2.x metadata compatibility (docs/PROGRESS.md, lint warning 3/4).
+      - dependency-name: "org.jetbrains.kotlinx:kotlinx-coroutines-*"

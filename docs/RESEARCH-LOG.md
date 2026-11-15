@@ -210,6 +210,16 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   in APK, compiled share/cleartext/native extraction settings and unchanged adaptive inset. Phone standard-picker/native
   download and high-resolution MKV playback remain unverified. No native/runtime/icon/dependency/permission update.
 
+- **R61 (15 Nov 2026):** Owner supplied `74ce7cf` phone log/picker screenshot: 1080×1920 selection `137+140`,
+  task-private replay reused, MP4 audio/video merge, 7,737,267-byte MediaStore publish, later self-test 7/7. Only one quality
+  download; no new playback/second-quality/MKV/accessibility claim. Runtime output confirms yt-dlp 2025.11.12 and bundled
+  Python/QuickJS/FFmpeg despite early header placeholders. No media titles/URLs or raw personal log committed.
+- **R62 (15 Nov 2026):** Checked https://opencode.ai/docs/migrate-v1, /docs/permissions, /docs/agents, /docs/models and
+  /docs/zen: supported legacy config retained; narrowed broad shell grants and default-denied reviewer tools. V2 docs
+  conflict with zip-audit Tab-only fallback advice: session model selection persists; use `/models` to explicitly confirm
+  the free model (owner approved this correction; same manual-fallback plan, no plugin). Official docs list both chosen free IDs and privacy terms;
+  inference/reload/enforcement untested (`opencode` absent from PATH). Handoff script blocked by missing PyYAML; not installed.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

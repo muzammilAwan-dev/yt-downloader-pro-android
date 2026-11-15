@@ -1,5 +1,7 @@
 # Prompt for Claude (web chat): debug and refine code another AI wrote
 
+> Note (15 Nov 2026): the product is now **YTDLP** (formerly ClipHarbor). Also attach `docs/STATE.md`; it is the short current-state file.
+
 Use this AFTER the opencode agent (or any first build) has produced code. Start a new Claude chat, attach this package's `docs/` and `contracts/`
 plus the files/logs for the problem (see "What to attach"), then paste everything below the divider.
 
