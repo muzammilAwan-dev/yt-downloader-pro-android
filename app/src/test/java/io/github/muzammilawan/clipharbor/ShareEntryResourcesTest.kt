@@ -52,6 +52,13 @@ class ShareEntryResourcesTest {
         assertEquals("dataSync", service.getAttributeNS(android, "foregroundServiceType"))
         assertFalse(service.hasAttributeNS(android, "process"))
         assertEquals(0, service.getElementsByTagName("intent-filter").length)
+        val receivers = manifest.getElementsByTagName("receiver")
+        assertEquals(1, receivers.length)
+        val receiver = receivers.item(0) as Element
+        assertEquals(".download.DownloadCancelReceiver", receiver.getAttributeNS(android, "name"))
+        assertEquals("false", receiver.getAttributeNS(android, "exported"))
+        assertFalse(receiver.hasAttributeNS(android, "process"))
+        assertEquals(0, receiver.getElementsByTagName("intent-filter").length)
         assertEquals("false", (manifest.getElementsByTagName("application").item(0) as Element)
             .getAttributeNS(android, "usesCleartextTraffic"))
     }

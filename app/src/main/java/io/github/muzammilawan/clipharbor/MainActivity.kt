@@ -1,10 +1,15 @@
 package io.github.muzammilawan.clipharbor
 
+import android.Manifest
+import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -22,12 +27,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.SharedSessionOwner
 import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsScreen
 import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsState
 import io.github.muzammilawan.clipharbor.diagnostics.ReportContextFactory
+import io.github.muzammilawan.clipharbor.download.DownloadService
+import io.github.muzammilawan.clipharbor.download.NotificationAccess
+import io.github.muzammilawan.clipharbor.download.notificationAccess
+import io.github.muzammilawan.clipharbor.feature.home.HomePhase
 import io.github.muzammilawan.clipharbor.feature.home.HomeScreen
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
 import io.github.muzammilawan.clipharbor.feature.home.YtdlpTheme
@@ -36,7 +47,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Single activity: Phase 1 link review/quality picker with separately accessible local diagnostics.
- * Attaches to a shared process-local session; no service/background protection is connected yet.
+ * Attaches to the shared task/service session; no process-death recovery or durable queue.
  */
 class MainActivity : ComponentActivity() {
     private lateinit var attachment: SharedSessionOwner.Attachment<DownloadSession>
@@ -47,6 +58,14 @@ class MainActivity : ComponentActivity() {
     private val home get() = session.home
     private val diagnostics get() = session.diagnostics
     private var showDiagnostics by mutableStateOf(false)
+    private var notificationVisibility by mutableStateOf(NotificationAccess.DISABLED)
+    private var notificationRequestPending by mutableStateOf(false)
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notificationRequestPending = false
+        refreshNotificationAccess() // Re-read platform state, never resume/start a download from this callback.
+        if (::attachment.isInitialized) logger.event('I', "notification_permission_result", stage = "APP",
+            fields = mapOf("access" to notificationVisibility.name))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +73,7 @@ class MainActivity : ComponentActivity() {
         // Do not replay the original share over a retained task; fresh process/session still prefills it.
         if (savedInstanceState == null || home.state.value.url.isEmpty()) receiveShare(intent)
         home.initialize()
+        refreshNotificationAccess()
 
         setContent {
             YtdlpTheme {
@@ -64,6 +84,34 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        refreshNotificationAccess()
+    }
+
+    private fun refreshNotificationAccess() {
+        val permissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        val channelEnabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
+            getSystemService(NotificationManager::class.java).getNotificationChannel(DownloadService.CHANNEL)?.importance !=
+            NotificationManager.IMPORTANCE_NONE
+        notificationVisibility = notificationAccess(Build.VERSION.SDK_INT, permissionGranted,
+            NotificationManagerCompat.from(this).areNotificationsEnabled(), channelEnabled)
+    }
+
+    private fun requestNotifications() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || notificationRequestPending ||
+            home.state.value.phase != HomePhase.CHOOSING || diagnostics.busy) return
+        refreshNotificationAccess()
+        if (notificationVisibility != NotificationAccess.PERMISSION_REQUIRED) return
+        notificationRequestPending = true
+        try { notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
+        catch (_: Exception) {
+            notificationRequestPending = false
+            logger.event('W', "notification_permission_unavailable", stage = "APP")
+        }
+    }
+
     @Composable
     private fun AppRoute() {
         val ui by home.state.collectAsState()
@@ -71,6 +119,8 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = showDiagnostics) { showDiagnostics = false }
         if (!showDiagnostics) {
             HomeScreen(state = ui, externalBusy = state.busy, onUrlChange = home::editUrl,
+                notificationAccess = notificationVisibility, notificationRequestPending = notificationRequestPending,
+                onRequestNotifications = ::requestNotifications,
                 onPaste = {
                     val text = getSystemService(ClipboardManager::class.java)?.primaryClip
                         ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text

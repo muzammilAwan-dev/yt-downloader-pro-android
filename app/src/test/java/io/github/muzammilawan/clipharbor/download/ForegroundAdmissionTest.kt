@@ -77,6 +77,7 @@ class ForegroundAdmissionTest {
             retains++
             object : ForegroundAdmission.Owner {
                 override fun timeout() { attached.value.onForegroundTimeout(task) {} }
+                override fun cancel() { attached.value.cancel() }
                 override fun close() { releases++; attached.close() }
             }
         }, start = { task ->
@@ -114,6 +115,7 @@ class ForegroundAdmissionTest {
         }
         override fun progress(percent: Int) { notices += "progress:$percent" }
         override fun publishing() { notices += "publishing" }
+        override fun cancelling() { notices += "cancelling" }
         override fun stop() { if (stops == 0) { stops++; events += "stop" } }
     }
 
@@ -431,6 +433,7 @@ class ForegroundAdmissionTest {
         admission = ForegroundAdmission(retain = {
             object : ForegroundAdmission.Owner {
                 override fun timeout() {}
+                override fun cancel() {}
                 override fun close() { releases++ }
             }
         }, start = { admission.serviceStarted(it, host) }, stopPending = { error("promoted") },
@@ -442,8 +445,11 @@ class ForegroundAdmissionTest {
         checkNotNull(queue.poll()).invoke()
         assertEquals(listOf("progress:100"), host.notices)
         lease.publishing()
+        lease.progress(99) // A worker callback cannot replace the queued saving notice.
         checkNotNull(queue.poll()).invoke()
         assertEquals(listOf("progress:100", "publishing"), host.notices)
+        lease.progress(100) // Nor restore the notification's Cancel action after saving renders.
+        assertTrue(queue.isEmpty())
         lease.close(); lease.close(); lease.progress(15); lease.publishing()
         assertEquals(1, queue.size)
         checkNotNull(queue.poll()).invoke()
@@ -470,5 +476,127 @@ class ForegroundAdmissionTest {
         runCurrent()
         assertEquals(1, h.downloads)
         h.home.cancel(); advanceUntilIdle(); h.flush(); h.close()
+    }
+
+    @Test fun notificationCancelRetainsSessionThroughCleanupWithoutTheActivity() = runTest {
+        val h = Harness(this)
+        h.home.initialize(); advanceUntilIdle()
+        h.choose(); advanceUntilIdle()
+        h.home.download()
+        val host = Host(h.events)
+        h.admission.serviceStarted("task-1", host); runCurrent()
+        h.ui.close()
+        h.cleanup = CompletableDeferred()
+        h.callback!!(ProgressEvent(10f, 0, "Cookie: private"))
+        assertTrue(h.admission.cancel("task-1"))
+        assertFalse(h.admission.cancel("task-1"))
+        h.callback!!(ProgressEvent(99f, 0, "late progress"))
+        runCurrent(); h.flush()
+        assertEquals(listOf("cancelling"), host.notices)
+        assertEquals(listOf("task-1"), h.fake.cancelledProcessIds)
+        assertEquals(0, h.releases)
+        assertEquals(0, host.stops)
+        h.cleanup!!.complete(Unit); advanceUntilIdle(); h.flush()
+        assertEquals(HomePhase.CANCELED, h.home.state.value.phase)
+        assertEquals(0, h.publishes)
+        assertEquals(1, h.releases)
+        assertEquals(1, host.stops)
+        h.assertSnapshotClosed()
+        h.close()
+    }
+
+    @Test fun notificationCancelCannotInterruptSavingEvenBeforeItsNoticeHasBeenDispatched() = runTest {
+        val h = Harness(this)
+        h.publication = CompletableDeferred()
+        h.home.initialize(); advanceUntilIdle()
+        h.choose(); advanceUntilIdle()
+        h.home.download()
+        val host = Host(h.events)
+        h.admission.serviceStarted("task-1", host); runCurrent()
+        h.finish.complete(Unit); runCurrent()
+        assertEquals(HomePhase.PUBLISHING, h.home.state.value.phase)
+        assertFalse(h.admission.cancel("task-1"))
+        assertTrue(h.fake.cancelledProcessIds.isEmpty())
+        h.publication!!.complete(Unit); advanceUntilIdle(); h.flush()
+        assertEquals(HomePhase.DONE, h.home.state.value.phase)
+        assertEquals(1, h.publishes)
+        h.close()
+    }
+
+    @Test fun staleNotificationCancelCannotAffectANewerTask() = runTest {
+        val h = Harness(this)
+        assertFalse(h.admission.cancel("task-1"))
+        h.home.initialize(); advanceUntilIdle()
+        h.choose(); advanceUntilIdle()
+        h.home.download()
+        val old = Host(h.events)
+        h.admission.serviceStarted("task-1", old); runCurrent()
+        h.home.cancel(); advanceUntilIdle(); h.flush()
+        h.choose(); advanceUntilIdle()
+        h.home.download()
+        val current = Host(h.events)
+        h.admission.serviceStarted("task-2", current); runCurrent()
+        assertFalse(h.admission.cancel("task-1"))
+        assertFalse(h.admission.cancel(null))
+        assertFalse(h.admission.cancel(url))
+        assertEquals(HomePhase.DOWNLOADING, h.home.state.value.phase)
+        assertEquals(0, current.stops)
+        assertEquals(listOf("task-1"), h.fake.cancelledProcessIds)
+        h.home.cancel(); advanceUntilIdle(); h.flush(); h.close()
+    }
+
+    @Test fun notificationCancelNativeFailureStillInterruptsTheActualJobAndClosesReplay() = runTest {
+        val h = Harness(this)
+        h.home.initialize(); advanceUntilIdle()
+        h.choose(); advanceUntilIdle()
+        h.home.download()
+        val host = Host(h.events)
+        h.admission.serviceStarted("task-1", host); runCurrent()
+        h.rejectNativeCancel = true
+        assertThrows(IllegalStateException::class.java) { h.admission.cancel("task-1") }
+        advanceUntilIdle(); h.flush()
+        assertEquals(HomePhase.CANCELED, h.home.state.value.phase)
+        assertEquals(1, h.releases)
+        assertEquals(0, h.publishes)
+        h.assertSnapshotClosed()
+        h.close()
+    }
+
+    @Test fun notificationCancelAfterTimeoutCannotOverwriteThePauseReason() = runTest {
+        val h = Harness(this)
+        h.home.initialize(); advanceUntilIdle()
+        h.choose(); advanceUntilIdle()
+        h.home.download()
+        val host = Host(h.events)
+        h.admission.serviceStarted("task-1", host); runCurrent()
+        h.cleanup = CompletableDeferred()
+        h.admission.timedOut(host, host::stop)
+        assertFalse(h.admission.cancel("task-1"))
+        runCurrent()
+        assertEquals(HomePhase.PAUSING, h.home.state.value.phase)
+        h.cleanup!!.complete(Unit); advanceUntilIdle(); h.flush()
+        assertEquals(ErrorCode.FGS_TIMEOUT, h.home.state.value.pauseReason)
+        h.close()
+    }
+
+    @Test fun timeoutDuringUserCancelCleanupStopsServiceWithoutTurningCancelIntoAPause() = runTest {
+        val h = Harness(this)
+        h.home.initialize(); advanceUntilIdle()
+        h.choose(); advanceUntilIdle()
+        h.home.download()
+        val host = Host(h.events)
+        h.admission.serviceStarted("task-1", host); runCurrent()
+        h.cleanup = CompletableDeferred()
+        assertTrue(h.admission.cancel("task-1"))
+        runCurrent()
+        h.admission.timedOut(host, host::stop)
+        assertNull(h.home.state.value.pauseReason)
+        assertEquals(0, h.releases)
+        h.cleanup!!.complete(Unit); advanceUntilIdle(); h.flush()
+        assertEquals(HomePhase.CANCELED, h.home.state.value.phase)
+        assertNull(h.home.state.value.pauseReason)
+        assertEquals(listOf("task-1"), h.fake.cancelledProcessIds)
+        assertEquals(1, h.releases)
+        h.close()
     }
 }

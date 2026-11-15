@@ -31,15 +31,28 @@ class ForegroundAdmission(
 
     interface Owner {
         fun timeout()
+        fun cancel()
         fun close()
     }
     interface Host {
         fun promote()
         fun progress(percent: Int)
         fun publishing()
+        fun cancelling() {}
         fun stop()
     }
     private var current: Admission? = null
+
+    /** User Cancel cannot cross publication; stale/repeated actions never touch newer work. */
+    fun cancel(taskId: String?): Boolean {
+        val record = current ?: return false
+        if (record.task != taskId || record.host == null || !record.open.get() || !record.job.isActive ||
+            record.publishing.get() || record.timedOut || record.cancelRequested) return false
+        record.cancelRequested = true
+        try { record.host?.cancelling() } catch (_: Exception) { /* Optional notification refresh. */ }
+        try { record.owner.cancel() } finally { record.job.cancel() }
+        return true
+    }
 
     override suspend fun acquire(taskId: String): DownloadForeground.Lease {
         require(taskId.matches(Regex("[A-Za-z0-9_-]{1,80}"))) { "Invalid task identifier" }
@@ -100,7 +113,7 @@ class ForegroundAdmission(
     fun timedOut(host: Host, stop: () -> Unit) {
         try { stop() } finally {
             val record = current
-            if (record?.host === host && record.open.get() && !record.timedOut) {
+            if (record?.host === host && record.open.get() && !record.timedOut && !record.cancelRequested) {
                 record.timedOut = true
                 try { record.owner.timeout() } finally { record.job.cancel() }
             }
@@ -115,14 +128,16 @@ class ForegroundAdmission(
         val open = AtomicBoolean(true)
         var host: Host? = null // Main-thread only.
         var timedOut = false
+        var cancelRequested = false
+        val publishing = AtomicBoolean(false)
         private val latest = AtomicReference<Int?>(null)
         private val posted = AtomicBoolean(false)
 
         override fun progress(percent: Int) {
-            if (percent in 0..100) update(percent)
+            if (percent in 0..100 && !publishing.get()) update(percent)
         }
 
-        override fun publishing() { update(-1) }
+        override fun publishing() { publishing.set(true); update(-1) }
 
         private fun update(value: Int) {
             if (!open.get()) return
@@ -132,9 +147,9 @@ class ForegroundAdmission(
                 dispatch {
                     posted.set(false)
                     val notice = latest.getAndSet(null)
-                    if (open.get() && !timedOut && current === this && notice != null) {
+                    if (open.get() && !timedOut && !cancelRequested && current === this && notice != null) {
                         try {
-                            if (notice == -1) host?.publishing() else host?.progress(notice)
+                            if (publishing.get()) host?.publishing() else host?.progress(notice)
                         } catch (_: Exception) { /* Notification refresh must never fail the download. */ }
                     }
                 }

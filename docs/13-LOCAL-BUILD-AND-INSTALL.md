@@ -70,12 +70,22 @@ edit/ask AI -> .\tools\build-debug.ps1 -> adb install -r dist\*.apk (or copy to 
 - Try a lower preset and a higher available one on the same source; compare the selected dimensions in completion/logs.
   Nonstandard source sizes are shown honestly; lower bounded fallbacks are possible. High-resolution merges use MKV,
   lower merges prefer MP4/MKV, and filenames retain the true extension with an `up-to-…p` ceiling tag.
-- Keep the app open: this preview is activity-lifetime only, without durable queue or foreground notifications.
+- For the foreground milestone APK, start a download, press the phone's Home button or switch apps, and check the
+  ongoing notification. Tap it during the active download: Home must reconnect to the same attempt, not start another.
+  Briefly lock/unlock the screen too. Finish a background download and check the saved file in Files/Downloads.
+- Start another attempt and tap **Cancel** in its notification before saving begins. Return to Home; check the
+  canceled result, notification removal and absence of a new saved file. Retry only through fresh formats + confirmation.
+  Saving is a commit boundary: the notification Cancel action disappears then; an old action must not interrupt it.
+- Android 10–12 must not request notification runtime permission. On Android 13+, **Enable notifications** is optional
+  in the quality picker. Denying/dismissing must not start or block a download; allow it only by choice, then tap Download.
+  If app/channel notifications are disabled in Android settings, Home must say so; use Home's Cancel while downloading.
+- Background execution, notification delivery and cleanup remain phone-unverified until these checks are reported.
+  Android 15+ timeout testing needs a separate compatible device; the Android 10 phone cannot exercise `onTimeout`.
 - After saving on Android 10+, tap **Open saved file**; confirm picture/sound and find it under Downloads/YTDLP.
 - Share one text link from another app to YTDLP. It must only prefill for review, not begin extraction or a download.
 - If convenient, send Home/picker screenshots (redact personal URLs/titles), light/dark or larger-text observations,
   and the newest exported log. Native share/UI/engine/cancel/open-file checks are not implied by JVM tests or compilation.
 
 Owner confirmed first-preview `ec146df` playback with sound and supplied dark Home/picker/progress/saved screenshots.
-The new standard-presets UI/native transfer and MKV playback still need their own phone check. This remains an
-activity-lifetime preview, not finished Phase 1. Thumbnail embedding and audio-only/exact-format selection are not included.
+Second-preset playback/dimensions and MKV playback still need their own phone checks. The foreground milestone is an
+in-process preview, not finished Phase 1: no durable queue or process-death recovery, thumbnail embedding or audio-only/exact-format selection.

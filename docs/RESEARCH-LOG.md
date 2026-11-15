@@ -264,6 +264,21 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   through promotion/cancel/timeout and enqueue release after Home's cleanup. Coalesce worker updates; failed starts log only fixed safe errors.
   Android service/notification behavior is compiled/offline-tested only, not device evidence; no durability, automatic rescheduling or wake lock.
 
+- **R67 (15 Nov 2026):** Rechecked https://developer.android.com/develop/ui/views/notifications/notification-permission and
+  https://developer.android.com/training/permissions/requesting: Android 13+ RequestPermission via Activity Result; ask explicitly in context,
+  accept denial/dismissal, re-read permission/app/channel state and never use the callback to start/resume a download. Android 10–12 has no prompt.
+  Picker shows an optional Enable notifications button + inline purpose/denial explanation; existing direct Download tap stays independent.
+  Checked https://developer.android.com/develop/ui/views/notifications/build-notification#Actions and
+  https://developer.android.com/develop/background-work/background-tasks/broadcasts: immutable explicit broadcast PendingIntent to private receiver,
+  per-task action identity (extras do not identify PendingIntents), no implicit filter/boot trigger/metadata. Receiver just calls process-local cancel,
+  does not attach a new session, launch a service or await worker cleanup; stale/repeated/cold actions are no-ops. No new permission/dependency.
+  Cancellation invokes native best-effort cancel with actual-Job cancellation in finally, retains service/session through cleanup; notification
+  shows canceling and drops its Cancel action. Publication immediately closes cancellation admission, even before a queued saving notice renders.
+  Timeout after user cancellation still stops service but cannot replace it with FGS_TIMEOUT; timeout-first rejects user Cancel and keeps the pause.
+  Native exceptions/notification action inputs are never logged; fixed event/error strings only. Owner's icon, engine and minSdk 24 unchanged.
+  CLI/fake-Engine evidence is not Android lifecycle/permission/notification proof. Next phone milestone remains Android 10 background/cancel/sound;
+  API 33+ permission and API 35+ timeout need separate devices. No process-death/durable recovery or wake-lock claim.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

@@ -1228,3 +1228,11 @@ Tests executed: 182 total, 181 passed, 1 Windows symlink skip, 0 failures/errors
 R66: Android 10/API 29 stays primary phone baseline, minSdk 24 unchanged; Android 13+ permission is conditional, not the minimum or FGS launch gate.
 No dependency/engine/planner/launcher-icon change or APK refresh; push verified increment. No phone/durability/automatic-restart/wake-lock claim.
 Next: notification Cancel + contextual permission UI, then stamped APK phone milestone. Keep app open until that verification; old phone gates remain open.
+
+### Notification controls / foreground milestone preparation — 15 Nov 2026
+Private immutable task Cancel action: cleanup-retained service/session, stale/repeated/saving fences, timeout-first reason preserved.
+Optional Android 13+ permission button re-reads app/channel access; callbacks never start/resume work. Android 10 and minSdk 24 unchanged (R67).
+12 new tests (6 fake-Engine cancellation/session, 6 policy/codec); placeholders failed 7/30. Late-progress saving regression failed 1/1, then fixed.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 23s
+Tests executed: 194 total, 193 passed, 1 Windows symlink skip, 0 failures/errors; lint executed: 0 errors / 7 known warnings.
+No engine/planner/launcher-icon/dependency/permission-budget change. Prepare stamped APK; background/cancel/sound still require phone evidence.

@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
+import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
@@ -31,8 +32,9 @@ class DownloadService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         lastStartId = startId
-        val host = ServiceHost()
-        val accepted = admission.serviceStarted(intent?.getStringExtra(EXTRA_TASK), host)
+        val task = intent?.getStringExtra(EXTRA_TASK)
+        val host = ServiceHost(task?.takeIf(DownloadCancelAction::validTask))
+        val accepted = admission.serviceStarted(task, host)
         app.foregroundEvent(if (accepted) "promoted" else "rejected")
         return START_NOT_STICKY // No replay/rescheduling after process death.
     }
@@ -57,7 +59,7 @@ class DownloadService : Service() {
         super.onDestroy()
     }
 
-    private inner class ServiceHost : ForegroundAdmission.Host {
+    private inner class ServiceHost(private val task: String?) : ForegroundAdmission.Host {
         private var stopped = false
         private var lastNotice: Int? = null
 
@@ -66,13 +68,14 @@ class DownloadService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 manager.createNotificationChannel(NotificationChannel(CHANNEL, "Downloads", NotificationManager.IMPORTANCE_LOW))
             }
-            ServiceCompat.startForeground(this@DownloadService, NOTICE_ID, notification(null),
+            ServiceCompat.startForeground(this@DownloadService, NOTICE_ID, notification(task, null),
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0)
             activeHost = this
         }
 
         override fun progress(percent: Int) { refresh(percent) }
         override fun publishing() { refresh(-1) }
+        override fun cancelling() { refresh(-2) }
 
         private fun refresh(value: Int) {
             if (stopped || activeHost !== this || lastNotice == value) return
@@ -80,7 +83,7 @@ class DownloadService : Service() {
                 ContextCompat.checkSelfPermission(this@DownloadService, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED) return
             lastNotice = value
-            getSystemService(NotificationManager::class.java).notify(NOTICE_ID, notification(value))
+            getSystemService(NotificationManager::class.java).notify(NOTICE_ID, notification(task, value))
         }
 
         override fun stop() {
@@ -93,15 +96,20 @@ class DownloadService : Service() {
         }
     }
 
-    private fun notification(value: Int?): Notification {
+    private fun notification(task: String?, value: Int?): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val saving = value == -1
-        return NotificationCompat.Builder(this, CHANNEL)
+        val cancelling = value == -2
+        val builder = NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(AppInfo.DISPLAY_NAME)
-            .setContentText(if (saving) "Saving the finished file…" else "Downloading video and audio…")
+            .setContentText(when {
+                saving -> "Saving the finished file…"
+                cancelling -> "Canceling. Waiting for task cleanup…"
+                else -> "Downloading video and audio…"
+            })
             .setContentIntent(open)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -109,17 +117,37 @@ class DownloadService : Service() {
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setProgress(100, value?.takeIf { it >= 0 } ?: 0, value == null || saving)
-            .build()
+            .setProgress(100, value?.takeIf { it >= 0 } ?: 0, value == null || saving || cancelling)
+        if (task != null && !saving && !cancelling) {
+            val cancel = PendingIntent.getBroadcast(this, 0, Intent(this, DownloadCancelReceiver::class.java).apply {
+                action = DownloadCancelAction.encode(task)
+            }, PendingIntent.FLAG_IMMUTABLE)
+            builder.addAction(0, "Cancel", cancel)
+        }
+        return builder.build()
     }
 
     companion object {
         private const val EXTRA_TASK = "task"
-        private const val CHANNEL = "downloads"
+        internal const val CHANNEL = "downloads"
         private const val NOTICE_ID = 1001
 
         fun intent(context: Context, task: String? = null): Intent = Intent(context, DownloadService::class.java).apply {
             if (task != null) putExtra(EXTRA_TASK, task)
+        }
+    }
+}
+
+/** System notification action only: no session attachment, work launch, restart or cleanup wait. */
+class DownloadCancelReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val task = DownloadCancelAction.decode(intent.action) ?: return
+        val app = context.applicationContext as YtdlpApplication
+        try {
+            if (app.foreground.cancel(task)) app.foregroundEvent("notification_cancel")
+        } catch (_: Exception) {
+            // The coordinator's finally still cancels the Job. Never log action/input/exception text.
+            app.foregroundEvent("notification_cancel_error")
         }
     }
 }

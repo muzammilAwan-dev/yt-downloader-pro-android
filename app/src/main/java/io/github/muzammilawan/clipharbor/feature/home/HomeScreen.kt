@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
 import io.github.muzammilawan.clipharbor.core.VideoQuality
+import io.github.muzammilawan.clipharbor.download.NotificationAccess
 
 @Composable
 fun YtdlpTheme(content: @Composable () -> Unit) {
@@ -60,6 +61,9 @@ fun YtdlpTheme(content: @Composable () -> Unit) {
 fun HomeScreen(
     state: HomeState,
     externalBusy: Boolean,
+    notificationAccess: NotificationAccess,
+    notificationRequestPending: Boolean,
+    onRequestNotifications: () -> Unit,
     onUrlChange: (String) -> Unit,
     onPaste: () -> Unit,
     onResolve: () -> Unit,
@@ -131,6 +135,20 @@ fun HomeScreen(
                         }
                         Text("Presets cap the shorter edge, including portrait video. No upscaling; a lower resolution may be used. The saved result reports selected dimensions. High-resolution merges use MKV.",
                             style = MaterialTheme.typography.bodySmall)
+                        Text("Optional notifications show progress and Cancel while downloading. Cancel is unavailable once saving begins. Downloads also work without notification permission.",
+                            style = MaterialTheme.typography.bodySmall)
+                        when (notificationAccess) {
+                            NotificationAccess.ENABLED -> Text("Download notifications are enabled.", style = MaterialTheme.typography.bodySmall)
+                            NotificationAccess.PERMISSION_REQUIRED -> {
+                                Text("Notification permission is not granted. You can still download and cancel from Home.", style = MaterialTheme.typography.bodySmall)
+                                OutlinedButton(onClick = onRequestNotifications, enabled = enabled && !notificationRequestPending,
+                                    modifier = Modifier.fillMaxWidth()) {
+                                    Text(if (notificationRequestPending) "Waiting for permission choice…" else "Enable notifications")
+                                }
+                            }
+                            NotificationAccess.DISABLED -> Text("Download notifications are turned off in Android settings. Use Home for progress and Cancel.",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
                         Button(onClick = onDownload, enabled = enabled && state.selectedQuality != null,
                             modifier = Modifier.fillMaxWidth()) { Text("Download video + audio") }
                         OutlinedButton(onClick = onCancel, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text("Dismiss selection") }
@@ -142,6 +160,10 @@ fun HomeScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (externalBusy) Text("Self-test is running. Download controls are temporarily unavailable.")
                     Text(state.status, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium)
+                    if (notificationAccess != NotificationAccess.ENABLED && state.phase in setOf(HomePhase.DOWNLOADING, HomePhase.PUBLISHING)) {
+                        Text("Notification controls are unavailable. Watch progress here; Cancel attempt works here while downloading, not while saving.",
+                            style = MaterialTheme.typography.bodySmall)
+                    }
                     if (state.busy) {
                         val percent = state.progress
                         if (state.phase == HomePhase.DOWNLOADING && percent != null) {
@@ -172,7 +194,7 @@ fun HomeScreen(
                     }
                 }
             }
-            Text("Phase 1 preview · Foreground service is not phone-verified yet; keep the app open. Notification controls, Android 13+ permission prompt and durable queue are still pending.",
+            Text("Phase 1 preview · Foreground downloads and notification controls are not phone-verified yet. No durable queue or process-death recovery.",
                 style = MaterialTheme.typography.bodySmall)
             OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Diagnostics & local logs") }
             Text("Unofficial · Free and open source · ${AppInfo.ENGINE_CREDIT}", style = MaterialTheme.typography.bodySmall)

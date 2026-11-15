@@ -61,6 +61,7 @@ class YtdlpApplication : Application() {
             val attached = sessions.attach()
             object : ForegroundAdmission.Owner {
                 override fun timeout() { attached.value.home.onForegroundTimeout(task) {} }
+                override fun cancel() { attached.value.home.cancel() }
                 override fun close() { attached.close() }
             }
         }, start = { task ->
