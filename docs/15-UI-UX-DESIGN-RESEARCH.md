@@ -44,11 +44,17 @@ ClipHarbor colors/icon, intended audience, tablet scope and preferred queue acti
 
 ## Original design workflow (proposed, not yet implemented)
 
-**Screenshot status (15 Nov 2026):** all nine original 720×1640 images from the owner's first archive were visually
-reviewed. Image/flow observations are in `16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` §1; no competitor images/assets or personal
-feed details committed. The owner subsequently supplied a second archive path that is not currently present at that
-location; the second batch has not been reviewed. Website-login/browser behaviour also has separate owner-reported runtime
-evidence and REA research in doc 16; screenshots alone do not establish renderer implementation or session transfer.
+**Screenshot status (15 Nov 2026):** all fourteen original 720×1640 images were visually reviewed: nine from the first
+archive and five from the reattached second archive. The previously unavailable path is resolved. Image mapping/flow
+observations are in `16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` §1; no competitor images/assets, account identity or personal
+feed/history details committed. The second batch shows player/download controls, a comments panel, site shortcuts and
+a signed-in website-style account page inside an app shell. It strengthens the owner's website-session observation,
+but does not show the login-entry sequence, bot prompt, format picker, queue or notification. Renderer/session transfer
+has separate static REA evidence; screenshots do not prove extraction or download success after login.
+
+If a later browser spike is approved, distinguish app navigation, website navigation, site-account controls and engine
+task state. Provide a visible origin and explicit loading/error states; site shortcuts are not support guarantees.
+These are original interaction principles, not permission to copy layouts, add comments/social features or expand MVP.
 
 - Extract interaction principles from the owner's screenshots; do not trace layouts or reuse competitor code, assets,
   branding or identity. Snaptube is a reference, not the ClipHarbor design system.

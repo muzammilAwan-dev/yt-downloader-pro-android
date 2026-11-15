@@ -23,9 +23,30 @@ Do not retain the owner's personal search/feed/download contents in design notes
 | 08 (`114146`) | Search results with source/category tabs, mixed media rows and download arrows | Keep media selection close to its download action |
 | 09 (`114152`) | Search field, recent/hot search chips and source shortcuts | Local, explicitly clearable history and source shortcuts; no remote trends needed for MVP |
 
-The pictures establish visual appearance, not whether a screen is native, WebView or another renderer. They do not show
+The first-batch pictures establish visual appearance, not whether a screen is native, WebView or another renderer. They do not show
 the account-login flow, a browser address bar, bot-error prompt, format picker, active queue or notification. No measured
 contrast/touch-target, TalkBack or large-text validation was performed.
+
+### Second screenshot batch (now received and reviewed)
+
+After the owner reattached `C:\Users\Malku\Downloads\screenshots 2.zip`, the archive was accessible. All five 720×1640
+PNGs were visually reviewed in filename-timestamp order. Archive SHA-256:
+`7f235ee3ad8c0028bdfc9ee2e7ddc179765c9723919d9c6ee75d5a00bb1fca6e`.
+Temporary copies remain outside the repository; no screenshots, account identity, comment authors/text, watch history,
+playlist contents or media titles are retained in these notes or committed.
+
+| Image / original filename | Visible UI | Original ClipHarbor lesson / evidence limit |
+|---|---|---|
+| 01 / `Screenshot_20261115-120537.png` | Player with progress/full-screen controls and loading indicator; media title, prominent Download button, headphone and overflow controls, comments preview and related-media rows; app navigation below | Keep the identified media and download action together. Loading playback and successful extraction/download are different states; no completed playback or transfer proved here. Headphone icon alone does not establish its action. |
+| 02 / `Screenshot_20261115-120543.png` | Comments panel beneath the player, drag handle, reaction/reply affordances and comment-entry field with account avatar | Secondary content can use a dismissible panel without replacing the media context. Comments/reactions are not Phase 1 requirements; account avatar is weaker authentication evidence than image 05. |
+| 03 / `Screenshot_20261115-120624.png` | Close/overflow browser-shell controls, thin loading/progress line, blank content area, website-style destinations above app navigation | Website and app navigation are visibly separate. Do not infer a failure, duration or eventual load result from this still; future browser design needs explicit loading/error states and a visible origin. |
+| 04 / `Screenshot_20261115-120634.png` | Sites list with icon/name/URL rows and history-like, delete and add toolbar icons; one shortcut visibly uses an `intent:` scheme | Source shortcuts are navigation aids, not download-support guarantees. Toolbar icon effects were not exercised. Do not inherit arbitrary intent launching; HTTPS validation and explicit external-action policy remain required. |
+| 05 / `Screenshot_20261115-120652.png` | YouTube-branded account page inside close/overflow shell, account avatar/name, Switch account and Google Account controls, history/playlist sections; website destinations above app navigation | Strong visual evidence of a signed-in website-style account state inside the app shell, consistent with the owner's website-session observation. It does not show credential entry, redirects, cookie transfer, token generation or post-login download success. Keep site account controls distinct from ClipHarbor settings. |
+
+This batch adds visual evidence of the browser shell, nested website navigation and authenticated account-page state.
+The exact renderer/cookie handoff is supported separately by the static REA trace in §7, not deduced from pixels. Neither
+batch shows the red bot-error prompt, login-entry sequence, format picker, active queue or foreground notification.
+No website login was performed by the agent, browser feature implemented or Phase 1 scope expanded.
 
 **Owner-reported runtime observation (15 Nov):** YouTube and its search run as a website in Snaptube's internal browser;
 the owner can sign into YouTube there. After a bot-related download failure, a red message suggests signing into the
@@ -81,9 +102,9 @@ Authentication/bot failure -> suggest website login             (owner observed)
 `explore` follow-up inspected that directory's original reports (results in §7). The earlier absence finding applied only to the
 previous search scope and is no longer a reason to request another export before checking this supplied path.
 
-The owner also supplied `C:\Users\Malku\Downloads\screenshots 2.zip`. Its exact path was not present when read; a
-case-insensitive direct-Downloads screenshot-ZIP search also returned no entries. **Second screenshot batch not reviewed**;
-do not infer its contents from the first batch or count it as visual evidence.
+The second archive was initially absent at its supplied Downloads path. **Resolved after the owner reattached it:** all
+five images have now been visually reviewed, with distinct observations and limits recorded above. The earlier absence
+was a search-time result, not a continuing blocker.
 
 ## 2. yt-dlp is broader than social sites
 

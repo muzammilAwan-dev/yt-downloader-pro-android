@@ -465,3 +465,30 @@ BUILD SUCCESSFUL in 18s
 ```
 
 Application sources are unchanged; test/lint reports were reused. This is not new browser/login feature verification.
+
+### Reattached second screenshot batch reviewed (15 Nov 2026)
+
+- Previous research commit `3ff7ff6` was pushed non-force; verified remote `main` at
+  `3ff7ff6977f6e35aeaf4026f6e69d89ef009bff1`. At the start of this increment the working tree was clean and tracked
+  `origin/main`. GitHub Actions results have not been checked.
+- Owner reattached `Downloads/screenshots 2.zip`; the previously unavailable archive is now accessible. Safely extracted
+  five PNGs under the approved temporary directory and visually reviewed all five (720×1640 each). Hash and original
+  filename mapping are in doc 16 §1, research R37. All fourteen images across both batches have now been reviewed.
+- New visual evidence: player/download controls, comments panel, loading browser shell, Sites list and signed-in
+  website-style account page inside app chrome. Supports the owner's website-session point; no credential-entry flow,
+  bot-error prompt, post-login transfer or PO-token generation shown. Static REA evidence remains separately qualified.
+- No images, account names, comments, personal history/playlist details or competitor code/assets committed. Original
+  design notes distinguish app/site navigation, origin visibility, loading/error states and validated source shortcuts.
+- Documentation only: no Android code, dependency/permission changes, browser implementation, agent-operated login,
+  new device test or APK handoff. Phase 1 remains incomplete; next engineering increment is task-private resolve reuse
+  and selected-format/output-path evidence with tests. The outstanding owner playback/gallery check remains open.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 15s
+36 actionable tasks: 1 executed, 35 up-to-date
+```
+
+Unit-test and lint analysis/report tasks were UP-TO-DATE; this reused existing results, not a fresh execution of tests or
+browser authentication verification. No `assembleDebug` or new APK performed for this documentation-only increment.
