@@ -569,3 +569,29 @@ lint XML: errors=0 warnings=6
 
 Tests executed, including eight new orchestration cases and real-thread interruption against a synthetic blocking runner.
 The host-restricted symlink case remains skipped. This does not execute native yt-dlp or prove Android child cleanup.
+
+### Step 3d: Android replay/evidence wiring
+
+- Diagnostics now resolves for its task and passes the opaque input to download; self-test-only resolves do not create
+  replay inputs. Android extraction clears derived selection/output/transport fields while retaining the full catalog.
+- Wired the library behind the tested runner: resolve keeps stderr separate, download deliberately merges stderr for
+  reliable failure tails. Both use ignore-config, HTTPS-only source validation, interruptible jobs and internal UUID keys.
+- Replay files live under app-private no-backup storage and are cleaned once per process before workers start. Activity
+  recreation does not delete active inputs. Handles are closed on all diagnostic/adapter terminal paths.
+- Removed timestamp-based output guessing. Diagnostics logs actual selected IDs/height, requested height, resolve-reuse
+  state and fragment concurrency. Low reported height is a warning, not inferred proof of withholding/bot immunity.
+- Verification pending; native replay/print behavior remains untested on the phone. No new permission/dependency/browser
+  feature, foreground service, picker, queue or `dist/` APK handoff yet. Phase 1 remains in progress.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 2m 17s
+54 actionable tasks: 16 executed, 38 up-to-date
+
+XML reports: suites=11 tests=89 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+```
+
+Tests executed; the new compatibility case confirms fake/alternative engines may resolve a task without supplying replay
+input. The one Windows symlink case remains skipped. Android code compiles; no native yt-dlp replay/device test performed.

@@ -179,6 +179,9 @@ interface Engine {
     /** Resolves one video URL. */
     suspend fun resolve(url: String): Result<ResolveOutcome>
 
+    /** Task-bound resolve may supply private single-use replay input. Always close that input on terminal paths. */
+    suspend fun resolveForTask(url: String, processId: String): Result<ResolveOutcome> = resolve(url)
+
     /** Downloads and merges one video; [onProgress] is called from a background thread. */
     suspend fun download(
         request: DownloadRequest,

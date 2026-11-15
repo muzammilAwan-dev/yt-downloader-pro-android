@@ -16,7 +16,11 @@ class EngineFailure(val error: DownloadError) : Exception(error.code.name) {
 }
 
 /** Original test seam around blocking execution. Commands and raw output must not be logged as objects. */
-internal class EngineCommand(val urls: List<String>, val options: List<Pair<String, String?>>) {
+internal class EngineCommand(
+    val urls: List<String>,
+    val options: List<Pair<String, String?>>,
+    val redirectErrorStream: Boolean = true,
+) {
     override fun toString(): String = "EngineCommand(<private>)"
 }
 

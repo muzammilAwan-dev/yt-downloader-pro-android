@@ -4,6 +4,7 @@ import io.github.muzammilawan.clipharbor.core.DownloadEvidence
 import io.github.muzammilawan.clipharbor.core.DownloadRequest
 import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
+import io.github.muzammilawan.clipharbor.testing.FakeEngine
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
@@ -51,6 +52,7 @@ class DownloadExecutorTest {
         var input: File? = null
         runner.action = { command, _, _ ->
             assertTrue(command.urls.isEmpty())
+            assertTrue(command.redirectErrorStream)
             val options = command.options
             assertEquals("4", options.single { it.first == "-N" }.second)
             assertTrue(options.single { it.first == "-f" }.second!!.contains("height<=1080"))
@@ -81,6 +83,15 @@ class DownloadExecutorTest {
         assertEquals(listOf(url), runner.commands.single().urls)
         assertFalse(runner.commands.single().options.any { it.first == "--load-info-json" })
         assertFalse(runner.commands.single().toString().contains(url))
+    }
+
+    @Test
+    fun taskResolveRemainsCompatibleWithEnginesWithoutReplay() = runBlocking {
+        val engine = FakeEngine()
+        val resolved = engine.resolveForTask(url, "task").getOrThrow()
+        assertEquals(1, engine.resolveCalls)
+        assertEquals(FakeEngine.SAMPLE_MEDIA, resolved.media)
+        assertNull(resolved.resolvedSnapshot)
     }
 
     @Test

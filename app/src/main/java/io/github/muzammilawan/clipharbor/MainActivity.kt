@@ -23,6 +23,7 @@ import io.github.muzammilawan.clipharbor.core.DownloadRequest
 import io.github.muzammilawan.clipharbor.core.Engine
 import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.FormatPlanner
+import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
 import io.github.muzammilawan.clipharbor.diagnostics.AndroidNetworkProbe
 import io.github.muzammilawan.clipharbor.diagnostics.AndroidStorageProbe
@@ -183,8 +184,8 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun download1080p(state: DiagnosticsState, taskId: String) {
         val url = state.url.trim()
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            state.status = "Paste a full http(s) link first."
+        if (!url.startsWith("https://", ignoreCase = true)) {
+            state.status = "Paste a full HTTPS link first."
             return
         }
         state.busy = true
@@ -200,13 +201,15 @@ class MainActivity : ComponentActivity() {
             fields = mapOf("url" to url),
         )
         val resolveStarted = System.currentTimeMillis()
+        var snapshot: ResolvedSnapshot? = null
         try {
-            val resolved = engine.resolve(url)
+            val resolved = engine.resolveForTask(url, taskId)
             if (resolved.isFailure) {
                 fail(state, taskId, resolved.exceptionOrNull())
                 return
             }
             val outcome = resolved.getOrThrow()
+            snapshot = outcome.resolvedSnapshot
             val summary = FormatPlanner.summary(outcome.media.formats)
             val withheld = summary.hdUnavailable || outcome.media.warnings.isNotEmpty()
             logger.event(
@@ -228,13 +231,15 @@ class MainActivity : ComponentActivity() {
             val workingDir = File(filesDir, "staging/$taskId")
             var lastPercent = -1
             val downloadStarted = System.currentTimeMillis()
-            logger.event('I', "start", task = taskId, stage = Stage.DOWNLOADING.name)
+            logger.event('I', "start", task = taskId, stage = Stage.DOWNLOADING.name,
+                fields = mapOf("resolveReuse" to (snapshot != null).toString(), "concurrentFragments" to "4"))
             val downloaded = engine.download(
                 request = DownloadRequest(
                     url = url,
                     maxHeight = 1080,
                     outputDirectory = workingDir,
                     processId = taskId,
+                    resolvedSnapshot = snapshot,
                 ),
                 onProgress = { event ->
                     val percent = event.percent?.toInt() ?: -1
@@ -257,7 +262,17 @@ class MainActivity : ComponentActivity() {
                 fail(state, taskId, downloaded.exceptionOrNull())
                 return
             }
-            val file = downloaded.getOrThrow().files.first()
+            val downloadOutcome = downloaded.getOrThrow()
+            logger.event(
+                level = if (downloadOutcome.selectedHeight?.let { it < 1080 } == true) 'W' else 'I',
+                event = "selected_formats", task = taskId, stage = Stage.DOWNLOADING.name,
+                fields = mapOf(
+                    "ids" to downloadOutcome.selectedFormatIds.joinToString("+").ifBlank { "unknown" },
+                    "actualHeight" to (downloadOutcome.selectedHeight?.toString() ?: "unknown"),
+                    "requestedHeight" to "1080", "reusedResolve" to downloadOutcome.reusedResolve.toString(),
+                ),
+            )
+            val file = downloadOutcome.files.first()
             logger.event(
                 level = 'I',
                 event = "ok",
@@ -290,6 +305,7 @@ class MainActivity : ComponentActivity() {
             state.status = "Saved ${file.name} to Downloads/ClipHarbor ($uri)"
             workingDir.deleteRecursively()
         } finally {
+            snapshot?.close()
             runningTaskId = null
             state.busy = false
             state.logTail = logger.snapshot()

@@ -13,11 +13,13 @@ import io.github.muzammilawan.clipharbor.core.EngineInfoParser
 import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.ErrorMapper
 import io.github.muzammilawan.clipharbor.core.FormatInfo
-import io.github.muzammilawan.clipharbor.core.FormatPlanner
 import io.github.muzammilawan.clipharbor.core.MediaInfo
 import io.github.muzammilawan.clipharbor.core.ProgressEvent
+import io.github.muzammilawan.clipharbor.core.ReplayInfo
 import io.github.muzammilawan.clipharbor.core.ResolveOutcome
+import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
+import io.github.muzammilawan.clipharbor.log.LogRedactor
 import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +32,30 @@ import org.json.JSONObject
  */
 class YoutubeDlEngine(private val context: Context) : Engine {
     override val id: String = "youtubedl-android"
+
+    private val snapshotDirectory = File(context.noBackupFilesDir, "resolved-inputs")
+    private val runner = object : BlockingEngineRunner {
+        override fun execute(
+            command: EngineCommand,
+            internalId: String,
+            callback: ((Float, Long, String) -> Unit)?,
+        ): EngineResponse {
+            val request = YoutubeDLRequest(command.urls)
+            command.options.forEach { (name, value) ->
+                if (value == null) request.addOption(name) else request.addOption(name, value)
+            }
+            val response = YoutubeDL.getInstance().execute(
+                request, internalId, redirectErrorStream = command.redirectErrorStream, callback = callback,
+            )
+            return EngineResponse(response.exitCode, response.out, response.err)
+        }
+
+        override fun destroy(internalId: String) {
+            YoutubeDL.getInstance().destroyProcessById(internalId)
+        }
+    }
+    private val execution = EngineExecution(runner::destroy)
+    private val downloader = DownloadExecutor(runner, execution, snapshotDirectory)
 
     @Volatile
     private var cached: EngineInfo = EngineInfo(libraryVersion = LIBRARY_VERSION)
@@ -56,6 +82,13 @@ class YoutubeDlEngine(private val context: Context) : Engine {
     private fun initBlocking(): EngineInfo {
         synchronized(initLock) {
             if (!initialized) {
+                // Process-wide gate: activity recreation must not delete a still-running worker's input.
+                synchronized(snapshotCleanupLock) {
+                    if (!snapshotsCleaned) {
+                        ResolvedSnapshot.cleanOrphans(snapshotDirectory)
+                        snapshotsCleaned = true
+                    }
+                }
                 YoutubeDL.getInstance().init(context)
                 FFmpeg.getInstance().init(context)
                 initialized = true
@@ -78,25 +111,33 @@ class YoutubeDlEngine(private val context: Context) : Engine {
 
     override fun info(): EngineInfo = cached
 
-    override suspend fun resolve(url: String): Result<ResolveOutcome> = withContext(Dispatchers.IO) {
+    override suspend fun resolve(url: String): Result<ResolveOutcome> = resolveInternal(url, null)
+
+    override suspend fun resolveForTask(url: String, processId: String): Result<ResolveOutcome> =
+        resolveInternal(url, processId)
+
+    private suspend fun resolveInternal(url: String, processId: String?): Result<ResolveOutcome> = withContext(Dispatchers.IO) {
         try {
+            requireHttpsSource(url)
             ensureInitialized()
-            val request = YoutubeDLRequest(url)
-                .addOption("-v")
-                .addOption("--dump-json")
-                .addOption("--no-playlist")
-            val response = YoutubeDL.getInstance().execute(request, null)
+            val response = execution.run(processId) { internalId ->
+                runner.execute(
+                    EngineCommand(
+                        listOf(url),
+                        listOf("--ignore-config" to null, "-v" to null, "--dump-json" to null, "--no-playlist" to null),
+                        redirectErrorStream = false,
+                    ), internalId, null,
+                )
+            }
             val stderr = response.err
             if (response.exitCode != 0) {
                 throw EngineFailure(
                     ErrorMapper.fromExit(
                         stage = Stage.RESOLVING,
                         exitCode = response.exitCode,
-                        output = buildString {
-                            append(stderr)
-                            append('\n')
-                            append(response.out.take(4000))
-                        },
+                        // stdout can be sensitive full info JSON; never put it in a diagnostic tail.
+                        output = LogRedactor.redactLine(stderr),
+                        maxTailLines = 200,
                     ),
                 )
             }
@@ -112,17 +153,31 @@ class YoutubeDlEngine(private val context: Context) : Engine {
                 libraryVersion = LIBRARY_VERSION,
             )
             cached = merge(cached, parsed)
+            val snapshot = processId?.let {
+                val replay = JSONObject(jsonLine)
+                val keys = replay.keys().asSequence().toSet()
+                ReplayInfo.fieldsToDiscard(keys, (replay.optJSONArray("formats")?.length() ?: 0) > 0)
+                    .forEach { key -> replay.remove(key) }
+                ResolvedSnapshot(url, it, replay.toString())
+            }
             Result.success(
                 ResolveOutcome(
                     media = media,
                     engineInfo = cached,
-                    debugTail = stderr.lines().filter { it.contains("[debug]") }.takeLast(200),
+                    debugTail = stderr.lines().filter { it.contains("[debug]") }.takeLast(200).map(LogRedactor::redactLine),
+                    resolvedSnapshot = snapshot,
                 ),
             )
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Exception) {
-            Result.failure(error as? EngineFailure ?: EngineFailure(DownloadError(ErrorCode.ENGINE_OUTDATED, Stage.RESOLVING, detail = error.message)))
+            val safe = LogRedactor.redactLine(error.message.orEmpty())
+            Result.failure(
+                error as? EngineFailure ?: EngineFailure(
+                    DownloadError(ErrorMapper.classify(Stage.RESOLVING, safe.lowercase()), Stage.RESOLVING,
+                        detail = safe.take(300), stderrTail = safe.lines().takeLast(200)),
+                ),
+            )
         }
     }
 
@@ -133,60 +188,7 @@ class YoutubeDlEngine(private val context: Context) : Engine {
     ): Result<DownloadOutcome> = withContext(Dispatchers.IO) {
         try {
             ensureInitialized()
-            val outputDirectory = request.outputDirectory.apply { if (!exists()) mkdirs() }
-            val startedAt = System.currentTimeMillis()
-            val tail = ArrayDeque<String>()
-            val ytRequest = YoutubeDLRequest(request.url)
-                .addOption("-v")
-                .addOption("-f", FormatPlanner.selector(request.maxHeight))
-                .addOption("--merge-output-format", request.mergeContainer)
-                .addOption("-P", outputDirectory.absolutePath)
-                .addOption("-o", FormatPlanner.outputTemplate())
-                .addOption("--windows-filenames")
-                .addOption("--no-playlist")
-                .addOption("--no-mtime")
-                .addOption("--newline")
-                .addOption("--progress")
-                .addOption("--print", "after_move:filepath")
-                .addOption("--no-simulate")
-
-            val response = YoutubeDL.getInstance().execute(ytRequest, request.processId) { percent, eta, line ->
-                if (line.isNotBlank()) {
-                    synchronized(tail) {
-                        tail.addLast(line)
-                        while (tail.size > TAIL_LINES) tail.removeFirst()
-                    }
-                    onLine(line)
-                }
-                onProgress(ProgressEvent(percent.takeIf { it >= 0f }, eta, line))
-            }
-
-            val combined = response.err + "\n" + response.out
-            if (response.exitCode != 0) {
-                val stage = if (combined.contains("[Merger]")) Stage.MERGING else Stage.DOWNLOADING
-                throw EngineFailure(ErrorMapper.fromExit(stage, response.exitCode, combined))
-            }
-
-            val files = findOutputFiles(outputDirectory, response.out, startedAt)
-            if (files.isEmpty()) {
-                throw EngineFailure(
-                    DownloadError(
-                        ErrorCode.POST_PROCESS_FAILED,
-                        Stage.POST_PROCESSING,
-                        detail = "exit=0 but no output file was found",
-                        exitCode = response.exitCode,
-                        stderrTail = synchronized(tail) { tail.toList() }.takeLast(40),
-                    ),
-                )
-            }
-            Result.success(
-                DownloadOutcome(
-                    files = files,
-                    exitCode = response.exitCode,
-                    elapsedMs = System.currentTimeMillis() - startedAt,
-                    outputTail = synchronized(tail) { tail.toList() },
-                ),
-            )
+            downloader.download(request, onProgress, onLine)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Exception) {
@@ -195,33 +197,16 @@ class YoutubeDlEngine(private val context: Context) : Engine {
                     DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.DOWNLOADING, detail = error.message),
                 ),
             )
+        } finally {
+            // Also handles init failure/cancellation before DownloadExecutor is entered.
+            request.resolvedSnapshot?.close()
         }
     }
 
-    override fun cancel(processId: String): Boolean =
-        runCatching { YoutubeDL.getInstance().destroyProcessById(processId) }.getOrDefault(false)
+    override fun cancel(processId: String): Boolean = execution.cancel(processId)
 
     private fun ensureInitialized() {
         if (!initialized) initBlocking()
-    }
-
-    private fun findOutputFiles(dir: File, stdout: String, startedAt: Long): List<File> {
-        val printed = stdout.lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("[") }
-            .map { File(it) }
-            .filter { it.isAbsolute && it.exists() && it.isFile }
-            .toList()
-        if (printed.isNotEmpty()) return printed
-
-        val ignored = setOf("part", "ytdl", "temp")
-        val candidates = dir.listFiles()
-            ?.filter { it.isFile }
-            ?.filter { it.extension.lowercase() !in ignored }
-            ?.filter { it.lastModified() >= startedAt - 2000 }
-            ?.sortedBy { it.lastModified() }
-            .orEmpty()
-        return candidates.takeLast(1)
     }
 
     private fun parseMedia(json: String): MediaInfo {
@@ -281,7 +266,8 @@ class YoutubeDlEngine(private val context: Context) : Engine {
         /** Must match `ytdlpAndroid` in gradle/libs.versions.toml; the library does not expose its own version. */
         const val LIBRARY_VERSION = "0.18.1"
 
-        private const val TAIL_LINES = 200
+        private val snapshotCleanupLock = Any()
+        private var snapshotsCleaned = false
     }
 }
 
