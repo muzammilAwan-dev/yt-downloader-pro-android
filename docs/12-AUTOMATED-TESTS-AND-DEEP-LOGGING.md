@@ -43,7 +43,7 @@ The Phase 0 spike is essentially this screen. The "report template" the AI asks 
 ## 4. Deep logging requirements
 
 **Where:** app-private `files/logs/app-YYYYMMDD.log` (rotating: max 5 files, 2 MB each). Not world-readable. No network upload, ever.
-**Tester (debug) builds also write a public copy** to `Downloads/<app-name>-logs/` (one file per session, last 5 kept) so you can grab it without any menu; see `13-LOCAL-BUILD-AND-INSTALL.md` section 4 for how and the Android 7-9 limitation.
+**Tester (debug) builds also write a public copy** to `Downloads/ClipHarbor-logs/` (one file per session, last 5 kept) so you can grab it without any menu; see `13-LOCAL-BUILD-AND-INSTALL.md` section 4 for how and the Android 7-9 limitation.
 **How the owner gets it:** Settings -> Diagnostics -> **Share log** (Android share sheet via `FileProvider`, as one `.txt` with a header) and **Copy summary**. Fallback for developers: `adb logcat -s <TAG>` mirrors the same lines at debug level.
 **Switch:** `Verbose logging` setting, **ON by default in debug and "tester" builds, OFF in release**, with a clear "Clear logs" button. Incognito mode disables file logging.
 

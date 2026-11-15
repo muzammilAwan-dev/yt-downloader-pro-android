@@ -13,9 +13,9 @@ Two halves:
 | Item | Value |
 |---|---|
 | App | ClipHarbor `0.1.0-phase0`, package `io.github.muzammilawan.clipharbor` |
-| Built from commit | `BUILD_COMMIT` (`BUILD_SHA`) |
-| APK | `dist/app-debug.apk`, `BUILD_BYTES` bytes |
-| SHA-256 | `BUILD_HASH` |
+| Built from commit | `8cd9487` (`BuildConfig.GIT_SHA`, read back from the generated BuildConfig after the build) |
+| APK | `dist/app-debug.apk`, 67,693,493 bytes |
+| SHA-256 | `E1A8C9F5780FD4F5E9A647B2B779521E0E0866FEDB0AFA15809ECEE2F088325A` |
 | minSdk / target / compileSdk | 24 / 37 / 37 |
 | ABIs in the APK | `arm64-v8a` only (deliberate: 67 MB vs ~200 MB) |
 | Permissions in the APK | `INTERNET` + AndroidX signature-level `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` |
@@ -55,8 +55,14 @@ release (`THIRD_PARTY_NOTICES.md`, Phase 3).
 ## 4. Automated evidence (this machine, 15 Nov 2026)
 
 ```
-BUILD_TESTS
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain
+
+BUILD SUCCESSFUL in 21s
+test suites=8 tests=46 failures=0
+lint: 0 errors, 6 warnings
 ```
+
+(Re-run after the last three code fixes: same suite/test counts and the same 6 warnings.)
 
 - 8 test suites, fake `Engine` + fake storage/network probes; no live-YouTube call in CI.
 - Lint: 0 errors, 6 deliberate/informational warnings (Gradle 9.9.1 exists; Compose plugin 2.4.21 exists; coroutines

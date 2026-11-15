@@ -219,12 +219,19 @@ The 6 lint warnings, all deliberate or informational:
 6. `UsableSpace` — free-space number is a rough hint in the header, not an allocation decision (Phase 1 adds the
    pre-flight check).
 
-APK (`tools/build-debug.ps1`, which re-ran the tests, lint and assemble):
+A rerun of `gradlew testDebugUnitTest lintDebug assembleDebug` after the three device-path fixes produced the same
+counts (`test suites=8 tests=46 failures=0`, `lint: 0 errors, 6 warnings`), and then:
 
 ```
-1478925B801720356607FBFA478D76D79D045A98B45A334A22D10CBD65C90E5C  app-debug.apk
+> powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1
+E1A8C9F5780FD4F5E9A647B2B779521E0E0866FEDB0AFA15809ECEE2F088325A  app-debug.apk
 dist/app-debug.apk = 67,693,493 bytes
 ```
+
+That APK carries `BuildConfig.GIT_SHA = "8cd9487"` (commit `docs: record Phase 0 engine facts…`, which contains every
+code change listed in this section) and `VERSION_NAME = "0.1.0-phase0"`; verified in
+`app/build/generated/source/buildConfig/debug/…/BuildConfig.java` after the build. The one docs commit that follows only
+records these numbers, so the APK bits still correspond to `8cd9487`.
 
 Manifest/packaging audit of that APK (`aapt2 dump xmltree`):
 

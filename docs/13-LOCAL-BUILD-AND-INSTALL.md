@@ -37,16 +37,17 @@ Debug APKs are signed automatically with a local debug key, so they install norm
 
 Tester (debug) builds write two copies:
 1. **Private rotating log** in app storage (always, as in doc 12).
-2. **Public copy in the phone's `Downloads/<app-name>-logs/`** as one text file per app session, e.g. `ytdlp-android-log-20261114-140322.txt`, written through MediaStore (no storage permission on Android 10+ [K]).
+2. **Public copy in the phone's `Downloads/ClipHarbor-logs/`** as one text file per app session, e.g. `clipharbor-log-20261115-140322.txt`, written through MediaStore (no storage permission on Android 10+ [K]).
    Keep only the last 5 sessions; write a new file per session instead of overwriting (MediaStore creates duplicate names such as `log (1).txt` when you re-insert the same name).
    On Android 7-9 (minSdk 24 means these exist) a public write needs a storage permission that the permissions budget forbids: there, skip the public copy and rely on **Share log**.
+   *Implemented in Phase 0 as `log/MediaStoreLogMirror.kt` (`Download/ClipHarbor-logs`, 5 sessions).*
 3. The same file is available from **Settings -> Diagnostics -> Share log** (share sheet), and **Run self-test** writes its result block into the current session file.
 
 Public-folder trade-off: files in Downloads are not private. Redaction (doc 12 section 4) still applies, and the public copy is **debug/tester builds only**; release builds log to the private folder and export
 only when you tap Share log.
 
-To get the file to the AI: open Downloads on the phone, attach `ytdlp-android-log-*.txt` to the Claude chat (or copy it to your PC), together with the debug prompt.
-Fallback with a cable: `adb pull /sdcard/Download/<app-name>-logs/ .` [K] or `adb logcat -d > logcat.txt`.
+To get the file to the AI: open Downloads on the phone, attach `clipharbor-log-*.txt` to the chat (or copy it to your PC), together with the debug prompt.
+Fallback with a cable: `adb pull /sdcard/Download/ClipHarbor-logs/ .` [K] or `adb logcat -d > logcat.txt`.
 
 ## 5. Daily loop
 
