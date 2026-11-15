@@ -27,8 +27,10 @@ object VideoQualities {
     private val safeId = Regex("[A-Za-z0-9_.-]{1,128}")
     private fun eligible(formats: List<FormatInfo>): List<FormatInfo> {
         val separateAudio = formats.any { it.hasAudio && !it.hasVideo }
+        val uniqueIds = formats.groupingBy { it.formatId }.eachCount().filterValues { it == 1 }.keys
         return formats.filter { it.hasVideo && (it.hasAudio || separateAudio) &&
-            it.width?.let { w -> w > 0 } == true && it.height?.let { h -> h > 0 } == true && safeId.matches(it.formatId) }
+            it.width?.let { w -> w > 0 } == true && it.height?.let { h -> h > 0 } == true &&
+            safeId.matches(it.formatId) && it.formatId in uniqueIds }
             .takeIf { it.size <= 512 }.orEmpty()
     }
 

@@ -28,7 +28,8 @@ object FormatPlanner {
         val best = ids(plan.bestIds)
         val cap = ids(plan.cappedIds)
         return "bv*$best[vcodec^=avc1]+ba[acodec^=mp4a]/" +
-            "b$best[vcodec^=avc1][acodec^=mp4a]/bv*$best+ba/b$best/bv*$cap+ba/b$cap"
+            "b$best[vcodec^=avc1][acodec^=mp4a]/bv*$best+ba[acodec^=mp4a]/bv*$best+ba/b$best/" +
+            "bv*$cap+ba[acodec^=mp4a]/bv*$cap+ba/b$cap"
     }
 
     /** A ceiling is labelled `up-to`, never falsely presented as the actual encoded resolution. */

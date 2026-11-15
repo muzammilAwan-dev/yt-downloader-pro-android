@@ -1079,3 +1079,35 @@ lint XML: errors=0 warnings=7
 ```
 131 passed/one existing host symlink skip. These are fake-runner/evidence checks, not a phone download. The optional
 no-network native selector checker is being prepared separately and is not counted as verified in this step.
+
+Step 3: following owner clarification, architectural inspiration is welcome; keep original implementation, existing Engine
+boundary and typed task/private selection state. Re-read doc 03 and desktop MainViewModel; no competitor code copied.
+Reject duplicate format IDs/oversized candidate lists to prevent ambiguous caps. Added JVM-generated 96-case native selector
+matrix and optional `tools/check-quality-selectors.py` against an **existing** version-checked package. It sorts/selects
+synthetic dictionaries only, never invokes extraction/download or installs a dependency. Covers all eight tiers in both
+orientations, H.264/AAC preference, higher other-codec selection, Opus audio, muxed-only, bounded lower/no fallback.
+JVM and native verification pending. No UI/APK handoff yet.
+
+First step-3 check failed at test compilation: attempted kotlinx.serialization JSON fixture output, but that planned
+dependency is not currently installed in the Phase 0/preview module. Corrected the test/tool to use JDK Properties XML,
+avoiding a new dependency or invented available API. No test pass claimed for that failed invocation. Rerun pending.
+
+Corrected JVM rerun succeeded (59s, 133 pass/one host skip; lint 0 errors/7 known warnings). First native matrix run exposed
+that generic `ba` preferred Opus when AAC also existed, contrary to the matrix's AAC compatibility expectation. Added
+explicit AAC preference for non-H.264 best video and capped lower fallbacks (Opus remains supported when AAC is absent).
+Fixed the nullable parent-directory compiler warning; full rerun/native check pending. This is why strings-only planner
+assertions are not sufficient to establish native selection behavior.
+
+Step-3 final verification:
+```
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain --no-daemon
+BUILD SUCCESSFUL in 1m 56s
+36 actionable tasks: 12 executed, 24 up-to-date
+XML reports: suites=17 tests=134 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=7
+> python tools/check-quality-selectors.py --package <existing verified pinned zip> --fixtures app/build/reports/quality-selectors.xml
+PASS: 96 JVM-generated selectors, yt-dlp 2025.11.12; offline only
+```
+133 passed/one existing host skip; no new lint/compiler warning. All 96 actual Kotlin-generated selectors passed pinned
+yt-dlp sorting/selection with synthetic formats, audio preservation and strict caps. This does not test Android native
+execution, FFmpeg merging or live extraction. Optional tool uses the existing extracted package; no package installed.

@@ -83,6 +83,18 @@ never-copy list; that prohibition still applies to the other named projects.
    opt-in that names the third-party service it contacts, WebView cookie login.
 4. Phase 4: image-post saving; site toggles surfaced from `contracts/sites.json`.
 
+## Standard quality adoption (15 Nov 2026)
+
+Rechecked the owner's `extension/popup.html` quality list and `extension/popup.js` command builder: named preset selection,
+1080 default, optional thumbnail embedding, per-quality output naming, MP4 merges for lower tiers and MKV for 1440/2160.
+The Android version implements those interaction/command-planning ideas in original Kotlin, adding 144/240 and explicitly
+labelling 1440 QHD vs 2160 4K. Availability comes from this task's reported formats, not a site capability flag. Strict
+short-edge caps cover portrait video; no unrestricted desktop fallback or arbitrary custom command is accepted.
+Highest reported resolution is preferred before compatibility, bounded lower fallback and honest selected dimensions.
+Keep `-N 4`, task-private replay, bundled QuickJS/FFmpeg and MediaStore. Unicode-safe filename restrictions remain instead
+of ASCII-only `--restrict-filenames`; ceiling tags say `up-to`, and `%(ext)s` reflects the real container. Optional thumbnail
+embedding is deferred until Android post-processing is separately tested. No source port/copy in this increment.
+
 ## How to read a repo for ideas without copying
 
 Read the module that owns the behaviour (download worker, options builder, cookie handling), write down the *rules* it enforces in your

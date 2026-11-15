@@ -1,5 +1,7 @@
 package io.github.muzammilawan.clipharbor.core
 
+import java.io.File
+import java.util.Properties
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -48,7 +50,7 @@ class VideoQualityTest {
         assertEquals(listOf("high.1"), plan.bestIds)
         assertEquals(listOf("high.1", "low"), plan.cappedIds)
         val branches = FormatPlanner.selector(plan).split('/')
-        assertEquals(6, branches.size)
+        assertEquals(8, branches.size)
         branches.forEach { assertTrue(it.contains("format_id~=")); assertFalse(it.contains("over")) }
         assertTrue(branches.first().contains("high\\.1"))
         assertFalse(branches.first().contains("low"))
@@ -68,6 +70,59 @@ class VideoQualityTest {
             assertTrue(template.contains("_up-to-${it.pixels}p"))
             assertTrue(template.endsWith(".%(ext)s"))
             assertTrue(template.contains("%(title).150B"))
+        }
+    }
+
+    @Test fun ambiguousIdsAndOversizedCandidateListsFailClosed() {
+        assertTrue(VideoQualities.choices(listOf(video("same", 1280, 720), video("same", 3840, 2160), audio))
+            .none { it.available })
+        assertTrue(VideoQualities.choices((0..512).map { video("v$it", 1280, 720) } + audio).none { it.available })
+    }
+
+    /** Optional Python checker consumes these actual Kotlin-generated selectors; CI needs no Python/network. */
+    @Test fun writeOfflineNativeSelectorMatrixFromActualPlanner() {
+        val cases = Properties()
+        var count = 0
+            VideoQuality.entries.forEach { quality ->
+                listOf(false, true).forEach { portrait ->
+                    fun v(id: String, pixels: Int, codec: String = "avc1", acodec: String = "none") =
+                        FormatInfo(id, if (codec == "avc1") "mp4" else "webm", codec, acodec,
+                            if (portrait) pixels else pixels * 2, if (portrait) pixels * 2 else pixels)
+                    val h264 = v("top.h264", quality.pixels)
+                    val av1 = v("top.av1", quality.pixels, "av01")
+                    val low = v("low", 100)
+                    val over = v("over", quality.pixels * 2)
+                    val aac = FormatInfo("aac", "m4a", "none", "mp4a")
+                    val opus = FormatInfo("opus", "webm", "none", "opus")
+                    val base = listOf(h264, av1, low, over, aac, opus)
+                    fun case(name: String, source: List<FormatInfo>, offered: List<FormatInfo>, expected: String?) {
+                        val plan = VideoQualities.plan(source, quality)!!
+                        val selector = FormatPlanner.selector(plan)
+                        assertTrue(plan.cappedIds.none { it == "over" })
+                        val prefix = "case.${count++}."
+                        cases.setProperty(prefix + "name", "${quality.pixels}-${if (portrait) "portrait" else "landscape"}-$name")
+                        cases.setProperty(prefix + "cap", quality.pixels.toString())
+                        cases.setProperty(prefix + "selector", selector)
+                        cases.setProperty(prefix + "expected", expected.orEmpty())
+                        cases.setProperty(prefix + "formats", offered.joinToString("\n") { f ->
+                            listOf(f.formatId, f.ext, f.vcodec, f.acodec, f.width ?: "NA", f.height ?: "NA").joinToString("\t")
+                        })
+                    }
+                    case("compatible", base, base, "top.h264+aac")
+                    case("resolution-before-codec", base - h264, base - h264, "top.av1+aac")
+                    case("opus-fallback", base - h264 - aac, base - h264 - aac, "top.av1+opus")
+                    val muxed = v("muxed", quality.pixels, acodec = "mp4a")
+                    case("muxed-only", listOf(muxed, over), listOf(muxed, over), "muxed")
+                    case("lower-fallback", base, listOf(low, over, aac, opus), "low+aac")
+                    case("never-unbounded", base, listOf(over, aac), null)
+                }
+            }
+        assertEquals(96, count)
+        cases.setProperty("count", count.toString())
+        val module = sequenceOf(File("."), File("app")).first { File(it, "src/main/AndroidManifest.xml").isFile }
+        File(module, "build/reports/quality-selectors.xml").apply {
+            parentFile?.mkdirs()
+            outputStream().use { cases.storeToXML(it, "Synthetic Kotlin planner fixtures", "UTF-8") }
         }
     }
 }

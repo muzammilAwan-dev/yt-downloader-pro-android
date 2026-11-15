@@ -184,6 +184,22 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   naming rather than needlessly stripping titles. Thumbnail embedding adds network/post-processing/dependency behavior;
   defer it explicitly until separately Android-tested. No competitor code/assets copied or external design skill loaded.
 
+- **R56:** Owner clarified that full architectural/code-behavior study is welcome, with original implementation rather
+  than source copying. Re-read doc 03's picker/extraction/task/transfer boundaries and typed processing/state lessons;
+  rechecked desktop MainViewModel height/quality parsing. Current work adopts task-private typed plans and explicit stages;
+  durable queue/service architecture remains planned, not delivered by this quality increment. Added duplicate-ID rejection
+  (an ID with contradictory dimensions cannot substantiate a cap) and a 512-candidate bound. Preparing 96 synthetic
+  JVM-generated selector cases for the already extracted, version-checked pinned package; no installs/live-media CI.
+- **R57:** Rechecked owner `extension/popup.html`/`popup.js`: standard dropdown defaults to 1080; command builder uses
+  MKV merges at 1440/2160, lower-tier MP4, opt-in thumbnail and quality suffixes. Adapt those rules without copying:
+  disable unavailable source tiers, strict portrait-aware caps, true extension, Unicode-safe filenames and no custom commands.
+  First optional native matrix run caught Opus preference in generic `ba`; added explicit AAC preference across best/lower
+  video fallbacks, retaining Opus when AAC is absent. Test fixture JSON compile assumption was corrected to JDK XML without
+  adding the not-yet-installed serialization dependency. Final generated native matrix verification pending.
+- **R58:** Executed corrected JVM checks (133 pass/one host skip, lint 0 errors/7 known warnings), then the optional native
+  checker against the existing pinned 2025.11.12 package. All 96 Kotlin-generated selectors passed orientation, codec,
+  audio, muxed and bounded/no-fallback cases. This is offline selector evidence, not FFmpeg/live-site/Android execution.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports
