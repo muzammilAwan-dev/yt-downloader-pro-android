@@ -6,12 +6,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import io.github.muzammilawan.clipharbor.AppInfo
 import java.io.File
 
 /**
  * Publishes a finished file so the phone's gallery/Files app can see it (docs/02 §7).
  *
- * API 29+: MediaStore `Download/ClipHarbor` with `IS_PENDING` around the copy.
+ * API 29+: MediaStore `Download/YTDLP` with `IS_PENDING` around the copy.
  * API 24-28: the public Downloads folder needs `WRITE_EXTERNAL_STORAGE`, which the permission budget forbids, so the
  * file goes to the app-specific external directory instead and the UI must say so.
  */
@@ -53,7 +54,7 @@ class MediaStorePublisher(private val context: Context) {
     private fun publishLegacy(source: File): Uri {
         val dir = File(
             context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir,
-            "ClipHarbor",
+            AppInfo.DISPLAY_NAME,
         ).apply { mkdirs() }
         val target = File(dir, source.name)
         source.copyTo(target, overwrite = true)
@@ -61,6 +62,6 @@ class MediaStorePublisher(private val context: Context) {
     }
 
     companion object {
-        const val RELATIVE_PATH = "Download/ClipHarbor"
+        const val RELATIVE_PATH = AppInfo.DOWNLOAD_RELATIVE_PATH
     }
 }

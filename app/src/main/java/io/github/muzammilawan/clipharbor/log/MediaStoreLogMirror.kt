@@ -5,13 +5,14 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import io.github.muzammilawan.clipharbor.AppInfo
 import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Debug-only public copy of the session log in `Download/ClipHarbor-logs/` via MediaStore, so the owner can attach it
+ * Debug-only public copy of the session log in `Download/YTDLP-logs/` via MediaStore, so the owner can attach it
  * without opening the app (docs/13 §4). No storage permission is needed on API 29+; on API 24-28 this is skipped and
  * only "Share log" works.
  *
@@ -25,7 +26,7 @@ class MediaStoreLogMirror(private val context: Context) {
     fun start(header: String): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
         return runCatching {
-            val name = "clipharbor-log-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".txt"
+            val name = AppInfo.LOG_FILE_PREFIX + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".txt"
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, name)
                 put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
@@ -97,7 +98,7 @@ class MediaStoreLogMirror(private val context: Context) {
     }
 
     companion object {
-        const val RELATIVE_PATH = "Download/ClipHarbor-logs"
+        const val RELATIVE_PATH = AppInfo.LOG_RELATIVE_PATH
         const val MAX_SESSIONS = 5
     }
 }

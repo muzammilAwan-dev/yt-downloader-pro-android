@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.os.Build
 import android.provider.MediaStore
+import io.github.muzammilawan.clipharbor.AppInfo
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.InetAddress
@@ -16,7 +17,7 @@ class AndroidStorageProbe(private val context: Context) : StorageProbe {
     override suspend fun appPrivateRoundTrip(): ProbeResult = withContext(Dispatchers.IO) {
         runCatching {
             val file = File(context.filesDir, "selftest-${System.currentTimeMillis()}.tmp")
-            val payload = "clipharbor-selftest".toByteArray()
+            val payload = "${AppInfo.DISPLAY_NAME}-selftest".toByteArray()
             file.writeBytes(payload)
             val read = file.readBytes()
             file.delete()
@@ -34,9 +35,9 @@ class AndroidStorageProbe(private val context: Context) : StorageProbe {
         }
         runCatching {
             val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, "clipharbor-selftest.txt")
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "${AppInfo.DISPLAY_NAME}-selftest.txt")
                 put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/ClipHarbor")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, AppInfo.DOWNLOAD_RELATIVE_PATH)
             }
             val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 ?: return@runCatching ProbeResult(false, "insert returned null")

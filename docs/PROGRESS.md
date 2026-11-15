@@ -720,3 +720,22 @@ lint XML: errors=0 warnings=6
 
 Tests executed: 91 passed; the existing Windows symlink case skipped. Rename compiles, but launcher/phone appearance
 has not been tested. The `dist/` handoff is still `5889eee` until all branding increments are packaged.
+
+Branding step 2: publisher, storage probe and public log mirror now use the central YTDLP output-name constants.
+New files go to `Download/YTDLP` and debug session logs to `Download/YTDLP-logs`; old ClipHarbor files are not moved,
+deleted or included in new-folder log pruning. Private replay filename prefixes stay unchanged for orphan cleanup
+compatibility. Added two JVM contract checks for the wired constants; real Android MediaStore rename is untested.
+Verification pending; no new permission, dependency or storage migration.
+
+```
+> .\gradlew.bat testDebugUnitTest lintDebug assembleDebug --console=plain --no-daemon
+
+BUILD SUCCESSFUL in 1m 43s
+54 actionable tasks: 16 executed, 38 up-to-date
+XML reports: suites=12 tests=94 failures=0 errors=0 skipped=1
+lint XML: errors=0 warnings=6
+```
+
+Tests executed: 93 passed, one existing Windows symlink case skipped. Storage branding constants are tested and the
+Android wiring compiles; no new phone MediaStore run performed. The owner requested this build continue in the background;
+results above were recorded only after its completion notification.
