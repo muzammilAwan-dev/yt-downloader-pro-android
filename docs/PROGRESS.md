@@ -1266,3 +1266,10 @@ R70 recommends owner approval for pinned APK-bundled engine-freshness investigat
 No app/test/permission/engine/APK change; current tester remains 6bb477b. Gate/phone checks stay open; no reinstall requested.
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 2s
 Tests/lint analyses UP-TO-DATE: existing reports 206 total / 205 passed / 1 skip / 0 failures/errors, lint 0 errors / 7 known warnings (not fresh execution).
+
+### Extraction bot gate versus media refusal — 15 Nov 2026 (R71)
+Owner's different desktop/video log shows webpage 429 then explicit sign-in bot gate during extraction; no successful catalog or media transfer.
+Official PO-token guide distinguishes Player/catalog and GVS/media checks: resolving formats/initial bytes does not rule out later anti-bot/client enforcement.
+Phone media 403 cause remains unproven; newer engine may fix client handling but cannot guarantee removal of a sign-in/IP gate. No app/engine/login/APK change approved or made.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 4s
+Tests/lint analyses UP-TO-DATE: existing reports 206 total / 205 passed / 1 skip / 0 failures/errors, lint 0 errors / 7 known warnings (not fresh execution).

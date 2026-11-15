@@ -327,6 +327,16 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   existing planner/replay/cancellation. Gate remains closed pending approval; no runtime updater/remote components/login/PO-token work.
   No app/test/engine/permission/APK change. No battery-setting cause or power exemption justified. Original current APK stays `6bb477b`.
 
+- **R71 (15 Nov 2026, owner's desktop bot-check example):** Owner pasted a desktop log dated 14 Nov: webpage HTTP 429,
+  followed by explicit "Sign in to confirm you're not a bot", exit 1 during extraction; no successful format catalog/media transfer.
+  It is a different device/video/session; exact engine version and shared public IP are not established by this excerpt.
+  Rechecked https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide: distinguishes Player (fetch format URLs), GVS (media bytes),
+  and subtitle checks; affected media URLs may return HTTP 403 without a required client PO token. Format discovery or initial
+  bytes therefore do not rule out later client/anti-bot enforcement. Phone logs establish media refusal, not an explicit sign-in
+  gate or its exact cause. The wiki's July 2026 client table is not treated as newer than R70's later tagged fixes.
+  Updating the engine is not guaranteed to fix a sign-in/IP gate; do not conflate the desktop's explicit gate with phone 403s.
+  No engine/login/cookie/PO-token change approved or implemented; R70's narrow refresh recommendation remains a test candidate.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

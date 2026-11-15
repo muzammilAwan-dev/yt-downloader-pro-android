@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R70);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R71);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -26,15 +26,17 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   with app continuously visible on owner-reported stable Wi-Fi. Each failure preceded service destruction; no recorded Cancel/timeout/restart.
   Four 403s near ~29 MiB fit three default HTTP chunks; cause/client unproven. Engine/replay/planner unchanged since working `74ce7cf`.
   Old-default-client 403 fixes exist upstream (R70); recommend owner-approved APK-bundled engine-freshness investigation, not a runtime updater.
+  R71 desktop example has explicit extraction bot gate/429; distinct from phone media 403s. Formats can resolve before media checks fail;
+  exact phone cause remains unknown, and engine refresh is not guaranteed to fix sign-in/IP gates. No refresh/login change approved.
   Sustained background/lock, Cancel/newer APIs remain unverified; no durability/rescheduling. Evidence: `docs/evidence/foreground-6bb477b.md`.
 - Full-session logging: fixed UI/lifecycle actions + available resolve/download diagnostics/progress/timings; emails/secrets redacted.
   Share snapshots the flushed startup-to-tap journal, not a rotating chunk; Clear/new process resets it. No silent truncation; R68 disk-space tradeoff.
   Owner supplied one complete file export (R69) and another session pasted in chat (R70); other native share targets remain unverified.
 
 ## Last recorded check — 15 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 2s** (R70 docs-only investigation).
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 4s** (R71 docs-only clarification).
 Test task and lint analyses UP-TO-DATE: reports 206 total / 205 passed / 1 Windows symlink skip / 0 failures/errors, lint 0 errors / 7 known warnings.
-Last actual execution: helper BUILD SUCCESSFUL in 59s; earlier source checks BUILD SUCCESSFUL in 33s. No new logic/test/APK change in R69/R70.
+Last actual execution: helper BUILD SUCCESSFUL in 59s; earlier source checks BUILD SUCCESSFUL in 33s. No new logic/test/APK change in R69–R71.
 12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
 Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
 Foreground cancellation-first/timeout-first and permission/service tests remain green. No engine/planner/icon/dependency/permission change.
