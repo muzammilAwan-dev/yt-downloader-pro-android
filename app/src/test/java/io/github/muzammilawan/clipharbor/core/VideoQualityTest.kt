@@ -17,6 +17,55 @@ class VideoQualityTest {
         assertTrue(VideoQuality.P2160.label.contains("4K"))
     }
 
+    @Test fun visiblePickerStopsAtReported1440pAndOmitsMissingTiers() {
+        val formats = listOf(video("qhd", 2560, 1440), video("fhd", 1920, 1080),
+            video("hd", 1280, 720), audio)
+        val visible = VideoQualities.visibleChoices(VideoQualities.choices(formats))
+        assertEquals(listOf(VideoQuality.P1440, VideoQuality.P1080, VideoQuality.P720), visible.map { it.quality })
+        assertTrue(visible.all { it.available })
+        assertEquals(listOf("1440p · QHD", "1080p · Full HD", "720p · HD"), visible.map { it.label })
+        assertTrue(visible.none { it.label.contains("4K") })
+        assertNull(VideoQualities.plan(formats, VideoQuality.P2160))
+    }
+
+    @Test fun visiblePickerDoesNotInventOtherChoicesForOneLowStream() {
+        val formats = listOf(video("low", 640, 360, "mp4a"))
+        val visible = VideoQualities.visibleChoices(VideoQualities.choices(formats))
+        assertEquals(listOf(VideoQuality.P360), visible.map { it.quality })
+        assertEquals("360p", visible.single().label)
+        assertEquals(VideoQuality.P360, VideoQualities.default(visible))
+    }
+
+    @Test fun real4kIsStillVisibleInEitherOrientation() {
+        for ((width, height) in listOf(3840 to 2160, 2160 to 3840)) {
+            val visible = VideoQualities.visibleChoices(VideoQualities.choices(listOf(video("4k", width, height), audio)))
+            assertEquals(listOf(VideoQuality.P2160), visible.map { it.quality })
+            assertEquals("2160p · 4K", visible.single().label)
+        }
+    }
+
+    @Test fun nonstandardPickerLabelsDescribeSourceNotThePlanningCeiling() {
+        for ((pixels, ceiling) in listOf(760 to VideoQuality.P1080, 1600 to VideoQuality.P2160)) {
+            for ((width, height) in listOf(pixels * 2 to pixels, pixels to pixels * 2)) {
+                val formats = listOf(video("v", width, height), audio)
+                val visible = VideoQualities.visibleChoices(VideoQualities.choices(formats))
+                assertEquals(listOf(ceiling), visible.map { it.quality })
+                assertEquals("${pixels}p", visible.single().label)
+                assertTrue(visible.single().detail.contains("$width × $height"))
+                assertEquals(listOf("v"), VideoQualities.plan(formats, ceiling)!!.bestIds)
+            }
+        }
+    }
+
+    @Test fun audioOnlyAndUnsubstantiatedVideoDoNotCreateVisibleVideoChoices() {
+        for (formats in listOf(emptyList(), listOf(audio), listOf(video("unknown", null, 720), audio),
+            listOf(video("bad']+b", 1280, 720), audio), listOf(video("orphan", 1280, 720)))) {
+            val visible = VideoQualities.visibleChoices(VideoQualities.choices(formats))
+            assertTrue(visible.isEmpty())
+            assertNull(VideoQualities.default(visible))
+        }
+    }
+
     @Test fun portraitAndLandscapeHaveIdenticalQualityTiers() {
         for (quality in VideoQuality.entries) {
             val landscape = VideoQualities.choices(listOf(video("v", quality.pixels * 2, quality.pixels), audio))

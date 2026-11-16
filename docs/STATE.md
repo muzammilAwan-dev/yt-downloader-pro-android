@@ -12,12 +12,17 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - **Phase 1 (MVP): in progress.** Done and unit-tested: logging/redaction, engine-version reporting, task-private replay
   (`--load-info-json`), download evidence, home controller, Material 3 home + paste/share, eight standard quality tiers with private
   typed selection plan, YTDLP branding and icon. Phone-verified earlier (`ec146df`): resolve, 1080p select, merge, MediaStore publish, playback with sound.
-- Latest tester: **`f96194e`** (APK-only engine refresh), `dist/app-debug.apk` stamp/asset/signature/copied SHA-256 verified; **phone untested**.
-  Owner's installed build remains `6bb477b` until confirmed. Helper checks: BUILD SUCCESSFUL in 2m 3s, 251 pass / 1 skip;
+- Latest/owner-installed tester: **`f96194e`** (APK-only engine refresh), artifact stamp/asset/signature/copied SHA-256 verified.
+  Owner log 16 Nov confirms Android 10 startup and one completed download; this is not a general 403 fix. Helper checks: BUILD SUCCESSFUL in 2m 3s, 251 pass / 1 skip;
   lint 0 errors / 7 known warnings; APK BUILD SUCCESSFUL in 32s. Tester hash/phone sequence: `docs/evidence/engine-refresh-2026.10.26.md`.
 - Owner evidence for `74ce7cf` (R61): dark portrait standard picker with disabled QHD/4K; 1080×1920 `137+140` download,
   resolve replay reused, MP4 merge and 7,737,267-byte MediaStore save; later self-test 7/7. Only one quality download.
 - Still unverified: second preset, new file playback with sound, QHD/4K MKV playback; earlier `ec146df` playback remains confirmed.
+- `f96194e` owner session: yt-dlp 2026.10.26 / EJS 0.8.0 local solver / Python 3.12.11 / QuickJS 2025-04-26 / ffmpeg 7.1.1 ran.
+  56 formats resolved; replay-selected `299+140` at 1920×1080, 292.01 MiB video + 7.58 MiB audio, MP4 merge and 314,296,147-byte save; no 403.
+  Transfer continued during ~6.6 s Activity pause/stop; service destroyed only after publication. Self-test 6 pass / 1 no-URL skip.
+  Open-file launch is recorded, not confirmed sound; failing 528/873 MiB samples and sustained background/lock still pending.
+  Log has no full format inventory: possible 4K/1440p mismatch unproven; initial report header is stale, later runtime lines are authoritative.
 - Foreground foundation: tested admission/progress/release and shared process-local session ownership with an independent scope.
   Tested Home timeout boundary: stop-service callback first, PAUSING through cleanup, then PAUSED(FGS_TIMEOUT); no automatic rescheduling.
   New task-only dataSync service wiring retains a session before admission, promotes before Engine work, and connects Android onTimeout.
@@ -41,23 +46,22 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   R73 adapter wiring now uses Android Os.rename and one process-wide install-before-library-init gate; 18 startup tests pass.
   Failed/interrupted startup does not publish readiness; retry is allowed. A ready process never reinstalls over an active worker.
   Reports verified installed yt-dlp/EJS pin, not stale updater preferences; later verbose runtime versions remain observable.
-  Stamped tester ready in `dist`; Android replacement/runtime/download compatibility untested. Next: OWNER installs/tests while visible.
+  Owner-tested runtime/merge/save on one sample; old-file replacement without data clearing and broader reliability remain unconfirmed.
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1`: checks **BUILD SUCCESSFUL in 2m 3s**, APK **BUILD SUCCESSFUL in 32s**.
-Fresh tests/lint execution with `-PgitSha=f96194e`: 252 total / 251 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Shell-only non-daemon setting; no persistent/project workaround. Actual APK BuildConfig field, signature and copied SHA-256 verified.
-18 startup tests first failed 18/18 (BUILD FAILED in 41s), then passed (BUILD SUCCESSFUL in 13s); installer/payload tests remain green.
-`dist/app-debug.apk`: 70,342,176 bytes; SHA-256 `9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`.
-12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
-Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
-Foreground cancellation-first/timeout-first and permission/service tests remain green. No runner/planner/icon/dependency/permission change.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 1m 42s** (available-only video picker).
+Fresh reports: 257 total / 256 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Five new picker tests first failed 5/5 (14 quality tests total), **BUILD FAILED in 36s**; all pass after filtering/source-label change.
+Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
+No new APK: `dist/app-debug.apk` remains stamped `f96194e`, 70,342,176 bytes; SHA-256 rechecked unchanged
+`9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`. Prior helper checks BUILD SUCCESSFUL in 2m 3s; APK in 32s.
+No runner/planner/icon/dependency/permission change; source-backed row labels and hidden missing tiers are CLI-tested, phone rendering untested.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
 Tester `f96194e`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `6bb477b`, no new permissions.
 
 ## Next steps (do in order, one per `/next`)
-Owner cadence (R65): push verified increments; APK-only engine tester `f96194e` is ready for the next meaningful reinstall over `6bb477b`.
+Owner cadence (R65): push verified increments; owner now runs engine tester `f96194e`; keep `dist` unchanged until the next meaningful tester.
 Passing CLI checks is not phone verification. Existing phone checks and the major-feature-area gate remain open.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
@@ -70,12 +74,13 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [x] 1e. Notification Cancel action and contextual Android 13+ notification permission UI (not a launch gate); CLI checks green.
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
 - [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), stamped APK built.
-- [ ] 1f. `6bb477b` installed; media 403 also reproduced while visible on owner-reported stable Wi-Fi (R70), not fixed. Prioritize
-        approved APK-bundled engine-only spike (R72/R73): payload/licenses and pre-init adapter wiring implemented; CLI checks green.
-        Stamped `f96194e` tester verified/ready: OWNER install over `6bb477b` without clearing data; confirm stamp/runtime versions.
-        Keep native runtime/planner/replay/cancellation/logs; no runtime downloads/login/new permissions. Android 10 baseline/minSdk 24.
-        Test failing long video + earlier working sample on same Wi-Fi while visible; share full logs/dimensions/playback with sound.
-        Wait for owner report; only after reliable visible transfers retest background/lock. Cancel/cleanup/playback still open.
+- [ ] 1f. Engine tester `f96194e` owner log confirms new runtime and one 1080p MP4 save without 403; old `6bb477b` failures remain historical.
+        Repeat the earlier failing long video + working sample on same Wi-Fi while visible; confirm playback with sound/second preset.
+        Brief background continuation is observed, not sustained background/lock or Cancel verification. Keep native runtime/planner/replay/logs.
+- [x] Owner priority (16 Nov), first increment: hide unavailable video rows and label actual source resolution; CLI checks green, new UI phone-untested.
+        This supersedes the older disabled-row design, not the standard typed planner. No exact-format picker/new tester in this increment.
+- [ ] Next owner priority: separate source-backed audio-only choices (before Room). MP3 conversion options must be labelled separately from source formats.
+        Supplied screenshots are behavior references only; do not copy code/assets. No browser/login/subtitle work.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)
@@ -85,9 +90,9 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
 
 ## Risks to keep visible
-- **Engine age:** installed `6bb477b` engine is 2025.11.12; source now activates bundled 2026.10.26 at verified startup. YouTube
+- **Engine freshness:** owner-installed `f96194e` runs bundled 2026.10.26; previous `6bb477b` used 2025.11.12. YouTube
   extraction is the first thing to break. Updating yt-dlp at runtime downloads code, which conflicts with "no remote code execution"
-  in `AGENTS.md`; R72 approves only a verified APK bundle, not runtime updates. Candidate Android behavior remains untested.
+  in `AGENTS.md`; R72 approves only a verified APK bundle, not runtime updates. One Android transfer passed; broader reliability remains open.
 - Name: the display name is `YTDLP`; the spaced expansion contains "You Tube" while `AGENTS.md` forbids "YouTube" in the app name. Open.
 - Browser/website-login and PO-token ideas are research only (`docs/16`); nothing is implemented. Do not start them unasked.
 - Clean-room: coding agents must not read decompiled Snaptube source (the `rea` MCP server / REA folder); use the written notes in `docs/03` and `docs/16`.

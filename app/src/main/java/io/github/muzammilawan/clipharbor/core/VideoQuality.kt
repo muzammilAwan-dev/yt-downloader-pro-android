@@ -9,6 +9,12 @@ enum class VideoQuality(val pixels: Int, val label: String) {
 
 data class QualityChoice(val quality: VideoQuality, val width: Int? = null, val height: Int? = null) {
     val available: Boolean get() = width != null && height != null
+    /** The internal ceiling can exceed a nonstandard source resolution; never label that source as Full HD/4K. */
+    val label: String get() {
+        if (!available) return quality.label
+        val pixels = minOf(width!!, height!!)
+        return VideoQuality.entries.firstOrNull { it.pixels == pixels }?.label ?: "${pixels}p"
+    }
     val detail: String get() = if (available) "Best reported: $width × $height · audio included"
         else "Unavailable in the reported formats"
 }
@@ -23,6 +29,9 @@ class VideoQualityPlan internal constructor(
 }
 
 object VideoQualities {
+    /** Keep missing tiers internal for planning/validation, not as rows in the picker. */
+    fun visibleChoices(choices: List<QualityChoice>): List<QualityChoice> = choices.filter { it.available }
+
     // Only known dimensions and safely representable IDs can substantiate a quality promise.
     private val safeId = Regex("[A-Za-z0-9_.-]{1,128}")
     private fun eligible(formats: List<FormatInfo>): List<FormatInfo> {
@@ -41,7 +50,7 @@ object VideoQualities {
         val video = eligible(formats)
         return VideoQuality.entries.mapIndexed { index, quality ->
             val previous = VideoQuality.entries.getOrNull(index - 1)?.pixels ?: 0
-            // Do not offer eight aliases for the same low-quality stream. Missing tiers remain visible but disabled.
+            // Do not offer eight aliases for one low-quality stream. The picker hides missing tiers via visibleChoices.
             val best = video.filter { resolution(it)!! in (previous + 1)..quality.pixels }
                 .maxByOrNull { resolution(it)!! }
             QualityChoice(quality, best?.width, best?.height)

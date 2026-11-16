@@ -1322,3 +1322,13 @@ Actual APK engine digest/versions/solver hashes/full notices verified; seven nat
 APK v2 signature verifies; certificate matches previous local tester, no new permissions. Previous 6bb477b hash-verified/preserved in approved temp before replacing dist.
 OWNER: install over 6bb477b without data clearing, confirm stamp/runtime versions, retry failing long video + earlier working sample while visible on same Wi-Fi; share full logs/dimensions/sound.
 Phone replacement/runtime/download/403/background/Cancel untested; wait for owner report. Evidence and artifact checks: docs/evidence/engine-refresh-2026.10.26.md.
+
+### Source-backed video picker + f96194e phone report — 16 Nov 2026
+Owner attachment session-1794804512696-000000000001.txt: 100,262 bytes / 665 lines; SHA-256 75fdb49ff0e9b62645749ce9ea348a2f1eb1491a2771762e0cfa3be98a25e968. Inspected redacted temp copy; no raw logs/screenshots copied into repo.
+Phone f96194e / Android 10 ran yt-dlp 2026.10.26, local EJS 0.8.0 solver, Python 3.12.11, QuickJS 2025-04-26, ffmpeg 7.1.1; 56 formats, replay 299+140 / 1920×1080, 292.01 MiB video + 7.58 MiB audio, MP4 merge/save 314,296,147 bytes; no 403.
+Activity paused/stopped 04:47:04.642Z–04:47:11.290Z while transfer continued; FGS destroyed after save. Open-file launch only (sound unconfirmed); self-test 6 pass / 1 no-URL skip. Prior 528/873 MiB failures not retested by this evidence; initial report header is stale, runtime lines authoritative.
+Full format inventory/max resolution absent: owner's possible 4K/1440p mismatch remains unproven; screenshots show video/music sections and 4K/MP3 rows, not source-format proof. Owner requests available-only rows, superseding historical disabled-tier UI.
+Home now hides missing video tiers; row labels use actual reported short edge (e.g. 1600p, not 4K). Internal standard ceilings/typed plans/defaults/selectors remain unchanged; real 4K stays offered when reported.
+Five new regression tests first failed 5/5 (14 quality tests total): BUILD FAILED in 36s; cover missing tiers, real 4K, nonstandard/portrait labels, lone low stream and unsubstantiated/audio-only input.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 1m 42s; 257 total / 256 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Shell-only non-daemon setting; existing fake-Engine/foreground/startup/replay/redaction tests green.
+No new APK in this increment: dist f96194e bytes/hash unchanged. Engine/replay/foreground/cancellation/logging/icon/dependencies/permissions unchanged; new picker rendering phone-untested. Next small step: separate source-backed audio-only choices; label any future MP3 conversions distinctly.

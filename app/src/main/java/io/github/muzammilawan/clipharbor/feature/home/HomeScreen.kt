@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
+import io.github.muzammilawan.clipharbor.core.VideoQualities
 import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
 
@@ -118,7 +119,7 @@ fun HomeScreen(
                         Text(state.title.orEmpty(), style = MaterialTheme.typography.titleSmall)
                         Text("Video + audio · Best reported resolution first; H.264/AAC preferred.", style = MaterialTheme.typography.bodySmall)
                         Column(Modifier.selectableGroup()) {
-                            state.qualities.forEach { choice ->
+                            VideoQualities.visibleChoices(state.qualities).forEach { choice ->
                                 val canChoose = enabled && choice.available
                                 Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).selectable(
                                     selected = state.selectedQuality == choice.quality, enabled = canChoose,
@@ -127,13 +128,13 @@ fun HomeScreen(
                                 ) {
                                     RadioButton(selected = state.selectedQuality == choice.quality, onClick = null, enabled = canChoose)
                                     Column(Modifier.weight(1f).padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
-                                        Text(choice.quality.label, style = MaterialTheme.typography.titleSmall)
+                                        Text(choice.label, style = MaterialTheme.typography.titleSmall)
                                         Text(choice.detail, style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
                         }
-                        Text("Presets cap the shorter edge, including portrait video. No upscaling; a lower resolution may be used. The saved result reports selected dimensions. High-resolution merges use MKV.",
+                        Text("Only qualities in the reported formats are shown. Labels describe the shorter edge, including portrait video. No upscaling; a lower resolution may be used. The saved result reports selected dimensions. High-resolution merges use MKV.",
                             style = MaterialTheme.typography.bodySmall)
                         Text("Optional notifications show progress and Cancel while downloading. Cancel is unavailable once saving begins. Downloads also work without notification permission.",
                             style = MaterialTheme.typography.bodySmall)
