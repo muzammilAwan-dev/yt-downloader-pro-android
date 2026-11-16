@@ -44,6 +44,7 @@ import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
 import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
+import io.github.muzammilawan.clipharbor.download.TaskRecord
 
 @Composable
 fun YtdlpTheme(content: @Composable () -> Unit) {
@@ -71,6 +72,11 @@ fun HomeScreen(
     onPendingLink: () -> Unit,
     onOpenFile: (PublishedMedia) -> Unit,
     onDiagnostics: () -> Unit,
+    tasks: List<TaskRecord> = emptyList(),
+    durableQueue: Boolean = false,
+    onStageLink: () -> Unit = {},
+    onReviewTask: (String, Boolean) -> Unit = { _, _ -> },
+    onRemoveTask: (String) -> Unit = {},
 ) {
     val enabled = !state.busy && !externalBusy
     val focusManager = LocalFocusManager.current
@@ -105,6 +111,8 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth()) {
                         Text(if (state.phase == HomePhase.CHOOSING) "Refresh formats" else "Find formats")
                     }
+                    if (durableQueue) OutlinedButton(onClick = onStageLink, enabled = enabled && state.engineReady,
+                        modifier = Modifier.fillMaxWidth()) { Text("Add link to queue · start later") }
                 }
             }
 
@@ -174,7 +182,8 @@ fun HomeScreen(
                     }
                 }
             }
-            Text("Phase 1 preview · Foreground downloads and notification controls are not phone-verified yet. No durable queue or process-death recovery.",
+            if (durableQueue) TaskQueue(tasks, enabled, onReviewTask, onRemoveTask, onOpenFile)
+            Text("Phase 1 preview · Host checks do not verify Android queue recovery, background execution, notification controls or playback. Device checks are deferred.",
                 style = MaterialTheme.typography.bodySmall)
             OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Diagnostics & local logs") }
             Text("Unofficial · Free and open source · ${AppInfo.ENGINE_CREDIT}", style = MaterialTheme.typography.bodySmall)

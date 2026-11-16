@@ -1422,3 +1422,8 @@ Application now owns one Room DB/repository across sessions; startup pauses inte
 NonCancellable terminal writes survive session cancellation; active task cleanup still owns replay/service release. Interrupted publication is PUBLICATION_INTERRUPTED, requiring folder check and explicit acceptance before new extraction.
 Added 200-record bound and title/name redaction regression; unsafe query links remain absent from persisted sources. Queue UI and contract/storage UX still pending; no phase-completion/device claim.
 Foundation wrapper BUILD SUCCESSFUL in 3m 37s; final wired wrapper BUILD SUCCESSFUL in 3m 8s, 306 total / 305 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. No APK/device build yet; continue Phase 1.
+### Compact queue and recent-save UI — 16 Nov 2026
+2 tests-first bounded/order/action-fence presentation regressions; active/staged work precedes 5 recent records with explicit all-record access in a 340dp viewport.
+Home adds stage-for-later, review fresh formats, forget-record (not saved-file deletion), previous-save opening and explicit interrupted-publication confirmation. No automatic queue admission or background rescheduling.
+Required wrapper BUILD SUCCESSFUL in 2m 59s; 308 total / 307 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Repeat BUILD SUCCESSFUL in 28s was up-to-date, not a second fresh run.
+UI/a11y/device recovery unverified; continue Phase 1 errors/storage/exact-video and final artifact checks.

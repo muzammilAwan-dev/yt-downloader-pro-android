@@ -133,6 +133,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun AppRoute() {
         val ui by home.state.collectAsState()
+        val tasks by home.tasks.collectAsState(initial = emptyList())
         val state = diagnostics
         BackHandler(enabled = showDiagnostics) {
             logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
@@ -173,6 +174,10 @@ class MainActivity : ComponentActivity() {
                     logger.action(UserAction.USE_PENDING_LINK, ui.phase.name)
                     home.usePendingLink()
                 }, onOpenFile = ::openSaved,
+                tasks = tasks, durableQueue = home.hasDurableQueue,
+                onStageLink = { if (!state.busy) home.stageCurrentLink() },
+                onReviewTask = { id, accepted -> if (!state.busy) home.reviewTask(id, accepted) },
+                onRemoveTask = { id -> if (!state.busy) home.removeTask(id) },
                 onDiagnostics = {
                     logger.action(UserAction.OPEN_DIAGNOSTICS, ui.phase.name)
                     state.engineLine = "engine: " + engine.info().headerLine()
