@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import io.github.muzammilawan.clipharbor.download.QueuePresentation
 import io.github.muzammilawan.clipharbor.download.TaskPhase
 import io.github.muzammilawan.clipharbor.download.TaskRecord
+import io.github.muzammilawan.clipharbor.core.ErrorCode
+import io.github.muzammilawan.clipharbor.core.ErrorRecovery
 
 @Composable
 internal fun TaskQueue(rows: List<TaskRecord>, enabled: Boolean, onReview: (String, Boolean) -> Unit,
@@ -47,7 +49,10 @@ internal fun TaskQueue(rows: List<TaskRecord>, enabled: Boolean, onReview: (Stri
                         row.selection.videoHeight?.let { Text("Requested ceiling: ${it}p", style = MaterialTheme.typography.bodySmall) }
                         row.selection.audioFormatId?.let { Text("Original audio · format $it", style = MaterialTheme.typography.bodySmall) }
                         row.selection.videoFormatId?.let { Text("Exact video · format $it", style = MaterialTheme.typography.bodySmall) }
-                        row.reason?.let { Text(it.replace('_', ' '), style = MaterialTheme.typography.bodySmall) }
+                        row.reason?.let { reason ->
+                            val recovery = runCatching { ErrorRecovery.forCode(ErrorCode.valueOf(reason)) }.getOrNull()
+                            Text(recovery?.explanation ?: reason.replace('_', ' '), style = MaterialTheme.typography.bodySmall)
+                        }
                         if (row.sourceUrl == null) Text("Source not retained for privacy. Re-enter the original link.", style = MaterialTheme.typography.bodySmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (QueuePresentation.reviewable(row)) OutlinedButton(onClick = {

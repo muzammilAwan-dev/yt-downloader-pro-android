@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
 import io.github.muzammilawan.clipharbor.core.VideoQuality
+import io.github.muzammilawan.clipharbor.core.ErrorRecovery
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
 import io.github.muzammilawan.clipharbor.download.TaskRecord
 
@@ -107,7 +108,8 @@ fun HomeScreen(
                         isError = state.inputError != null,
                         supportingText = { Text(state.inputError ?: "One link at a time. No command options.") })
                     OutlinedButton(onClick = onPaste, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text("Paste from clipboard") }
-                    Button(onClick = findFormats, enabled = enabled && state.engineReady,
+                    Button(onClick = findFormats, enabled = enabled && state.engineReady &&
+                        (state.failureCode?.let { ErrorRecovery.forCode(it).freshResolve } != false),
                         modifier = Modifier.fillMaxWidth()) {
                         Text(if (state.phase == HomePhase.CHOOSING) "Refresh formats" else "Find formats")
                     }
@@ -147,6 +149,12 @@ fun HomeScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (externalBusy) Text("Self-test is running. Download controls are temporarily unavailable.")
                     Text(state.status, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium)
+                    state.failureCode?.let { code ->
+                        Text("${code.name} · ${ErrorRecovery.forCode(code).contractAction}", style = MaterialTheme.typography.bodySmall)
+                        if (ErrorRecovery.forCode(code).freshResolve) OutlinedButton(onClick = findFormats, enabled = enabled,
+                            modifier = Modifier.fillMaxWidth()) { Text("Review fresh formats · confirm download again") }
+                        else OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Read local diagnostics") }
+                    }
                     state.storageReport?.let { Text(it.summary, style = MaterialTheme.typography.bodySmall) }
                     if (notificationAccess != NotificationAccess.ENABLED && state.phase in setOf(HomePhase.DOWNLOADING, HomePhase.PUBLISHING)) {
                         Text("Notification controls are unavailable. Watch progress here; Cancel attempt works here while downloading, not while saving.",

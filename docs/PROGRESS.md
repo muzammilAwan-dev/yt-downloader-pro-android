@@ -1433,3 +1433,9 @@ UI/a11y/device recovery unverified; continue Phase 1 errors/storage/exact-video 
 StatFs checks existing private/fixed destination filesystems without new permission (R78). Conservative parts/merge/public-copy budget + 64 MiB DB/log reserve; unknown sizes remain unknown, UI displays free/budget and no-guarantee warning.
 Actual destination bytes checked again immediately before publication; no SAF/folder picker or promise of disk-full prevention. Required wrapper BUILD SUCCESSFUL in 3m 59s; 313 total / 312 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
 Continue Phase 1 contract recovery/exact-video/final packaging; no phone request or device claim.
+
+### Contract-driven recovery capability boundary — 16 Nov 2026
+2 tests-first recovery cases compare all 17 error/action/retry flags to contracts/errors.json and fence unsupported runtime/login/client/folder/raw-output actions; UI explains unavailable capabilities rather than pretending they exist.
+Explicit supported retry always re-extracts and requires Download again; network timeout waits at least 5 seconds in the current process, no automatic retry/resume/reschedule. Queue and Home both gate unsupported failures.
+2 added fake-Engine cases cover destination full after transfer and timeout wait/unsupported-sign-in admission. Required wrapper BUILD SUCCESSFUL in 2m 55s; 317 total / 316 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
+Storage/retry is host-verified, not phone reliability or a guaranteed 403 fix; continue exact-video/publication hardening and final stamped APK.

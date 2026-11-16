@@ -24,9 +24,12 @@ class HomeQueueTest {
     private var publishes = 0
     private var holdDownload = false
     private var failDownload = false
+    private var failureCode = ErrorCode.HTTP_403_ON_MEDIA
+    private var now = 0L
     private val publishGate = CompletableDeferred<Unit>()
     private var holdPublish = false
     private var space: StorageSpace? = null
+    private var spaceAfterTransfer: StorageSpace? = null
     private val phasesAtWork = mutableListOf<TaskPhase>()
     private val engine = object : Engine by fake {
         override suspend fun resolveForTask(url: String, processId: String): Result<ResolveOutcome> {
@@ -38,9 +41,10 @@ class HomeQueueTest {
             downloads++
             phasesAtWork += store.rows.value.last().phase
             if (holdDownload) awaitCancellation()
-            if (failDownload) return Result.failure(EngineFailure(DownloadError(ErrorCode.HTTP_403_ON_MEDIA, Stage.DOWNLOADING)))
+            if (failDownload) return Result.failure(EngineFailure(DownloadError(failureCode, Stage.DOWNLOADING)))
             request.outputDirectory.mkdirs()
             val file = File(request.outputDirectory, "test.mp4").apply { writeText("bytes") }
+            spaceAfterTransfer?.let { space = it }
             return Result.success(DownloadOutcome(listOf(file), 0, 1, emptyList(), listOf("18"), 360, selectedWidth = 640))
         }
     }
@@ -51,7 +55,7 @@ class HomeQueueTest {
             phasesAtWork += store.rows.value.last().phase
             if (holdPublish) publishGate.await()
             PublishedMedia("content://test/1", file.name, "Downloads/YTDLP", "video/mp4")
-        }, newTaskId = { "task-${++serial}" }, queue = repository,
+        }, newTaskId = { "task-${++serial}" }, queue = repository, clockMs = { now },
             storageSpace = { space ?: StorageSpace(Long.MAX_VALUE, Long.MAX_VALUE) })
 
     @Test fun storagePreflightBlocksTransferAndRechecksActualPublicationBytes() = runTest {
@@ -70,6 +74,42 @@ class HomeQueueTest {
         assertEquals(1, downloads)
         assertEquals(1, publishes)
         assertTrue(home.state.value.storageReport!!.allowed)
+        home.close()
+    }
+
+    @Test fun destinationBecomingFullAfterTransferPreventsPublication() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        spaceAfterTransfer = StorageSpace(Long.MAX_VALUE, 0)
+        home.download(); advanceUntilIdle()
+        assertEquals(1, downloads)
+        assertEquals(0, publishes)
+        assertEquals("NO_SPACE", store.rows.value.single().reason)
+        home.close()
+    }
+
+    @Test fun timeoutRecoveryWaitsAndUnsupportedContractActionsNeverStartAnotherExtraction() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        failDownload = true
+        failureCode = ErrorCode.NETWORK_TIMEOUT
+        home.download(); advanceUntilIdle()
+        home.resolve(); advanceUntilIdle()
+        assertEquals(1, fake.resolveCalls)
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals(1, fake.resolveCalls)
+        now = 5_000
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        failureCode = ErrorCode.LOGIN_REQUIRED
+        home.download(); advanceUntilIdle()
+        home.resolve(); advanceUntilIdle()
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        assertEquals(2, downloads)
+        assertTrue(home.state.value.status.contains("not available"))
         home.close()
     }
 

@@ -59,6 +59,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Contract recovery: **BUILD SUCCESSFUL in 2m 55s**, 317 total / 316 pass / 1 skip; lint 0 errors / 7 warnings.
+Taxonomy/retry flags matched against contracts/errors.json; safe explicit fresh retries, 5-second timeout wait, no automatic reschedule.
+Unsupported sign-in/client/runtime/folder/raw-part actions honestly explained. Destination-full-after-transfer and retry-capability tests pass.
 Storage preflight: **BUILD SUCCESSFUL in 3m 59s**, 313 total / 312 pass / 1 skip; lint 0 errors / 7 warnings.
 4 budget/unknown/overflow/estimate tests + fake-Engine low-space admission/retry test pass. Actual-byte publication recheck wired.
 Conservative 3x video / 2x audio estimate + 64 MiB reserve, displayed free/budget/unknown warning; Android filesystem behavior device-unverified.
@@ -131,7 +134,9 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
         Home/application wired with process-once recovery, staged/review/remove commands, new native attempt IDs, persist-before-work
         and cleanup-fenced terminal writes. Queue/history UI wired; interrupted publication requires separate explicit acceptance;
         Android Room runtime/process recovery device-deferred. At most 200 records, no secret headers retained in titles.
-- [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
+- [x] 3. Contract-checked error/retry UI; explicit fresh resolution after media 403 and safe failures, timeout wait, pre-flight
+        free-space and actual-byte publication checks. Login/client/runtime/folder/raw-part recovery unavailable in Phase 1 and explained;
+        no automatic connectivity resume/rescheduling or general 403 reliability claim.
 - [ ] 4. Exact-video-format picker (original audio moved earlier and delivered above). Thumbnail embedding is deliberately deferred.
 - [ ] 5. Broader engine update policy remains gated; approved APK-only freshness investigation is prioritized in 1f (R72).
 - [ ] Integrated queue/history/progress/recovery UI and host recovery/privacy tests; stamped APK/source/signature/payload inspection and phase report.

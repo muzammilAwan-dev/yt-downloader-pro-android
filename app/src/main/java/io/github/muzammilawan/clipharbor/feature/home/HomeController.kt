@@ -8,6 +8,7 @@ import io.github.muzammilawan.clipharbor.core.DownloadForeground
 import io.github.muzammilawan.clipharbor.core.DownloadRequest
 import io.github.muzammilawan.clipharbor.core.Engine
 import io.github.muzammilawan.clipharbor.core.ErrorCode
+import io.github.muzammilawan.clipharbor.core.ErrorRecovery
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.QualityChoice
 import io.github.muzammilawan.clipharbor.core.VideoQualities
@@ -59,6 +60,7 @@ data class HomeState(
     val pendingUrl: String? = null,
     val pauseReason: ErrorCode? = null,
     val storageReport: StorageReport? = null,
+    val failureCode: ErrorCode? = null,
 ) {
     val canDownload: Boolean get() = phase == HomePhase.CHOOSING && engineReady &&
         ((selectedAudioFormatId == null && qualities.any { it.available && it.quality == selectedQuality }) ||
@@ -101,6 +103,7 @@ class HomeController(
     private var prepared: Prepared? = null
     private var currentRecord: String? = null
     private var reviewedRecord: TaskRecord? = null
+    private var retryAfterMs = 0L
     @Volatile private var activeTask: String? = null
     @Volatile private var timeoutTask: String? = null
     @Volatile private var closed = false
@@ -136,7 +139,7 @@ class HomeController(
         discardPrepared()
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
             title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null,
-            phase = HomePhase.READY, pauseReason = null, storageReport = null, status = "Review the link, then find formats.") }
+            phase = HomePhase.READY, pauseReason = null, storageReport = null, failureCode = null, status = "Review the link, then find formats.") }
     }
 
     fun receiveShared(text: String) {
@@ -153,7 +156,7 @@ class HomeController(
                     reviewedRecord = null
                     discardPrepared()
                     mutable.update { it.copy(url = input.url, inputError = null, title = null,
-                        qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null, pauseReason = null,
+                        qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null, pauseReason = null, failureCode = null,
                         phase = if (it.engineReady) HomePhase.READY else it.phase,
                         status = "Shared link ready. Review it before finding formats.") }
                 }
@@ -170,6 +173,12 @@ class HomeController(
 
     fun resolve(forceRefresh: Boolean = false) {
         if (closed || state.value.busy || job?.isActive == true || !state.value.engineReady) return
+        state.value.failureCode?.let { code ->
+            val recovery = ErrorRecovery.forCode(code)
+            if (!recovery.freshResolve || clockMs() < retryAfterMs) {
+                mutable.update { it.copy(status = recovery.explanation) }; return
+            }
+        }
         val input = MediaEntry.pasted(state.value.url)
         if (input is MediaEntry.Input.Invalid) {
             mutable.update { it.copy(inputError = input.message) }
@@ -189,7 +198,7 @@ class HomeController(
         activeTask = task
         mutable.update { it.copy(phase = HomePhase.RESOLVING, url = url, inputError = null,
             saved = null, title = null, qualities = emptyList(), selectedQuality = null,
-            audioChoices = emptyList(), selectedAudioFormatId = null, progress = null, pauseReason = null, storageReport = null,
+            audioChoices = emptyList(), selectedAudioFormatId = null, progress = null, pauseReason = null, storageReport = null, failureCode = null,
             status = "Finding available video and audio formats…") }
         job = scope.launch {
             var snapshot: ResolvedSnapshot? = null
@@ -458,14 +467,12 @@ class HomeController(
         if (closed) return
         observer.failure(task, error)
         discardPrepared()
-        val message = when (error.code) {
-            ErrorCode.AGE_OR_BOT_GATE, ErrorCode.LOGIN_REQUIRED -> "The site requires verification or sign-in. In-app login is not available yet."
-            ErrorCode.FORMATS_WITHHELD -> "No selectable video + audio qualities or original audio streams were reported."
-            ErrorCode.RESOLVE_TIMEOUT, ErrorCode.HTTP_403_ON_MEDIA -> "The link or media access may have expired. Find formats again."
-            ErrorCode.NO_SPACE -> "Not enough storage. Free some space, then find formats again."
-            else -> "This attempt failed (${error.code.name}). Diagnostics has the details."
-        }
-        mutable.update { it.copy(phase = HomePhase.FAILED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null, status = message) }
+        val recovery = ErrorRecovery.forCode(error.code)
+        retryAfterMs = clockMs() + recovery.waitMs
+        observer.event(task, stage.name, "recovery", mapOf("code" to error.code.name, "contractAction" to recovery.contractAction,
+            "freshResolveAvailable" to recovery.freshResolve.toString(), "automatic" to "false"))
+        mutable.update { it.copy(phase = HomePhase.FAILED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null,
+            failureCode = error.code, status = recovery.explanation) }
     }
 
     fun stageCurrentLink() {
@@ -507,6 +514,16 @@ class HomeController(
                 }
                 if (row.phase in setOf(TaskPhase.DONE, TaskPhase.PUBLISHING, TaskPhase.DOWNLOADING, TaskPhase.RESOLVING)) {
                     mutable.update { it.copy(phase = HomePhase.READY, status = "This task cannot be restarted from the queue.") }; return@launch
+                }
+                if (row.phase == TaskPhase.FAILED) {
+                    val code = runCatching { ErrorCode.valueOf(row.reason.orEmpty()) }.getOrNull()
+                    if (code == null || !ErrorRecovery.forCode(code).freshResolve) {
+                        mutable.update { it.copy(phase = HomePhase.READY, status = code?.let { ErrorRecovery.forCode(it).explanation }
+                            ?: "This failure has no supported retry. Check Diagnostics.") }; return@launch
+                    }
+                    if (code == ErrorCode.NETWORK_TIMEOUT && currentRecord == row.id && clockMs() < retryAfterMs) {
+                        mutable.update { it.copy(phase = HomePhase.READY, status = ErrorRecovery.forCode(code).explanation) }; return@launch
+                    }
                 }
                 if (row.reason == "PUBLICATION_INTERRUPTED" && !acceptPublicationRetry) {
                     mutable.update { it.copy(phase = HomePhase.READY,
