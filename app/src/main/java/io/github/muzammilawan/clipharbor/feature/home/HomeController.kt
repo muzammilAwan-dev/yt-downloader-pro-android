@@ -16,6 +16,10 @@ import io.github.muzammilawan.clipharbor.core.VideoQualityPlan
 import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
 import io.github.muzammilawan.clipharbor.engine.EngineFailure
+import io.github.muzammilawan.clipharbor.download.TaskPhase
+import io.github.muzammilawan.clipharbor.download.TaskRecord
+import io.github.muzammilawan.clipharbor.download.TaskRepository
+import io.github.muzammilawan.clipharbor.download.TaskSelection
 import java.io.File
 import java.util.Locale
 import java.util.UUID
@@ -24,14 +28,17 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-enum class HomePhase { INITIALIZING, READY, RESOLVING, CHOOSING, DOWNLOADING, PUBLISHING, PAUSING, PAUSED, DONE, FAILED, CANCELED }
+enum class HomePhase { INITIALIZING, STAGING, READY, RESOLVING, CHOOSING, DOWNLOADING, PUBLISHING, PAUSING, PAUSED, DONE, FAILED, CANCELED }
 
 data class HomeState(
     val phase: HomePhase = HomePhase.INITIALIZING,
@@ -53,7 +60,7 @@ data class HomeState(
         ((selectedAudioFormatId == null && qualities.any { it.available && it.quality == selectedQuality }) ||
             (selectedQuality == null && audioChoices.any { it.formatId == selectedAudioFormatId }))
     val downloadLabel: String get() = if (selectedAudioFormatId != null) "Download audio only" else "Download video + audio"
-    val busy: Boolean get() = phase in setOf(HomePhase.INITIALIZING, HomePhase.RESOLVING, HomePhase.DOWNLOADING,
+    val busy: Boolean get() = phase in setOf(HomePhase.INITIALIZING, HomePhase.STAGING, HomePhase.RESOLVING, HomePhase.DOWNLOADING,
         HomePhase.PUBLISHING, HomePhase.PAUSING)
     // Do not accidentally expose source/signed URLs or media titles when debugging an object.
     override fun toString(): String = "HomeState(phase=$phase)"
@@ -79,17 +86,22 @@ class HomeController(
     private val newTaskId: () -> String = { UUID.randomUUID().toString() },
     private val foreground: DownloadForeground = DownloadForeground.ActivityOnly,
     private val publishAudio: suspend (File, String) -> PublishedMedia = { _, _ -> error("Audio publisher is not configured") },
+    private val queue: TaskRepository? = null,
 ) {
     private val mutable = MutableStateFlow(HomeState())
     val state = mutable.asStateFlow()
+    val tasks = queue?.rows ?: flowOf(emptyList())
+    val hasDurableQueue: Boolean get() = queue != null
     private var job: Job? = null
     private var prepared: Prepared? = null
+    private var currentRecord: String? = null
+    private var reviewedRecord: TaskRecord? = null
     @Volatile private var activeTask: String? = null
     @Volatile private var timeoutTask: String? = null
     @Volatile private var closed = false
 
     private class Prepared(val task: String, val url: String, val snapshot: ResolvedSnapshot?, val createdAt: Long,
-        val plans: Map<VideoQuality, VideoQualityPlan>, val audioPlans: Map<String, AudioPlan>)
+        val plans: Map<VideoQuality, VideoQualityPlan>, val audioPlans: Map<String, AudioPlan>, val recordId: String?)
 
     fun initialize() {
         if (closed || job?.isActive == true || state.value.engineReady) return
@@ -97,6 +109,7 @@ class HomeController(
         job = scope.launch {
             val started = clockMs()
             try {
+                queue?.recoverInterrupted()
                 engine.init().getOrThrow()
                 observer.event(null, "APP", "engine_init", mapOf("ms" to (clockMs() - started).coerceAtLeast(0).toString()))
                 mutable.update { it.copy(phase = HomePhase.READY, engineReady = true, status = "Ready when you are.") }
@@ -111,6 +124,9 @@ class HomeController(
     fun editUrl(text: String) {
         if (closed || state.value.busy) return
         if (text == state.value.url && state.value.phase == HomePhase.CHOOSING) return
+        abandonChooser()
+        currentRecord = null
+        reviewedRecord = null
         discardPrepared()
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
             title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null,
@@ -126,6 +142,9 @@ class HomeController(
                 if (state.value.busy && state.value.phase != HomePhase.INITIALIZING) {
                     mutable.update { it.copy(pendingUrl = input.url) }
                 } else {
+                    abandonChooser()
+                    currentRecord = null
+                    reviewedRecord = null
                     discardPrepared()
                     mutable.update { it.copy(url = input.url, inputError = null, title = null,
                         qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null, pauseReason = null,
@@ -144,7 +163,7 @@ class HomeController(
     }
 
     fun resolve(forceRefresh: Boolean = false) {
-        if (closed || state.value.busy || !state.value.engineReady) return
+        if (closed || state.value.busy || job?.isActive == true || !state.value.engineReady) return
         val input = MediaEntry.pasted(state.value.url)
         if (input is MediaEntry.Input.Invalid) {
             mutable.update { it.copy(inputError = input.message) }
@@ -156,6 +175,9 @@ class HomeController(
             mutable.update { it.copy(status = "Using this task's recently resolved formats. Refresh explicitly for a new site check.") }
             return
         }
+        val existingRecord = currentRecord.takeIf { state.value.phase in setOf(HomePhase.CHOOSING, HomePhase.FAILED, HomePhase.PAUSED, HomePhase.CANCELED, HomePhase.READY) }
+        val requestedSelection = reviewedRecord?.selection
+        reviewedRecord = null
         discardPrepared()
         val task = newTaskId()
         activeTask = task
@@ -165,8 +187,14 @@ class HomeController(
             status = "Finding available video and audio formats…") }
         job = scope.launch {
             var snapshot: ResolvedSnapshot? = null
+            var recordId: String? = existingRecord
             val started = clockMs()
             try {
+                if (queue != null) {
+                    if (recordId == null) recordId = queue.stage(task, url).id
+                    currentRecord = recordId
+                    queue.transition(recordId, TaskPhase.RESOLVING)
+                }
                 observer.event(task, Stage.RESOLVING.name, "start")
                 val outcome = engine.resolveForTask(url, task).getOrThrow()
                 snapshot = outcome.resolvedSnapshot
@@ -183,7 +211,14 @@ class HomeController(
                     choice.formatId to checkNotNull(AudioFormats.plan(outcome.media.formats, choice.formatId))
                 }
                 if (plans.isEmpty() && audioPlans.isEmpty()) throw EngineFailure(DownloadError(ErrorCode.FORMATS_WITHHELD, Stage.RESOLVING))
-                prepared = Prepared(task, url, snapshot, clockMs(), plans, audioPlans)
+                val defaultVideo = requestedSelection?.videoHeight?.let { pixels -> plans.keys.firstOrNull { it.pixels == pixels } }
+                    ?: VideoQualities.default(qualities)
+                val defaultAudio = requestedSelection?.audioFormatId?.takeIf { it in audioPlans }
+                    ?: if (plans.isEmpty()) audioChoices.first().formatId else null
+                val selection = if (defaultAudio != null) TaskSelection(audioFormatId = defaultAudio)
+                    else TaskSelection(videoHeight = defaultVideo?.pixels)
+                persistPhase(recordId, TaskPhase.CHOOSING, selection = selection, title = outcome.media.title)
+                prepared = Prepared(task, url, snapshot, clockMs(), plans, audioPlans, recordId)
                 snapshot = null // Ownership is transferred to the chooser, not persisted in UI/history.
                 observer.event(task, Stage.RESOLVING.name, "ok", mapOf("formats" to outcome.media.formats.size.toString(),
                     "ms" to (clockMs() - started).coerceAtLeast(0).toString(),
@@ -191,14 +226,14 @@ class HomeController(
                     "visibleResolutions" to VideoQualities.visibleChoices(qualities).map { minOf(it.width!!, it.height!!) }.joinToString(",").ifEmpty { "none" },
                     "audioChoices" to audioChoices.size.toString()))
                 mutable.update { it.copy(phase = HomePhase.CHOOSING, title = outcome.media.title,
-                    qualities = qualities, selectedQuality = VideoQualities.default(qualities),
-                    audioChoices = audioChoices, selectedAudioFormatId = if (plans.isEmpty()) audioChoices.first().formatId else null,
+                    qualities = qualities, selectedQuality = if (defaultAudio == null) defaultVideo else null,
+                    audioChoices = audioChoices, selectedAudioFormatId = defaultAudio,
                     status = "Choose video + audio or an original audio-only stream. Then confirm Download.") }
             } catch (canceled: CancellationException) {
-                canceled(task)
+                canceled(task, recordId)
                 throw canceled
             } catch (error: Exception) {
-                fail(task, error, Stage.RESOLVING)
+                fail(task, error, Stage.RESOLVING, recordId)
             } finally {
                 snapshot?.close()
                 activeTask = null
@@ -222,7 +257,7 @@ class HomeController(
     }
 
     fun download() {
-        if (closed || !state.value.canDownload) return
+        if (closed || job?.isActive == true || !state.value.canDownload) return
         val input = prepared ?: return
         val plan = state.value.selectedQuality?.let(input.plans::get)
         val audio = state.value.selectedAudioFormatId?.let(input.audioPlans::get)
@@ -244,6 +279,8 @@ class HomeController(
             var lease: DownloadForeground.Lease? = null
             try {
                 currentCoroutineContext().ensureActive()
+                persistPhase(input.recordId, TaskPhase.DOWNLOADING, selection = if (audio != null)
+                    TaskSelection(audioFormatId = audio.formatId) else TaskSelection(videoHeight = plan?.quality?.pixels))
                 val admitted = foreground.acquire(input.task)
                 lease = admitted
                 currentCoroutineContext().ensureActive()
@@ -287,12 +324,14 @@ class HomeController(
                         minOf(outcome.selectedWidth, outcome.selectedHeight).toString() else "unknown"),
                     "mediaMode" to mode, "requestedResolution" to (plan?.quality?.pixels?.toString() ?: "none"), "qualityAxis" to "shortEdge",
                     "reusedResolve" to outcome.reusedResolve.toString()))
+                persistPhase(input.recordId, TaskPhase.PUBLISHING)
                 mutable.update { it.copy(phase = HomePhase.PUBLISHING, progress = null, status = "Saving the finished file…") }
                 admitted.publishing()
                 val publicationStarted = clockMs()
                 observer.event(input.task, Stage.PUBLISHING.name, "start")
                 currentCoroutineContext().ensureActive()
                 val saved = if (audio != null) publishAudio(file, audio.mimeType) else publish(file)
+                persistPhase(input.recordId, TaskPhase.DONE, saved = saved)
                 observer.event(input.task, Stage.PUBLISHING.name, "ok", mapOf("uri" to saved.uri,
                     "bytes" to file.length().toString(), "mime" to saved.mimeType,
                     "ms" to (clockMs() - publicationStarted).coerceAtLeast(0).toString()))
@@ -307,11 +346,11 @@ class HomeController(
                 // Success only; cancellation does not prove native descendants have released staging files.
                 directory.deleteRecursively()
             } catch (canceled: CancellationException) {
-                canceled(input.task)
+                canceled(input.task, input.recordId)
                 throw canceled
             } catch (error: Exception) {
                 if (timeoutTask != input.task) {
-                    fail(input.task, error, if (state.value.phase == HomePhase.PUBLISHING) Stage.PUBLISHING else Stage.DOWNLOADING)
+                    fail(input.task, error, if (state.value.phase == HomePhase.PUBLISHING) Stage.PUBLISHING else Stage.DOWNLOADING, input.recordId)
                 }
             } finally {
                 try {
@@ -319,7 +358,7 @@ class HomeController(
                 } finally {
                     input.snapshot?.close()
                     activeTask = null
-                    finishTimeout(input.task)
+                    finishTimeout(input.task, input.recordId)
                 }
             }
         }
@@ -330,6 +369,7 @@ class HomeController(
         if (closed || state.value.phase !in setOf(HomePhase.RESOLVING, HomePhase.DOWNLOADING, HomePhase.CHOOSING)) return
         activeTask?.let(engine::cancel)
         job?.cancel()
+        if (state.value.phase == HomePhase.CHOOSING) abandonChooser()
         discardPrepared()
         if (!state.value.busy) mutable.update { it.copy(phase = HomePhase.CANCELED, audioChoices = emptyList(), selectedAudioFormatId = null,
             status = "Selection dismissed.") }
@@ -342,6 +382,7 @@ class HomeController(
             if (activeTask != timeoutTask) activeTask?.let(engine::cancel)
         } finally {
             job?.cancel()
+            abandonChooser()
             discardPrepared()
         }
     }
@@ -366,8 +407,9 @@ class HomeController(
         return true
     }
 
-    private fun finishTimeout(task: String) {
+    private suspend fun finishTimeout(task: String, recordId: String?) {
         if (timeoutTask != task) return
+        persistTerminal(recordId, TaskPhase.PAUSED, ErrorCode.FGS_TIMEOUT.name)
         timeoutTask = null
         if (closed) return
         mutable.update { it.copy(phase = HomePhase.PAUSED, pauseReason = ErrorCode.FGS_TIMEOUT, progress = null,
@@ -388,7 +430,8 @@ class HomeController(
             clockMs() - input.createdAt in 0..ResolvedSnapshot.MAX_AGE_MS && input.snapshot?.availableFor(url, input.task) == true
     }
 
-    private fun canceled(task: String) {
+    private suspend fun canceled(task: String, recordId: String? = null) {
+        if (timeoutTask != task) persistTerminal(recordId, TaskPhase.CANCELED, ErrorCode.CANCELED.name)
         if (!closed && timeoutTask != task) {
             observer.event(task, "ANY", "canceled")
             mutable.update { it.copy(phase = HomePhase.CANCELED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null,
@@ -396,9 +439,10 @@ class HomeController(
         }
     }
 
-    private fun fail(task: String?, throwable: Throwable, stage: Stage) {
-        if (closed) return
+    private suspend fun fail(task: String?, throwable: Throwable, stage: Stage, recordId: String? = null) {
         val error = (throwable as? EngineFailure)?.error ?: DownloadError(ErrorCode.UNAVAILABLE, stage, detail = throwable.message)
+        persistTerminal(recordId, TaskPhase.FAILED, error.code.name)
+        if (closed) return
         observer.failure(task, error)
         discardPrepared()
         val message = when (error.code) {
@@ -409,5 +453,95 @@ class HomeController(
             else -> "This attempt failed (${error.code.name}). Diagnostics has the details."
         }
         mutable.update { it.copy(phase = HomePhase.FAILED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null, status = message) }
+    }
+
+    fun stageCurrentLink() {
+        val repository = queue ?: return
+        if (closed || state.value.busy || job?.isActive == true) return
+        val source = MediaEntry.pasted(state.value.url)
+        if (source is MediaEntry.Input.Invalid) {
+            mutable.update { it.copy(inputError = source.message) }; return
+        }
+        val url = (source as MediaEntry.Input.Link).url
+        abandonChooser()
+        discardPrepared()
+        currentRecord = null
+        mutable.update { it.copy(phase = HomePhase.STAGING, status = "Adding link to the durable queue…") }
+        job = scope.launch {
+            try {
+                val row = repository.stage(newTaskId(), url)
+                observer.event(row.id, "QUEUE", "staged", mapOf("sourceRetained" to (row.sourceUrl != null).toString()))
+                mutable.update { it.copy(phase = HomePhase.READY, title = null, qualities = emptyList(), audioChoices = emptyList(),
+                    selectedQuality = null, selectedAudioFormatId = null, status = if (row.sourceUrl != null)
+                        "Link queued. Review it when ready; nothing started automatically."
+                    else "Link recorded without its sensitive query. Re-enter it to start; it cannot be resumed after restart.") }
+            } catch (canceled: CancellationException) { throw canceled }
+            catch (error: Exception) { fail(null, error, Stage.ANY) }
+        }
+    }
+
+    fun reviewTask(id: String, acceptPublicationRetry: Boolean = false) {
+        val repository = queue ?: return
+        if (closed || state.value.busy || job?.isActive == true || !state.value.engineReady) return
+        abandonChooser()
+        discardPrepared()
+        mutable.update { it.copy(phase = HomePhase.STAGING, status = "Loading queued link…") }
+        job = scope.launch {
+            try {
+                val row = repository.get(id)
+                if (row == null) {
+                    mutable.update { it.copy(phase = HomePhase.READY, status = "This task record is no longer available.") }; return@launch
+                }
+                if (row.phase in setOf(TaskPhase.DONE, TaskPhase.PUBLISHING, TaskPhase.DOWNLOADING, TaskPhase.RESOLVING)) {
+                    mutable.update { it.copy(phase = HomePhase.READY, status = "This task cannot be restarted from the queue.") }; return@launch
+                }
+                if (row.reason == "PUBLICATION_INTERRUPTED" && !acceptPublicationRetry) {
+                    mutable.update { it.copy(phase = HomePhase.READY,
+                        status = "Saving was interrupted. Check Downloads for an existing file before explicitly confirming a new attempt.") }; return@launch
+                }
+                mutable.update { it.copy(phase = HomePhase.READY) }
+                if (row.sourceUrl == null) {
+                    editUrl("")
+                    mutable.update { it.copy(status = "This record has no retained source link. Paste the original link again.") }; return@launch
+                }
+                editUrl(row.sourceUrl)
+                currentRecord = row.id
+                reviewedRecord = row
+            } catch (canceled: CancellationException) { throw canceled }
+            catch (error: Exception) { fail(null, error, Stage.ANY); return@launch }
+            // Finish this load job before normal resolve admission checks.
+            job = null
+            resolve(forceRefresh = true)
+        }
+    }
+
+    fun removeTask(id: String) {
+        val repository = queue ?: return
+        if (closed || state.value.busy || job?.isActive == true) return
+        scope.launch {
+            try { if (repository.remove(id)) observer.event(id, "QUEUE", "removed") }
+            catch (canceled: CancellationException) { throw canceled }
+            catch (error: Exception) { observer.event(id, "QUEUE", "write_failed") }
+        }
+    }
+
+    private suspend fun persistPhase(recordId: String?, phase: TaskPhase, selection: TaskSelection? = null,
+        title: String? = null, saved: PublishedMedia? = null) {
+        if (queue == null || recordId == null) return
+        queue.transition(recordId, phase, selection = selection, title = title,
+            savedUri = saved?.uri, savedName = saved?.name, savedMime = saved?.mimeType)
+    }
+
+    private suspend fun persistTerminal(recordId: String?, phase: TaskPhase, reason: String) = withContext(NonCancellable) {
+        if (queue == null || recordId == null) return@withContext
+        try {
+            val previous = queue.get(recordId) ?: return@withContext
+            if (previous.phase != TaskPhase.DONE) queue.transition(recordId, phase, reason = reason)
+        } catch (error: Exception) { observer.event(recordId, "QUEUE", "write_failed") }
+    }
+
+    private fun abandonChooser() {
+        val row = prepared?.recordId ?: return
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { persistTerminal(row, TaskPhase.CANCELED, "CHOOSER_DISMISSED") }
     }
 }

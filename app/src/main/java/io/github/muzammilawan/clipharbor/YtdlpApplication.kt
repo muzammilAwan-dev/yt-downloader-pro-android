@@ -21,6 +21,10 @@ import io.github.muzammilawan.clipharbor.diagnostics.StorageProbe
 import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
 import io.github.muzammilawan.clipharbor.download.DownloadService
 import io.github.muzammilawan.clipharbor.download.ForegroundAdmission
+import io.github.muzammilawan.clipharbor.download.RoomTaskStore
+import io.github.muzammilawan.clipharbor.download.TaskDatabase
+import io.github.muzammilawan.clipharbor.download.TaskRepository
+import androidx.room.Room
 import io.github.muzammilawan.clipharbor.feature.home.HomeController
 import io.github.muzammilawan.clipharbor.feature.home.HomeObserver
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
@@ -33,8 +37,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Process-local session and service wiring. No durable queue or process-death recovery. */
+/** A process-wide database/recovery owner; session/native leases remain independent of Activity lifetime. */
 class YtdlpApplication : Application() {
+    private val taskDatabase by lazy {
+        Room.databaseBuilder(this, TaskDatabase::class.java, "tasks.db").build()
+    }
+    private val tasks by lazy { TaskRepository(RoomTaskStore(taskDatabase.tasks())) }
     private val engine: Engine by lazy { YoutubeDlEngine(this) }
     private val storage: StorageProbe by lazy { AndroidStorageProbe(this) }
     private val network: NetworkProbe by lazy { AndroidNetworkProbe() }
@@ -51,7 +59,7 @@ class YtdlpApplication : Application() {
 
     val sessions: SharedSessionOwner<DownloadSession> by lazy {
         SharedSessionOwner(Dispatchers.Main.immediate, create = { scope ->
-            DownloadSession(this, scope, engine, logger, storage, network, foreground)
+            DownloadSession(this, scope, engine, logger, storage, network, foreground, tasks)
         }, stop = DownloadSession::close)
     }
 
@@ -81,6 +89,7 @@ class DownloadSession(
     val storage: StorageProbe,
     private val network: NetworkProbe,
     foreground: DownloadForeground,
+    queue: TaskRepository,
 ) {
     private val appContext = context.applicationContext
     private val publisher = MediaStorePublisher(appContext)
@@ -103,7 +112,7 @@ class DownloadSession(
             logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
                 " V task=$task stage=$stage event=ytdlp " + line)
         }
-    }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) })
+    }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) }, queue = queue)
 
     init { logger.event('I', "session_start", stage = "APP") }
 

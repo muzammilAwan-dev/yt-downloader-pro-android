@@ -1,6 +1,7 @@
 package io.github.muzammilawan.clipharbor.download
 
 import io.github.muzammilawan.clipharbor.core.MediaEntry
+import io.github.muzammilawan.clipharbor.log.LogRedactor
 import java.net.URI
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
@@ -32,7 +33,10 @@ data class TaskRecord(
     val updatedAt: Long = 0,
     val revision: Long = 0,
 ) {
-    init { require(Regex("[A-Za-z0-9_-]{1,128}").matches(id)) }
+    init {
+        require(Regex("[A-Za-z0-9_-]{1,128}").matches(id))
+        require(sourceUrl == null || TaskSources.persistable(sourceUrl) == sourceUrl)
+    }
     override fun toString(): String = "TaskRecord(phase=$phase)"
 }
 
@@ -64,8 +68,10 @@ interface TaskStore {
 class TaskRepository(private val store: TaskStore, private val clockMs: () -> Long = System::currentTimeMillis) {
     val rows = store.rows
     private val lock = Mutex()
+    private var recovered = false
 
     suspend fun stage(id: String, url: String): TaskRecord = lock.withLock {
+        check(store.all().size < MAX_RECORDS) { "Queue is full; remove old records before adding another link" }
         val now = clockMs()
         TaskRecord(id, TaskSources.persistable(url), createdAt = now, updatedAt = now).also { store.insert(it) }
     }
@@ -79,18 +85,21 @@ class TaskRepository(private val store: TaskStore, private val clockMs: () -> Lo
         require(reason == null || Regex("[A-Z0-9_]{1,64}").matches(reason))
         require(savedUri == null || savedUri.startsWith("content://"))
         val changed = previous.copy(phase = next, selection = selection ?: previous.selection,
-            title = title?.take(300) ?: previous.title, reason = reason, savedUri = savedUri,
-            savedName = savedName?.take(300), savedMime = savedMime?.take(100), updatedAt = clockMs(), revision = previous.revision + 1)
+            title = title?.let(LogRedactor::redactLine)?.take(300) ?: previous.title, reason = reason, savedUri = savedUri,
+            savedName = savedName?.let(LogRedactor::redactLine)?.take(300), savedMime = savedMime?.take(100), updatedAt = clockMs(), revision = previous.revision + 1)
         check(store.replace(changed, previous.revision)) { "Task changed by another owner" }
         changed
     }
 
     /** Run once per process before admission, never on Activity/session recreation. No automatic rescheduling. */
     suspend fun recoverInterrupted() = lock.withLock {
+        if (recovered) return@withLock
         store.all().filter { it.phase in activePhases }.forEach { previous ->
-            check(store.replace(previous.copy(phase = TaskPhase.PAUSED, reason = "PROCESS_INTERRUPTED", savedUri = null,
+            check(store.replace(previous.copy(phase = TaskPhase.PAUSED,
+                reason = if (previous.phase == TaskPhase.PUBLISHING) "PUBLICATION_INTERRUPTED" else "PROCESS_INTERRUPTED", savedUri = null,
                 updatedAt = clockMs(), revision = previous.revision + 1), previous.revision))
         }
+        recovered = true
     }
 
     suspend fun remove(id: String): Boolean = lock.withLock {
@@ -102,13 +111,14 @@ class TaskRepository(private val store: TaskStore, private val clockMs: () -> Lo
     private fun allowed(from: TaskPhase, to: TaskPhase): Boolean = when (from) {
         TaskPhase.STAGED, TaskPhase.PAUSED, TaskPhase.FAILED, TaskPhase.CANCELED -> to in setOf(TaskPhase.RESOLVING, TaskPhase.CANCELED)
         TaskPhase.RESOLVING -> to in setOf(TaskPhase.CHOOSING, TaskPhase.PAUSED, TaskPhase.FAILED, TaskPhase.CANCELED)
-        TaskPhase.CHOOSING -> to in setOf(TaskPhase.CHOOSING, TaskPhase.RESOLVING, TaskPhase.DOWNLOADING, TaskPhase.PAUSED, TaskPhase.CANCELED)
+        TaskPhase.CHOOSING -> to in setOf(TaskPhase.CHOOSING, TaskPhase.RESOLVING, TaskPhase.DOWNLOADING, TaskPhase.PAUSED, TaskPhase.FAILED, TaskPhase.CANCELED)
         TaskPhase.DOWNLOADING -> to in setOf(TaskPhase.PUBLISHING, TaskPhase.PAUSED, TaskPhase.FAILED, TaskPhase.CANCELED)
         TaskPhase.PUBLISHING -> to in setOf(TaskPhase.DONE, TaskPhase.PAUSED, TaskPhase.FAILED)
         TaskPhase.DONE -> false
     }
 
     companion object {
+        const val MAX_RECORDS = 200
         val activePhases = setOf(TaskPhase.RESOLVING, TaskPhase.CHOOSING, TaskPhase.DOWNLOADING, TaskPhase.PUBLISHING)
     }
 }

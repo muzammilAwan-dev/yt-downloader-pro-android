@@ -1415,3 +1415,10 @@ Pinned official Room 2.8.5/KSP 2.3.14; Gradle resolved only required plugin/runt
 KSP generated database/DAO; revision replace is Room @Transaction, delete uses revision-qualified SQL, inserts abort conflicts. Production entity mapper rejects malformed selections/unsafe sources; full payload is never persisted.
 3 new fake-table production-mapper/DAO-body tests and 4 stdlib exported-DDL/actual-DAO-SQL/backup/rollback checks pass; tools/test_task_schema.py runs in-memory SQLite without external files. Android Room transaction/runtime behavior unverified.
 Required wrapper BUILD SUCCESSFUL in 7m 14s; 299 total / 298 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Generated schema v1 committed; continue Home/service/UI integration, not phase complete.
+
+### Home and process-wide Room integration — 16 Nov 2026
+6 tests-first fake-Engine regressions cover staging without work, persisted phases before extraction/download/publication, same-row fresh retry with new confirmation, process-once conservative recovery, missing rows/explicit interrupted-save acceptance, failed DB admission and timeout/save cancellation fences.
+Application now owns one Room DB/repository across sessions; startup pauses interrupted tasks once per process and never auto-downloads/re-publishes. Explicit starts use new native attempt IDs; records retain only typed source inputs/selections/results.
+NonCancellable terminal writes survive session cancellation; active task cleanup still owns replay/service release. Interrupted publication is PUBLICATION_INTERRUPTED, requiring folder check and explicit acceptance before new extraction.
+Added 200-record bound and title/name redaction regression; unsafe query links remain absent from persisted sources. Queue UI and contract/storage UX still pending; no phase-completion/device claim.
+Foundation wrapper BUILD SUCCESSFUL in 3m 37s; final wired wrapper BUILD SUCCESSFUL in 3m 8s, 306 total / 305 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. No APK/device build yet; continue Phase 1.

@@ -41,7 +41,8 @@ class TaskRepositoryTest {
         store.insert(TaskRecord("queued", "https://example.invalid/a"))
         store.insert(TaskRecord("done", "https://example.invalid/a", phase = TaskPhase.DONE, savedUri = "content://test/1"))
         repository.recoverInterrupted()
-        assertEquals(4, store.rows.value.count { it.phase == TaskPhase.PAUSED && it.reason == "PROCESS_INTERRUPTED" })
+        assertEquals(3, store.rows.value.count { it.phase == TaskPhase.PAUSED && it.reason == "PROCESS_INTERRUPTED" })
+        assertEquals("PUBLICATION_INTERRUPTED", store.rows.value.first { it.id == "PUBLISHING" }.reason)
         assertEquals(TaskPhase.STAGED, store.rows.value.first { it.id == "queued" }.phase)
         assertEquals(TaskPhase.DONE, store.rows.value.first { it.id == "done" }.phase)
         repository.recoverInterrupted()
@@ -55,6 +56,15 @@ class TaskRepositoryTest {
         assertEquals(TaskPhase.RESOLVING, repository.transition("one", TaskPhase.RESOLVING).phase)
         assertNull(store.rows.value.single().reason)
         assertNull(store.rows.value.single().savedUri)
+    }
+
+    @Test fun queueIsBoundedAndTitlesDoNotRetainSecretHeaders() = runTest {
+        repeat(TaskRepository.MAX_RECORDS) { store.insert(TaskRecord("row$it", "https://example.invalid/a")) }
+        try { repository.stage("overflow", "https://example.invalid/a"); fail("unbounded") } catch (_: IllegalStateException) {}
+        repository.transition("row0", TaskPhase.RESOLVING)
+        repository.transition("row0", TaskPhase.CHOOSING, title = "Cookie: sensitive=value")
+        assertFalse(store.rows.value.first().title!!.contains("sensitive=value"))
+        assertThrows(IllegalArgumentException::class.java) { TaskRecord("invalid", "https://example.invalid/a?token=secret") }
     }
 
     @Test fun removalCannotDeleteActiveOrSavingTasksAndOnlySafeSelectionDataIsStored() = runTest {
