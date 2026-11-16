@@ -402,6 +402,11 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   process-once interrupted recovery to PAUSED, fresh extraction and explicit confirmation on retry, no boot/background
   reschedule or repeated publication. Unknown/signed source query parameters are not persisted; require link re-entry
   after process loss. Keep single-use snapshots process-private. These are design decisions, runtime integration untested.
+  Official Google Maven room-runtime/room-compiler 2.8.5 and Maven Central KSP 2.3.14 POMs fetched (HTTP 200),
+  Apache-2.0 license confirmed. Required plugin/runtime/compiler dependencies resolved through Gradle; no SDK/emulator/
+  Python tooling installed. KSP generated DAO/database and exported v1 schema; wrapper BUILD SUCCESSFUL in 7m 14s,
+  298 pass / 1 skip, lint 0 errors / 7 known warnings. 3 production mapper/fake-DAO tests + 4 stdlib exported-DDL/
+  SQL/transaction/backup tests pass. Host SQLite is not Android Room instrumentation or device recovery proof.
 
 ## Still unverified (carried forward)
 

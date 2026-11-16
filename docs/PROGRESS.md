@@ -1409,3 +1409,9 @@ Wrapper BUILD SUCCESSFUL in 2m 48s; 291 total / 290 pass / 1 Windows symlink ski
 TaskRepository/TaskStore are platform-free and not wired yet; no replay/formats/headers/cookies/stderr in task records. R77 documents stable Room APIs and conservative one-task explicit recovery design.
 First run BUILD FAILED in 2m 40s: reason validator rejected digits in HTTP_403_ON_MEDIA. Fixed to permit bounded uppercase/digit/underscore codes; regression passed.
 Required wrapper BUILD SUCCESSFUL in 2m 27s; 296 total / 295 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Continue Room adapter and Home/UI wiring; no APK/device test.
+
+### Room adapter and v1 exported schema — 16 Nov 2026
+Pinned official Room 2.8.5/KSP 2.3.14; Gradle resolved only required plugin/runtime/compiler transitive dependencies. No SDK/emulator/test-framework install; engine/native/icon/permission budget unchanged. Apache-2.0 POM notices recorded (R77).
+KSP generated database/DAO; revision replace is Room @Transaction, delete uses revision-qualified SQL, inserts abort conflicts. Production entity mapper rejects malformed selections/unsafe sources; full payload is never persisted.
+3 new fake-table production-mapper/DAO-body tests and 4 stdlib exported-DDL/actual-DAO-SQL/backup/rollback checks pass; tools/test_task_schema.py runs in-memory SQLite without external files. Android Room transaction/runtime behavior unverified.
+Required wrapper BUILD SUCCESSFUL in 7m 14s; 299 total / 298 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Generated schema v1 committed; continue Home/service/UI integration, not phase complete.

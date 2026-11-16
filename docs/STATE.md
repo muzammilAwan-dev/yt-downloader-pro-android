@@ -59,6 +59,8 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Room/KSP adapter: **BUILD SUCCESSFUL in 7m 14s**, 299 total / 298 pass / 1 skip; lint 0 errors / 7 warnings;
+4 stdlib exported-DDL/DAO-SQL/transaction/backup tests pass. Generated v1 schema committed. Android database execution unverified.
 Queue state foundation: **BUILD SUCCESSFUL in 2m 27s**, 296 total / 295 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
 5 new store/state/privacy/recovery tests pass; first run caught numeric HTTP_403 error-name validation, fixed. Room and Home integration not yet implemented.
 Current resolve-reuse/timing increment: **BUILD SUCCESSFUL in 2m 48s**, 291 total / 290 pass / 1 skip / 0 failures/errors;
@@ -116,7 +118,8 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
 - [x] OWNER supplied e37686c picker/screenshots and complete post-result audio + second-video logs (R75). Audible playback/visibility,
         sustained background/Cancel/new APIs and earlier failing long videos remain deferred, not passed.
 - [ ] 2. Durable Room queue: platform-free revision-fenced task/store/transition/privacy/recovery foundation has 5 passing tests;
-        Room adapter and Home integration still pending. Official Room 2.8.5/KSP 2.3.14 researched (R76/R77), not resolved yet.
+        Room 2.8.5/KSP 2.3.14 resolved/compiled; mapper/CAS tests and exported schema host SQL checks pass (R76/R77).
+        Home/application/queue UI integration still pending; Android Room runtime/process recovery device-deferred.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-video-format picker (original audio moved earlier and delivered above). Thumbnail embedding is deliberately deferred.
 - [ ] 5. Broader engine update policy remains gated; approved APK-only freshness investigation is prioritized in 1f (R72).
