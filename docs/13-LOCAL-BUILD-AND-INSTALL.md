@@ -31,6 +31,47 @@ process-scoped invocation `powershell -NoProfile -ExecutionPolicy Bypass -File .
 changing a persistent execution policy. Identify each phone log by `gitSha`, not the version name alone. The first UI
 preview now uses `0.1.0-phase1-preview` / versionCode 2; it is not the full completed Phase 1.
 
+### Optional phone-free verification (Windows, no installation)
+
+From the repo root, using the **existing Python 3.11+**, JDK, SDK build-tools and cached Gradle/dependencies:
+
+```powershell
+python -I tools/phone-free.py
+```
+
+This small stdlib helper does not connect to your phone, use an emulator, install packages, download an engine,
+assemble an APK or replace `dist/app-debug.apk`. It runs from an unchanged temporary copy under
+`%LOCALAPPDATA%\Temp\opencode\ytdlp-phone-free-*` and removes **only that copy** afterward. It keeps local
+`summary.json` / `summary.md` reports there and prints their path; it adds no service, scheduled job or project dependency.
+Normal Gradle outputs/cache and build-tool scratch files remain in their usual locations.
+
+- Checks built/copied/SHA256SUMS agreement (including PowerShell's UTF-16 checksum file), the actual **own BuildConfig DEX stamp**,
+  stamp ancestry and unchanged tracked app/build/contracts inputs; rejects untracked app/build inputs. Later docs/tool commits are allowed.
+- Uses existing SDK tools to verify signing against the documented local debug certificate, identity/SDK/ABI/permissions;
+  compares the complete packaged engine/notices against source and verifies the engine/EJS pin and seven arm64 native entries.
+- Runs helper regressions, then fresh `testDebugUnitTest lintDebug --offline --rerun-tasks --console=plain -PgitSha=<APK stamp>`
+  using the **already-extracted cached Gradle distribution directly**, so even the wrapper cannot initiate a download.
+  The non-daemon setting is child-process-only; missing cached tools/dependencies cause failure, not installation.
+- Requires fresh unit/lint/video-fixture reports, runs synthetic video and exact original-audio selectors against the verified
+  bundled engine with socket connections blocked, then rechecks the APK hash and source stamp. No site/media extraction is performed.
+- Optional: `python -I tools/phone-free.py --baseline "<previously verified APK path>"` additionally requires identical
+  assets, native files, binary manifest and icon entries. An intentional change needs review, not silently relaxed checks.
+  `--apk` selects an existing candidate (its neighboring SHA256SUMS and the module's built APK must still agree);
+  `--certificate` sets an explicitly trusted lowercase SHA-256 signer for another owner's build.
+
+Exit 0 / `PASS_HOST_CHECKS_DEVICE_REQUIRED` means **host checks only**. Exit 1 / `FAILED_HOST_CHECKS` means a host check,
+report or temporary-copy cleanup failed. Reports contain fixed failure guidance, counts and hashes, not raw command output/secrets.
+Changed temporary copies are preserved, not deleted. Run `python -I tools/test_phone_free.py` for the stdlib regressions alone.
+Verified on this PC with Python 3.14.6; no other-host support is claimed. The optional helper is removable later by deleting only
+`tools/phone-free.py`, `tools/test_phone_free.py`, this usage section and the specific generated report folders you no longer need;
+do not delete the shared temp root, Gradle/SDK installation or other project outputs.
+
+**The owner still needs to install and test the phone APK:** picker interaction, Android engine/runtime execution,
+M4A/WebM audible playback and file visibility, another video preset/picture/sound, the earlier failing long sample and complete
+Share session logs. Background/lock/notification Cancel/newer APIs are separate device checks; a green host report proves none of these.
+No phone-PC connection is required: transfer/install manually as below. Current ready tester/sequence:
+`docs/evidence/original-audio-tester.md` (`e37686c`, not a new APK from this helper).
+
 ## 3. Get it onto the phone and install
 
 1. Copy the APK from `dist\` to the phone: USB cable (File Transfer), Google Drive, Telegram "Saved Messages", or `adb install -r dist\<file>.apk` (fastest; needs USB debugging on).

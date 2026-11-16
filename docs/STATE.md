@@ -14,6 +14,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   typed selection plan, YTDLP branding and icon. Phone-verified earlier (`ec146df`): resolve, 1080p select, merge, MediaStore publish, playback with sound.
 - Latest ready tester: **`e37686c`** — source-backed available video rows + separate original audio, CLI-tested and stamped APK verified;
   phone-untested. Artifact/phone sequence: `docs/evidence/original-audio-tester.md`. OWNER next: in-place install, picker/audio/video/log report.
+- Owner-approved lightweight phone-free helper: `python -I tools/phone-free.py` (Windows, existing stdlib/SDK/JDK/cached Gradle only).
+  Fresh host checks, stamped/source/signature/assets checks and offline selectors passed; removes its own unchanged temp copy, retains local reports.
+  No APK rebuild/replacement, phone connection, emulator, dependency install or device-verification claim. Usage/removal: `docs/13-LOCAL-BUILD-AND-INSTALL.md`.
 - Previous owner-installed tester: **`f96194e`** (APK-only engine refresh), artifact stamp/asset/signature/copied SHA-256 verified.
   Owner log 16 Nov confirms Android 10 startup and one completed download; this is not a general 403 fix. Helper checks: BUILD SUCCESSFUL in 2m 3s, 251 pass / 1 skip;
   lint 0 errors / 7 known warnings; APK BUILD SUCCESSFUL in 32s. Tester hash/phone sequence: `docs/evidence/engine-refresh-2026.10.26.md`.
@@ -52,13 +55,17 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-Stamped helper (checks enabled): **BUILD SUCCESSFUL in 2m 45s** (tests/lint), **BUILD SUCCESSFUL in 54s** (APK).
-Earlier `.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 3m 14s** (integrated picker).
+Phone-free helper final default run: **BUILD SUCCESSFUL in 3m 44s**, 24 stdlib regressions and 96 video / 9 exact-audio selector cases passed.
+Report `C:\Users\Malku\AppData\Local\Temp\opencode\ytdlp-phone-free-kvjj2y5b\summary.md`: PASS_HOST_CHECKS_DEVICE_REQUIRED;
+JSON device_verification=NOT_RUN, runtime_copy=REMOVED; directory contains only the two reports. No installs or APK changes.
+Earlier baseline-enabled helper: **BUILD SUCCESSFUL in 2m 39s**, full assets/native/manifest/icon identical to verified `f96194e`.
+Required wrapper check also ran offline with stamped property: **BUILD SUCCESSFUL in 19s** (tests/lint up-to-date, not another fresh test run).
+Prior stamped APK helper: **BUILD SUCCESSFUL in 2m 45s** (tests/lint), **BUILD SUCCESSFUL in 54s** (APK).
 Fresh reports: 284 total / 283 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
 Five state/label safety tests passed before UI wiring, BUILD SUCCESSFUL in 36s; existing Home/audio/runner/replay/foreground/redaction tests green.
 Offline WebM synthetic replay CLI emitted 251/NA/NA and 251/none/opus with socket connections blocked; no media downloaded.
 Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
-New `dist/app-debug.apk`: actual DEX stamp `e37686c`, **70,276,358 bytes**, built/copied/SHA256SUMS agree:
+Unchanged `dist/app-debug.apk`: actual DEX stamp `e37686c`, **70,276,358 bytes**, built/copied/SHA256SUMS agree:
 `C923865E6A01F464358F2B30570FF5A25A84DD5275B7E5FDF8DEA245EAAD4FE6`.
 Signature verifies and matches `f96194e`; exact engine/notices, seven native entries, manifest and three icon entries unchanged.
 Video planner/dependencies/permissions unchanged; separate original audio UI/Home/save routing CLI-tested, phone-untested. 96 video selector cases
@@ -70,6 +77,8 @@ Tester `e37686c`: minSdk 24 / target 37 / arm64; same signing certificate/native
 Owner cadence (R65): verified increments pushed; ready tester `e37686c` replaces `dist`, previous owner-installed is `f96194e`.
 Current next action is the owner's audio/video/picker/log report; stop here, do not start Room or a new major feature area in this handoff.
 Passing CLI checks is not phone verification. Existing phone checks and the major-feature-area gate remain open.
+- [x] Owner-approved temporary/removable phone-free verifier: stdlib regressions, fresh offline tests/lint, APK/source/signing/payload
+        checks and synthetic selectors; default and optional-baseline runs passed. Current tester remains `e37686c`; no phone/device test performed.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
 - [ ] 0b. OWNER: try a second available preset, confirm selected dimensions and playback with sound; send its post-download log.
