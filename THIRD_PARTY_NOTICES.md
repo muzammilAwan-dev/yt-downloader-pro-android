@@ -6,7 +6,7 @@ files yet (tracked as item C.3 in `docs/10-VERIFICATION-LOG.md`).
 
 | Component | Used for | License | Status |
 |---|---|---|---|
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | the download engine (Python zipapp) | Unlicense (public domain) | Verified: official **2026.10.26** candidate ships unchanged at `app/src/main/assets/engine/yt-dlp-2026.10.26`, with signed SHA-256 verified (R72). Startup activation follows separately; `library` 0.18.1 still includes its original **2025.11.12** payload. Upstream LICENSE read 15 Nov 2026 |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | the download engine (Python zipapp) | Unlicense (public domain) | Verified: official **2026.10.26** candidate ships unchanged at `app/src/main/assets/engine/yt-dlp-2026.10.26`, with signed SHA-256 verified (R72). Startup verifies/installs it before library initialization (R73); `library` 0.18.1 still includes its original **2025.11.12** payload. Upstream LICENSE read 15 Nov 2026 |
 | [yt-dlp-ejs](https://github.com/yt-dlp/ejs) | locally bundled JavaScript solver scripts | Unlicense (public domain) | **EJS 0.8.0** included in the candidate zipapp under `yt_dlp_ejs/yt/solver/`; both `core.min.js` and `lib.min.js` retain the upstream Unlicense headers |
 | Meriyah 6.1.4 | EJS JavaScript parser | ISC | Complete copyright and ISC notice preserved inside the candidate zipapp's `yt_dlp_ejs/yt/solver/lib.min.js` header; offline packaging test verifies the full text |
 | Astring 1.9.0 | EJS JavaScript code generator | MIT | Complete copyright and MIT notice preserved inside the same `lib.min.js` header; offline packaging test verifies the full text |
@@ -26,7 +26,7 @@ notice above; no desktop source-code port is included in this branding change.
 
 The approved engine-freshness spike is **APK-bundled only** (R72). Historical runtime-updater plans are not authorization
 to download code on the phone. Candidate yt-dlp 2026.10.26/EJS 0.8.0 is now bundled, unchanged, with the notices above
-embedded in its local solver scripts. It is not activated yet; Android runtime/download compatibility is untested.
+embedded in its local solver scripts. Startup activates it only after verified local installation; Android runtime/download compatibility is untested.
 Existing native release obligations remain open.
 
 ## Rules for contributors

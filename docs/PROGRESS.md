@@ -1302,3 +1302,13 @@ Fresh tests/lint analyses: 234 total / 233 passed / 1 Windows symlink skip / 0 f
 > .\gradlew.bat assembleDebug --console=plain — BUILD SUCCESSFUL in 15s; packaging-check APK 70,276,358 bytes.
 Actual APK asset/digest/solver hashes/full notices verified; all seven native entries byte-identical to 6bb477b. dist/app-debug.apk remains unchanged.
 Not activated/no phone tester yet; Android runtime/403 behavior untested. Next: atomic Android replacement + process-wide pre-init/version reporting; no runtime downloads/new permissions.
+
+### APK-only engine pre-init activation — 16 Nov 2026 (R73)
+Shared process-wide gate verifies/installs the asset via synced sibling staging/Android Os.rename before library init; failed/interrupted startup blocks work and can retry.
+Ready process never reinstalls over an active worker; new process rechecks pin. Installed yt-dlp/EJS versions replace updater preferences; verbose runtime versions remain observable.
+18 offline startup tests first failed 18/18 (BUILD FAILED in 41s), then passed (BUILD SUCCESSFUL in 13s); includes concurrent init/retry and simulated active worker.
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 1m 32s (shell-only GRADLE_OPTS=-Dorg.gradle.daemon=false).
+Initial daemon disappeared during lint after full test execution; retry test task UP-TO-DATE, lint reran. Reports 252 total / 251 passed / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+> .\gradlew.bat assembleDebug --console=plain — BUILD SUCCESSFUL in 22s; validation APK 70,342,167 bytes.
+Actual APK asset/digest/startup class verified; all seven native entries and binary manifest identical to 6bb477b. Runner/resolve/download/replay/cancel/parser unchanged.
+dist tester unchanged, no stamped handoff yet; next stamped tester + owner visible-app same-Wi-Fi transfers. Android replacement/runtime/403 behavior untested; no runtime downloads/new permissions.

@@ -357,6 +357,17 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Sources, exact boundaries and next installer/device test plan: `docs/evidence/engine-refresh-2026.10.26.md`.
   No app/dependency/permission/test/APK change in this investigation; verified asset is a test candidate, not a proven 403 fix.
 
+- **R73 (16 Nov 2026, APK-only pre-init activation APIs):** Re-read published 0.18.1 `YoutubeDL.kt`/updater sources JAR (R72):
+  private destination uses public `baseName`, `ytdlpDirName`, `ytdlpBin`; engine copies only if absent and `init` runs no engine command.
+  `version(context)` reads updater preferences, so installed hash pin must replace that reporting source; later verbose versions remain observable.
+  [Android Os.rename reference](https://developer.android.com/reference/android/system/Os#rename(java.lang.String,%20java.lang.String))
+  confirms `rename(String, String)` added API 21, throwing `ErrnoException`; usable at unchanged minSdk 24/Android 10 baseline.
+  [rename(2)](https://man7.org/linux/man-pages/man2/rename.2.html) documents atomic existing-target replacement and target preservation on failure.
+  Use synced, hash-verified sibling staging in app-private storage; never delete old target first or use a non-atomic fallback.
+  Shared startup gate serializes install + library init, publishes readiness only on full success, and never reinstalls after ready in this process.
+  New process rechecks the pin; no runtime downloads/updater preference writes/native-runtime changes. Android atomic/runtime/download behavior untested;
+  file sync + rename is not a verified abrupt-power-loss durability guarantee. R72 scope/phone test plan remains unchanged.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

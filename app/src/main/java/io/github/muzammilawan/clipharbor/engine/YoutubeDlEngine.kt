@@ -1,6 +1,7 @@
 package io.github.muzammilawan.clipharbor.engine
 
 import android.content.Context
+import android.system.Os
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -21,6 +22,7 @@ import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
 import io.github.muzammilawan.clipharbor.log.LogRedactor
 import java.io.File
+import java.io.InterruptedIOException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -81,27 +83,40 @@ class YoutubeDlEngine(private val context: Context) : Engine {
 
     private fun initBlocking(): EngineInfo {
         synchronized(initLock) {
-            if (!initialized) {
-                // Process-wide gate: activity recreation must not delete a still-running worker's input.
-                synchronized(snapshotCleanupLock) {
-                    if (!snapshotsCleaned) {
-                        ResolvedSnapshot.cleanOrphans(snapshotDirectory)
-                        snapshotsCleaned = true
+            val pin = startup.initialize(
+                install = {
+                    val base = File(context.noBackupFilesDir, YoutubeDL.baseName)
+                    val destination = File(File(base, YoutubeDL.ytdlpDirName), YoutubeDL.ytdlpBin)
+                    // Same-directory rename is atomic on Android (API 21+); never delete the old engine first.
+                    val installer = BundledEngineInstaller({ staged, target ->
+                        Os.rename(staged.absolutePath, target.absolutePath)
+                    })
+                    installer.install(
+                        destination, BundledEngineStartup.SHA256, BundledEngineStartup.BYTES,
+                    ) { context.assets.open(BundledEngineStartup.ASSET) }
+                },
+                initializeLibraries = {
+                    // Process-wide gate: activity recreation must not delete a still-running worker's input.
+                    synchronized(snapshotCleanupLock) {
+                        if (!snapshotsCleaned) {
+                            ResolvedSnapshot.cleanOrphans(snapshotDirectory)
+                            snapshotsCleaned = true
+                        }
                     }
-                }
-                YoutubeDL.getInstance().init(context)
-                FFmpeg.getInstance().init(context)
-                initialized = true
-            }
+                    YoutubeDL.getInstance().init(context)
+                    FFmpeg.getInstance().init(context)
+                },
+            )
             cached = cached.copy(
                 libraryVersion = LIBRARY_VERSION,
-                ytdlpVersion = cached.ytdlpVersion
-                    ?: runCatching { YoutubeDL.getInstance().version(context) }.getOrNull()
-                        ?.let(EngineInfoParser::normalizeVersion),
+                // Updater preferences do not describe our locally installed bytes. Later verbose output stays observable.
+                ytdlpVersion = cached.ytdlpVersion ?: pin.ytdlpVersion,
+                ejsVersion = cached.ejsVersion ?: pin.ejsVersion,
                 jsRuntime = cached.jsRuntime ?: bundledLib("libqjs.so")?.let { "quickjs (bundled)" },
                 ffmpegVersion = cached.ffmpegVersion ?: bundledLib("libffmpeg.zip.so")?.let { "bundled (libffmpeg)" },
                 pythonVersion = cached.pythonVersion ?: bundledLib("libpython.zip.so")?.let { "bundled (python)" },
             )
+            initialized = true
             return cached
         }
     }
@@ -266,8 +281,41 @@ class YoutubeDlEngine(private val context: Context) : Engine {
         /** Must match `ytdlpAndroid` in gradle/libs.versions.toml; the library does not expose its own version. */
         const val LIBRARY_VERSION = "0.18.1"
 
+        private val startup = BundledEngineStartup()
         private val snapshotCleanupLock = Any()
         private var snapshotsCleaned = false
+    }
+}
+
+/**
+ * One instance is shared by every adapter in the process; callbacks must not execute engine tasks.
+ * Only a fully successful startup publishes the verified pin. Failures can retry before any task is admitted.
+ * Once ready, a recreated adapter cannot reinstall over an active worker; a new process verifies the file again.
+ */
+internal class BundledEngineStartup {
+    private var installed: EngineInfo? = null
+
+    @Synchronized
+    fun initialize(install: () -> Unit, initializeLibraries: () -> Unit): EngineInfo {
+        checkInterrupted()
+        installed?.let { return it }
+        install()
+        checkInterrupted()
+        initializeLibraries()
+        checkInterrupted()
+        return EngineInfo(ytdlpVersion = VERSION, ejsVersion = EJS_VERSION).also { installed = it }
+    }
+
+    private fun checkInterrupted() {
+        if (Thread.currentThread().isInterrupted) throw InterruptedIOException("Bundled engine startup interrupted")
+    }
+
+    companion object {
+        const val ASSET = "engine/yt-dlp-2026.10.26"
+        const val VERSION = "2026.10.26"
+        const val EJS_VERSION = "0.8.0"
+        const val BYTES = 3_073_072L
+        const val SHA256 = "e51e69e89489f199530f13d32a4342da3ddb2cf34842f364603a066db05afbf3"
     }
 }
 

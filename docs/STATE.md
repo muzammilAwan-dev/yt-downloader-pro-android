@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R72);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R73);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -36,16 +36,19 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Python 3.12.11/QuickJS 2025-04-26 meet tagged requirements. Library remains 0.18.1; host-only offline smokes passed.
   Local installer foundation now has 22 offline tests: size/hash verification, synced staging, failure/interruption preservation,
   narrow cleanup/retry and cross-instance serialization. Official asset/notices now bundled unchanged; six offline payload tests pass.
-  Packaging-check APK inspected: exact asset digest/full embedded notices, seven native entries match `6bb477b`; `dist` tester unchanged.
-  Atomic replacement is injected; no Android/adapter wiring or activated tester yet. Next: process-wide pre-init gate/version reporting.
-  Android runtime/download compatibility untested.
+  Validation APK inspected: exact asset digest, startup class packaged, seven native entries/binary manifest match `6bb477b`; `dist` unchanged.
+  R73 adapter wiring now uses Android Os.rename and one process-wide install-before-library-init gate; 18 startup tests pass.
+  Failed/interrupted startup does not publish readiness; retry is allowed. A ready process never reinstalls over an active worker.
+  Reports verified installed yt-dlp/EJS pin, not stale updater preferences; later verbose runtime versions remain observable.
+  No stamped activated tester yet; Android replacement/runtime/download compatibility untested. Next: stamped tester.
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 1m 58s** (bundled payload/notices).
-Fresh tests/lint analyses: 234 total / 233 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Six packaging tests first failed 6/6 (BUILD FAILED in 1m 43s), then passed (BUILD SUCCESSFUL in 21s); 22 installer tests remain green.
-`assembleDebug`: **BUILD SUCCESSFUL in 15s**; 70,276,358-byte packaging-check APK, exact 3,073,072-byte asset SHA-256 verified.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 1m 32s** (pre-init activation; shell-only non-daemon retry).
+Reports: 252 total / 251 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Full tests executed before first lint daemon disappearance; test task UP-TO-DATE on successful retry, lint reran. No project config workaround.
+18 startup tests first failed 18/18 (BUILD FAILED in 41s), then passed (BUILD SUCCESSFUL in 13s); installer/payload tests remain green.
+`assembleDebug`: **BUILD SUCCESSFUL in 22s**; 70,342,167-byte validation APK, exact asset/native/binary manifest checks pass; no stamped handoff yet.
 12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
 Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
 Foreground cancellation-first/timeout-first and permission/service tests remain green. No runner/planner/icon/dependency/permission change.
@@ -67,8 +70,8 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
 - [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), stamped APK built.
 - [ ] 1f. `6bb477b` installed; media 403 also reproduced while visible on owner-reported stable Wi-Fi (R70), not fixed. Prioritize
-        approved APK-bundled engine-only spike (R72): payload/licenses bundled and APK-inspected; local installer tested, not wired into adapter.
-        Next Android atomic replacement and process-wide pre-init/version reporting; stamped tester after checks.
+        approved APK-bundled engine-only spike (R72/R73): payload/licenses and pre-init adapter wiring implemented; CLI checks green.
+        Next stamped tester after checks; verify actual APK asset/native packaging/permissions/signature/stamp before owner handoff.
         Keep native runtime/planner/replay/cancellation/logs; no runtime downloads/login/new permissions. Android 10 baseline/minSdk 24.
         No reinstall yet; after reliable foreground transfers, retest background/lock. Cancel/cleanup/playback still open.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
@@ -80,7 +83,7 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
 
 ## Risks to keep visible
-- **Engine age:** active `youtubedl-android` 0.18.1 engine is 2025.11.12; bundled 2026.10.26 candidate is not activated yet. YouTube
+- **Engine age:** installed `6bb477b` engine is 2025.11.12; source now activates bundled 2026.10.26 at verified startup. YouTube
   extraction is the first thing to break. Updating yt-dlp at runtime downloads code, which conflicts with "no remote code execution"
   in `AGENTS.md`; R72 approves only a verified APK bundle, not runtime updates. Candidate Android behavior remains untested.
 - Name: the display name is `YTDLP`; the spaced expansion contains "You Tube" while `AGENTS.md` forbids "YouTube" in the app name. Open.
