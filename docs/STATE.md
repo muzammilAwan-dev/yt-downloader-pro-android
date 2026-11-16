@@ -50,9 +50,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 1m 42s** (available-only video picker).
-Fresh reports: 257 total / 256 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Five new picker tests first failed 5/5 (14 quality tests total), **BUILD FAILED in 36s**; all pass after filtering/source-label change.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 1m 42s** (typed original-audio foundation).
+Fresh reports: 262 total / 261 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Five foundation tests first ran 4 fail / 1 pass, **BUILD FAILED in 48s**; all pass after implementation.
 Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
 No new APK: `dist/app-debug.apk` remains stamped `f96194e`, 70,342,176 bytes; SHA-256 rechecked unchanged
 `9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`. Prior helper checks BUILD SUCCESSFUL in 2m 3s; APK in 32s.
@@ -81,6 +81,8 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
         This supersedes the older disabled-row design, not the standard typed planner. No exact-format picker/new tester in this increment.
 - [ ] Next owner priority: separate source-backed audio-only choices (before Room). MP3 conversion options must be labelled separately from source formats.
         Supplied screenshots are behavior references only; do not copy code/assets. No browser/login/subtitle work.
+        Owner now requests continuing through a verified stamped APK, not stopping after intermediate commits (16 Nov).
+        Typed original-audio choices/plan CLI-tested; next evidence/runner, Home/publication, UI wiring, stamped tester. No MP3 conversions in this tester.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)

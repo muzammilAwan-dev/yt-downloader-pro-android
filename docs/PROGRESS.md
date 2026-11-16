@@ -1332,3 +1332,11 @@ Home now hides missing video tiers; row labels use actual reported short edge (e
 Five new regression tests first failed 5/5 (14 quality tests total): BUILD FAILED in 36s; cover missing tiers, real 4K, nonstandard/portrait labels, lone low stream and unsubstantiated/audio-only input.
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 1m 42s; 257 total / 256 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Shell-only non-daemon setting; existing fake-Engine/foreground/startup/replay/redaction tests green.
 No new APK in this increment: dist f96194e bytes/hash unchanged. Engine/replay/foreground/cancellation/logging/icon/dependencies/permissions unchanged; new picker rendering phone-untested. Next small step: separate source-backed audio-only choices; label any future MP3 conversions distinctly.
+
+### Original audio selection foundation — 16 Nov 2026
+Owner asks to continue verified small increments through the meaningful stamped tester without another go/stop between commits.
+Added task-private AudioPlan/DownloadRequest boundary and only reported, unique, safe original-audio choices; explicit vcodec=none, known output containers, capped count, no raw source note/codec echoed to UI/debug object.
+Exact ba[format_id='…'] has no other-ID/video fallback or conversion; original extension preserved, container-specific audio MIME incl. WebM/Opus. M4A first; unknown size stays unknown, reported size labelled approximate.
+Five foundation tests first ran: 4 failed / 1 passed, BUILD FAILED in 48s; full checks BUILD SUCCESSFUL in 1m 42s, 262 total / 261 passed / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Verified payload offline smoke: 9 selector/missing-ID/muxed-rejection cases passed on yt-dlp 2026.10.26 with socket connections blocked. No extraction/media access.
+Not connected to Home/runner/UI yet; no new APK, runtime/dependency/permission or MP3 conversion change. Continue runner evidence then user flow and stamped tester.

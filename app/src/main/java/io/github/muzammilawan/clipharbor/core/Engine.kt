@@ -100,6 +100,8 @@ data class DownloadRequest(
     val resolvedSnapshot: ResolvedSnapshot? = null,
     /** App-owned standard short-edge plan. Null retains the legacy diagnostics height ceiling. */
     val qualityPlan: VideoQualityPlan? = null,
+    /** App-owned original audio selection; mutually exclusive with [qualityPlan]. */
+    val audioPlan: AudioPlan? = null,
 )
 
 data class DownloadOutcome(
@@ -185,7 +187,7 @@ interface Engine {
     /** Task-bound resolve may supply private single-use replay input. Always close that input on terminal paths. */
     suspend fun resolveForTask(url: String, processId: String): Result<ResolveOutcome> = resolve(url)
 
-    /** Downloads and merges one video; [onProgress] is called from a background thread. */
+    /** Downloads one original audio stream or downloads/merges video; callbacks run on a background thread. */
     suspend fun download(
         request: DownloadRequest,
         onProgress: (ProgressEvent) -> Unit,
