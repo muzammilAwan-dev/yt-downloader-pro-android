@@ -147,6 +147,7 @@ fun HomeScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (externalBusy) Text("Self-test is running. Download controls are temporarily unavailable.")
                     Text(state.status, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium)
+                    state.storageReport?.let { Text(it.summary, style = MaterialTheme.typography.bodySmall) }
                     if (notificationAccess != NotificationAccess.ENABLED && state.phase in setOf(HomePhase.DOWNLOADING, HomePhase.PUBLISHING)) {
                         Text("Notification controls are unavailable. Watch progress here; Cancel attempt works here while downloading, not while saving.",
                             style = MaterialTheme.typography.bodySmall)

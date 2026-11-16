@@ -26,6 +26,7 @@ class HomeQueueTest {
     private var failDownload = false
     private val publishGate = CompletableDeferred<Unit>()
     private var holdPublish = false
+    private var space: StorageSpace? = null
     private val phasesAtWork = mutableListOf<TaskPhase>()
     private val engine = object : Engine by fake {
         override suspend fun resolveForTask(url: String, processId: String): Result<ResolveOutcome> {
@@ -50,7 +51,27 @@ class HomeQueueTest {
             phasesAtWork += store.rows.value.last().phase
             if (holdPublish) publishGate.await()
             PublishedMedia("content://test/1", file.name, "Downloads/YTDLP", "video/mp4")
-        }, newTaskId = { "task-${++serial}" }, queue = repository)
+        }, newTaskId = { "task-${++serial}" }, queue = repository,
+            storageSpace = { space ?: StorageSpace(Long.MAX_VALUE, Long.MAX_VALUE) })
+
+    @Test fun storagePreflightBlocksTransferAndRechecksActualPublicationBytes() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        space = StorageSpace(0, 0)
+        home.download(); advanceUntilIdle()
+        assertEquals(0, downloads)
+        assertEquals("NO_SPACE", store.rows.value.single().reason)
+        assertFalse(home.state.value.storageReport!!.allowed)
+        space = StorageSpace(Long.MAX_VALUE, Long.MAX_VALUE)
+        home.reviewTask("task-1"); advanceUntilIdle()
+        holdDownload = false
+        home.download(); advanceUntilIdle()
+        assertEquals(1, downloads)
+        assertEquals(1, publishes)
+        assertTrue(home.state.value.storageReport!!.allowed)
+        home.close()
+    }
 
     @Test fun stageSeveralLinksWithoutEngineWorkAndExplicitReviewPersistsBeforeResolveDownloadSave() = runTest {
         val home = home(this)

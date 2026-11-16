@@ -1427,3 +1427,9 @@ Foundation wrapper BUILD SUCCESSFUL in 3m 37s; final wired wrapper BUILD SUCCESS
 Home adds stage-for-later, review fresh formats, forget-record (not saved-file deletion), previous-save opening and explicit interrupted-publication confirmation. No automatic queue admission or background rescheduling.
 Required wrapper BUILD SUCCESSFUL in 2m 59s; 308 total / 307 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Repeat BUILD SUCCESSFUL in 28s was up-to-date, not a second fresh run.
 UI/a11y/device recovery unverified; continue Phase 1 errors/storage/exact-video and final artifact checks.
+
+### Storage admission and actual-byte publication recheck — 16 Nov 2026
+4 tests-first budget/unknown/overflow/source-estimate cases and fake-Engine no-space admission/retry regression; low free space blocks transfer before service/native work.
+StatFs checks existing private/fixed destination filesystems without new permission (R78). Conservative parts/merge/public-copy budget + 64 MiB DB/log reserve; unknown sizes remain unknown, UI displays free/budget and no-guarantee warning.
+Actual destination bytes checked again immediately before publication; no SAF/folder picker or promise of disk-full prevention. Required wrapper BUILD SUCCESSFUL in 3m 59s; 313 total / 312 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
+Continue Phase 1 contract recovery/exact-video/final packaging; no phone request or device claim.

@@ -15,6 +15,9 @@ import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.core.VideoQualityPlan
 import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
+import io.github.muzammilawan.clipharbor.core.StorageBudget
+import io.github.muzammilawan.clipharbor.core.StorageSpace
+import io.github.muzammilawan.clipharbor.core.StorageReport
 import io.github.muzammilawan.clipharbor.engine.EngineFailure
 import io.github.muzammilawan.clipharbor.download.TaskPhase
 import io.github.muzammilawan.clipharbor.download.TaskRecord
@@ -55,6 +58,7 @@ data class HomeState(
     val saved: PublishedMedia? = null,
     val pendingUrl: String? = null,
     val pauseReason: ErrorCode? = null,
+    val storageReport: StorageReport? = null,
 ) {
     val canDownload: Boolean get() = phase == HomePhase.CHOOSING && engineReady &&
         ((selectedAudioFormatId == null && qualities.any { it.available && it.quality == selectedQuality }) ||
@@ -87,6 +91,7 @@ class HomeController(
     private val foreground: DownloadForeground = DownloadForeground.ActivityOnly,
     private val publishAudio: suspend (File, String) -> PublishedMedia = { _, _ -> error("Audio publisher is not configured") },
     private val queue: TaskRepository? = null,
+    private val storageSpace: (suspend () -> StorageSpace)? = null,
 ) {
     private val mutable = MutableStateFlow(HomeState())
     val state = mutable.asStateFlow()
@@ -101,7 +106,8 @@ class HomeController(
     @Volatile private var closed = false
 
     private class Prepared(val task: String, val url: String, val snapshot: ResolvedSnapshot?, val createdAt: Long,
-        val plans: Map<VideoQuality, VideoQualityPlan>, val audioPlans: Map<String, AudioPlan>, val recordId: String?)
+        val plans: Map<VideoQuality, VideoQualityPlan>, val audioPlans: Map<String, AudioPlan>, val recordId: String?,
+        val videoEstimates: Map<VideoQuality, Long?>, val audioEstimates: Map<String, Long?>)
 
     fun initialize() {
         if (closed || job?.isActive == true || state.value.engineReady) return
@@ -130,7 +136,7 @@ class HomeController(
         discardPrepared()
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
             title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null,
-            phase = HomePhase.READY, pauseReason = null, status = "Review the link, then find formats.") }
+            phase = HomePhase.READY, pauseReason = null, storageReport = null, status = "Review the link, then find formats.") }
     }
 
     fun receiveShared(text: String) {
@@ -183,7 +189,7 @@ class HomeController(
         activeTask = task
         mutable.update { it.copy(phase = HomePhase.RESOLVING, url = url, inputError = null,
             saved = null, title = null, qualities = emptyList(), selectedQuality = null,
-            audioChoices = emptyList(), selectedAudioFormatId = null, progress = null, pauseReason = null,
+            audioChoices = emptyList(), selectedAudioFormatId = null, progress = null, pauseReason = null, storageReport = null,
             status = "Finding available video and audio formats…") }
         job = scope.launch {
             var snapshot: ResolvedSnapshot? = null
@@ -218,7 +224,9 @@ class HomeController(
                 val selection = if (defaultAudio != null) TaskSelection(audioFormatId = defaultAudio)
                     else TaskSelection(videoHeight = defaultVideo?.pixels)
                 persistPhase(recordId, TaskPhase.CHOOSING, selection = selection, title = outcome.media.title)
-                prepared = Prepared(task, url, snapshot, clockMs(), plans, audioPlans, recordId)
+                prepared = Prepared(task, url, snapshot, clockMs(), plans, audioPlans, recordId,
+                    plans.mapValues { StorageBudget.estimate(outcome.media.formats, it.value) },
+                    audioChoices.associate { it.formatId to it.approxBytes })
                 snapshot = null // Ownership is transferred to the chooser, not persisted in UI/history.
                 observer.event(task, Stage.RESOLVING.name, "ok", mapOf("formats" to outcome.media.formats.size.toString(),
                     "ms" to (clockMs() - started).coerceAtLeast(0).toString(),
@@ -279,6 +287,10 @@ class HomeController(
             var lease: DownloadForeground.Lease? = null
             try {
                 currentCoroutineContext().ensureActive()
+                storageSpace?.let { probe ->
+                    checkStorage(StorageBudget.download(probe(), if (audio != null) input.audioEstimates[audio.formatId]
+                        else input.videoEstimates[plan?.quality], merging = audio == null), input.task, Stage.DOWNLOADING)
+                }
                 persistPhase(input.recordId, TaskPhase.DOWNLOADING, selection = if (audio != null)
                     TaskSelection(audioFormatId = audio.formatId) else TaskSelection(videoHeight = plan?.quality?.pixels))
                 val admitted = foreground.acquire(input.task)
@@ -324,6 +336,7 @@ class HomeController(
                         minOf(outcome.selectedWidth, outcome.selectedHeight).toString() else "unknown"),
                     "mediaMode" to mode, "requestedResolution" to (plan?.quality?.pixels?.toString() ?: "none"), "qualityAxis" to "shortEdge",
                     "reusedResolve" to outcome.reusedResolve.toString()))
+                storageSpace?.let { probe -> checkStorage(StorageBudget.publication(probe(), file.length()), input.task, Stage.PUBLISHING) }
                 persistPhase(input.recordId, TaskPhase.PUBLISHING)
                 mutable.update { it.copy(phase = HomePhase.PUBLISHING, progress = null, status = "Saving the finished file…") }
                 admitted.publishing()
@@ -543,5 +556,13 @@ class HomeController(
     private fun abandonChooser() {
         val row = prepared?.recordId ?: return
         scope.launch(start = CoroutineStart.UNDISPATCHED) { persistTerminal(row, TaskPhase.CANCELED, "CHOOSER_DISMISSED") }
+    }
+
+    private fun checkStorage(report: StorageReport, task: String, stage: Stage) {
+        mutable.update { it.copy(storageReport = report) }
+        observer.event(task, stage.name, "storage_check", mapOf("availableBytes" to report.availableBytes.toString(),
+            "requiredBytes" to report.requiredBytes.toString(), "estimatedBytes" to (report.estimatedBytes?.toString() ?: "unknown"),
+            "allowed" to report.allowed.toString()))
+        if (!report.allowed) throw EngineFailure(DownloadError(ErrorCode.NO_SPACE, stage))
     }
 }

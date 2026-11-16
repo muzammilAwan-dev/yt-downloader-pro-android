@@ -418,3 +418,10 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   and the MediaStore publish landed in `Download/ClipHarbor` (`content://media/external/downloads/18406`). Still open: whether the
   earlier file's gallery visibility and behaviour on other videos/sites. Owner confirmed latest `ec146df` download playback
   with sound (R53); new `74ce7cf` standard-plan transfers/MKV playback need separate phone verification.
+
+- **R78 (16 Nov 2026, storage safety):** Android StatFs.availableBytes exists since API 18 (minSdk remains 24).
+  https://developer.android.com/reference/android/os/StatFs#getAvailableBytes()
+  Check existing private and fixed publication filesystem free bytes without storage permission; conservatively
+  reserve reported candidate parts + merge + public copy (3x video / 2x audio) plus 64 MiB DB/log headroom.
+  Unknown sizes remain unknown with only reserve admission; recheck actual bytes immediately before publication.
+  No promise that estimates prevent disk-full during transfer; no SAF/folder permission UI introduced in Phase 1.

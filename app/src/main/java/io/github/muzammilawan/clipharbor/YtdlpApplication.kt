@@ -32,6 +32,7 @@ import io.github.muzammilawan.clipharbor.log.AppLogger
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
 import io.github.muzammilawan.clipharbor.log.RotatingLog
 import io.github.muzammilawan.clipharbor.publish.MediaStorePublisher
+import io.github.muzammilawan.clipharbor.publish.AndroidStorageSpace
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -112,7 +113,8 @@ class DownloadSession(
             logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
                 " V task=$task stage=$stage event=ytdlp " + line)
         }
-    }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) }, queue = queue)
+    }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) }, queue = queue,
+        storageSpace = AndroidStorageSpace(appContext)::read)
 
     init { logger.event('I', "session_start", stage = "APP") }
 

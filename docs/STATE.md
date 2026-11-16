@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R77);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R78);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -59,6 +59,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Storage preflight: **BUILD SUCCESSFUL in 3m 59s**, 313 total / 312 pass / 1 skip; lint 0 errors / 7 warnings.
+4 budget/unknown/overflow/estimate tests + fake-Engine low-space admission/retry test pass. Actual-byte publication recheck wired.
+Conservative 3x video / 2x audio estimate + 64 MiB reserve, displayed free/budget/unknown warning; Android filesystem behavior device-unverified.
 Queue/history UI: **BUILD SUCCESSFUL in 2m 59s**, 308 total / 307 pass / 1 skip; lint 0 errors / 7 warnings.
 2 bounded/order/action-fence presentation tests pass; repeated wrapper BUILD SUCCESSFUL in 28s was up-to-date, not fresh.
 Integrated staging/review/forget/open actions, 5 recent records plus all access, interrupted-save confirmation. UI/a11y/device unverified.
