@@ -16,7 +16,7 @@ country — you are responsible for what you download.
 |---|---|
 | Environment setup | done on the owner's PC (`docs/dev-setup.md`) |
 | Phase 0 — engine spike on a real arm64 phone | **passed 15 Nov 2026** on an Infinix X682B (Android 10, arm64): 7/7 self-test, merged MP4 published via MediaStore. Evidence: `docs/evidence/phase0.md` |
-| Phase 1 — MVP (share target, picker, queue, notifications) | **in progress**: Home/share, source-backed video/original-audio picker, foreground ownership and full-session logs are CLI-tested. Video replay/merge/save verified on the owner's phone; new picker/audio, sustained background/Cancel and durable queue remain open (`docs/STATE.md`) |
+| Phase 1 — MVP (share target, picker, queue, notifications) | **Implementation host-delivered; Android acceptance deferred**: compact video/original-audio/exact picker, durable queue/history, foreground ownership, recovery/storage/publication and full-session logs. Verified stamped APK: `docs/evidence/phase1-delivery.md`. Not a device/reliability pass; STOP before Phase 2. |
 | Phase 2 — parity (playlists, trim, audio, subs, cookies, updates) | not started |
 | Phase 3 — release (baseline profiles, a11y, signing, F-Droid metadata) | not started |
 

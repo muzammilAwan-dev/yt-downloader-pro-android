@@ -1469,3 +1469,11 @@ Continue final evidence invalidation/task-scoped review and stamped APK/report; 
 Different shared links clear only Home's task-local warning; the interrupted queue record still requires explicit acceptance. Stage and Download cannot bypass current uncertainty. Service loss while saving now reports PAUSED and folder-check warning, not a canceled/unsaved certainty.
 Initial BUILD FAILED in 2m caught the existing service-loss assertion expecting CANCELED; strengthened it to PAUSED + uncertainty + folder-check status. Required wrapper BUILD SUCCESSFUL in 1m 8s; 338 total / 337 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
 Implementation review complete; proceed only to final fresh host checks, stamped APK inspection and phase report. Device gates remain deferred.
+
+### Phase 1 approved host delivery and final artifact — 16 Nov 2026
+Source 56c15c4dc76a579c400e7b8a084dbb408eda299b; offline stamped assembleDebug BUILD SUCCESSFUL in 1m 45s. dist/app-debug.apk 70,620,367 bytes; built/copy/SHA256SUMS agree: 71BE20C713B902B57E3FAA4DA9F904EEEEFB023175BC6D928CB27D8BE38ED233.
+Fresh helper rerun BUILD SUCCESSFUL in 3m 6s; 338 total / 337 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. 24 helper + 4 schema regressions; 96 standard-video / 9 original-audio / 20 exact-video socket-blocked selectors passed, no media downloaded.
+Own DEX full stamp/source match, signature/identity/min24-target37-arm64/budget verified; engine2026.10.26/EJS0.8.0/notices and seven native/three icon entries byte-identical to f96194e. Manifest adds only Room non-exported internal service (R80), no new requested permissions; identical-manifest baseline mode not weakened.
+Report C:\Users\Malku\AppData\Local\Temp\opencode\ytdlp-phone-free-o5y5fbwt\summary.md: PASS_HOST_CHECKS_DEVICE_REQUIRED / device NOT_RUN / runner REMOVED; only two reports retained. Full phase report docs/evidence/phase1-delivery.md.
+Approved Phase 1 implementation/host delivery complete; Android acceptance NOT PASSED and device-only gates deferred, not waived. Latest owner-tested artifact still e37686c. No live resolve-speedup or general 403 fix claim; no runtime updater/login/automatic queue scheduling.
+STOP for owner's next before Phase 2. No intermediate/new phone installation request; no push or tooling installation.

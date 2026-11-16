@@ -433,3 +433,10 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Prior file:// return could not be viewed and failed durable content-URI validation; corrected inside Phase 1.
   MediaStore commit must update exactly one pending row before success; copy/commit failures attempt row cleanup.
   Host transaction/file/provider-root tests do not establish OEM gallery visibility or viewer playback.
+
+- **R80 (16 Nov 2026, final APK inspection):** Actual stamped `56c15c4` APK / SDK aapt2 manifest tree versus verified
+  `f96194e` adds only Room's androidx.room.MultiInstanceInvalidationService (exported=false, directBootAware=true),
+  plus manifest line-number shifts. This is the compiled approved Room dependency's internal component, no permission addition.
+  All 2 assets/full notices, 7 native and 3 icon entries are byte-identical; signer unchanged. Optional helper baseline
+  mode deliberately requires a fully identical binary manifest; not used or relaxed for this intentional Room change.
+  Fresh host report PASS_HOST_CHECKS_DEVICE_REQUIRED; Android startup/service/database behavior remains NOT_RUN.

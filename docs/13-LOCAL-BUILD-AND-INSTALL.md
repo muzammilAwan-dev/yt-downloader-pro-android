@@ -29,7 +29,8 @@ Debug APKs are signed automatically with a local debug key, so they install norm
 (Windows) and `tools/build-debug.sh` (macOS/Linux). On this PC script execution is disabled; use the already-tested,
 process-scoped invocation `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1` instead of
 changing a persistent execution policy. Identify each phone log by `gitSha`, not the version name alone. The first UI
-preview now uses `0.1.0-phase1-preview` / versionCode 2; it is not the full completed Phase 1.
+tester retains `0.1.0-phase1-preview` / versionCode 2; identify delivery by its source stamp, not version name alone.
+Phase 1 implementation is host-delivered; Android acceptance remains deferred, not passed.
 
 ### Optional phone-free verification (Windows, no installation)
 
@@ -70,7 +71,7 @@ do not delete the shared temp root, Gradle/SDK installation or other project out
 M4A/WebM audible playback and file visibility, another video preset/picture/sound, the earlier failing long sample and complete
 Share session logs. Background/lock/notification Cancel/newer APIs are separate device checks; a green host report proves none of these.
 No phone-PC connection is required: transfer/install manually as below. Current ready tester/sequence:
-`docs/evidence/original-audio-tester.md` (`e37686c`, not a new APK from this helper).
+`docs/evidence/phase1-delivery.md` (`56c15c4`, not a new APK from this helper). The latest actual owner-tested APK is still `e37686c`.
 
 ## 3. Get it onto the phone and install
 
@@ -137,6 +138,7 @@ edit/ask AI -> .\tools\build-debug.ps1 -> adb install -r dist\*.apk (or copy to 
   Clear logs deliberately starts a new timeline. Do not clear between reproducing a bug and sharing its log.
 
 Owner confirmed first-preview `ec146df` playback with sound and supplied dark Home/picker/progress/saved screenshots.
-Second-preset playback/dimensions and MKV playback still need their own phone checks. The foreground milestone is an
-in-process preview, not finished Phase 1: no durable queue/process-death recovery, thumbnail embedding, audio conversion or exact-video-format picker.
-Original audio-only selection is CLI-tested in the new tester; Android playback and radio interaction still require the owner's report.
+Second-preset playback/dimensions and MKV playback still need their own phone checks. The final Phase 1 tester adds host-tested
+durable queue/process-recovery wiring and advanced exact-video selection; Android execution is not implied by those checks.
+Thumbnail embedding, audio conversion and automatic queue scheduling remain unavailable. Original audio-only and exact-video
+selection are CLI-tested; Android playback and radio interaction still require the owner's deferred report.

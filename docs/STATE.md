@@ -2,16 +2,20 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R79);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R80);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
 - Product: YTDLP, an unofficial, free, GPL-3.0 Android front end for yt-dlp (package `io.github.muzammilawan.clipharbor`).
   Desktop sibling: `muzammilAwan-dev/yt-downloader-pro` (MIT), the parity target.
 - Phase 0 (engine spike): **PASSED** 15 Nov 2026 on Infinix X682B (Android 10, API 29, arm64). Evidence: `docs/evidence/phase0.md`.
-- **Phase 1 (MVP): in progress.** Done and unit-tested: logging/redaction, engine-version reporting, task-private replay
-  (`--load-info-json`), download evidence, home controller, Material 3 home + paste/share, eight standard quality tiers with private
-  typed selection plan, YTDLP branding and icon. Phone-verified earlier (`ec146df`): resolve, 1080p select, merge, MediaStore publish, playback with sound.
+- **Phase 1 (MVP): approved implementation/host delivery complete; Android acceptance deferred, NOT PASSED. STOP for owner's `next`.**
+  Compact video/original-audio/exact picker, private resolve reuse/timings, Room queue/history, foreground ownership, recovery/storage,
+  publication safety and full-session logs are host-tested. No Phase 2 work authorized. Report: `docs/evidence/phase1-delivery.md`.
+- **Current delivered APK:** `dist/app-debug.apk`, actual full DEX stamp `56c15c4dc76a579c400e7b8a084dbb408eda299b`, 70,620,367 bytes.
+  SHA-256 `71BE20C713B902B57E3FAA4DA9F904EEEEFB023175BC6D928CB27D8BE38ED233`; built/copy/SHA256SUMS agree, owner signer verified.
+  yt-dlp 2026.10.26 / EJS0.8.0, library0.18.1; all 2 assets/notices, 7 native and 3 icon entries match f96194e. Manifest adds only
+  Room's non-exported internal invalidation service (R80); no new requested permissions. min24 / target37 / arm64. Device NOT_RUN.
 - Latest owner-tested artifact: **`e37686c`** — source-backed video + original audio. Owner log confirms WebM/Opus `251-drc`
   (24,965,341 bytes) and 720p `136+140-3` (1280×720, 108,448,544 bytes) saved without recorded 403. Sound/visibility unconfirmed.
   Four screenshots show 22 audio choices before video; resolve took 42,545/38,261 ms. Evidence: `docs/evidence/phase1-owner-feedback.md`.
@@ -58,7 +62,15 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner-tested runtime/merge/save on one sample; old-file replacement without data clearing and broader reliability remain unconfirmed.
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
-## Last recorded check — 16 Nov 2026
+## Final recorded checks — 16 Nov 2026
+Fresh phone-free helper: **BUILD SUCCESSFUL in 3m 6s**, 338 total / 337 pass / 1 Windows symlink skip / 0 failures/errors;
+lint 0 errors / 7 known warnings. Stamped offline APK: **BUILD SUCCESSFUL in 1m 45s**. 24 helper + 4 schema regressions and
+96 standard-video / 9 original-audio / 20 actual Kotlin exact-video socket-blocked selectors passed; no media downloaded.
+Report `C:\Users\Malku\AppData\Local\Temp\opencode\ytdlp-phone-free-o5y5fbwt\summary.md`: PASS_HOST_CHECKS_DEVICE_REQUIRED;
+JSON device_verification=NOT_RUN, runtime_copy=REMOVED; directory contains only two reports. Source/signature/identity/budget/assets verified.
+No live extraction speedup measured, no general 403 reliability/playback claim. No phone connection/emulator/tooling install/push.
+
+### Verified final implementation increments (historical, superseded by fresh full check above)
 Final evidence/task-scope hardening: **BUILD SUCCESSFUL in 1m 8s**, 338 total / 337 pass / 1 skip; lint 0 errors / 7 warnings.
 4 added regressions pass: malformed later evidence clears IDs/dimensions, uncertain-save stage/share fences, recovered review guard,
 and known URI retention through timeout. Service-loss regression now asserts paused uncertainty, not canceled/unsaved certainty.
@@ -68,51 +80,10 @@ cancel a newer revision. 24 helper regressions / 4 exported-schema tests and 20 
 Publication mechanics: **BUILD SUCCESSFUL in 1m 36s**, 331 total / 330 pass / 1 skip; lint 0 errors / 7 warnings.
 5 pending-commit/copy-failure/legacy collision/content-provider-root tests pass. API 24-28 uses narrow content-URI grants;
 MediaStore success requires one committed row. Android provider/gallery execution unverified; no added permissions.
-Exact-video Home/UI: **BUILD SUCCESSFUL in 3m 7s**, 326 total / 325 pass / 1 skip; lint 0 errors / 7 warnings.
-3 fake-Engine exclusivity/typed-history/evidence-refusal/fresh-retry regressions pass. Standard video remains default;
-advanced exact stream list is bounded, original audio separate. No device playback/visual verification.
-Exact-video foundation: **BUILD SUCCESSFUL in 2m 43s**, then exporter **BUILD SUCCESSFUL in 1m 18s**;
-323 total / 322 pass / 1 skip; lint 0 errors / 7 warnings. 20 actual Kotlin selectors passed on socket-blocked pinned yt-dlp.
-Typed source/selector/evidence/runner tests pass; exact source cannot fall back to different video. Home/UI wiring pending.
-Contract recovery: **BUILD SUCCESSFUL in 2m 55s**, 317 total / 316 pass / 1 skip; lint 0 errors / 7 warnings.
-Taxonomy/retry flags matched against contracts/errors.json; safe explicit fresh retries, 5-second timeout wait, no automatic reschedule.
-Unsupported sign-in/client/runtime/folder/raw-part actions honestly explained. Destination-full-after-transfer and retry-capability tests pass.
-Storage preflight: **BUILD SUCCESSFUL in 3m 59s**, 313 total / 312 pass / 1 skip; lint 0 errors / 7 warnings.
-4 budget/unknown/overflow/estimate tests + fake-Engine low-space admission/retry test pass. Actual-byte publication recheck wired.
-Conservative 3x video / 2x audio estimate + 64 MiB reserve, displayed free/budget/unknown warning; Android filesystem behavior device-unverified.
-Queue/history UI: **BUILD SUCCESSFUL in 2m 59s**, 308 total / 307 pass / 1 skip; lint 0 errors / 7 warnings.
-2 bounded/order/action-fence presentation tests pass; repeated wrapper BUILD SUCCESSFUL in 28s was up-to-date, not fresh.
-Integrated staging/review/forget/open actions, 5 recent records plus all access, interrupted-save confirmation. UI/a11y/device unverified.
-Home/Room integration: **BUILD SUCCESSFUL in 3m 8s**, 306 total / 305 pass / 1 skip; lint 0 errors / 7 warnings.
-6 fake-Engine queue admission/retry/recovery/storage-failure/timeout/publication tests + bounded/redacted-record test pass.
-Process-wide repository wired in Application; persist-before-resolve/download/publish/success; queue UI and recovery/storage UX still pending.
-Room/KSP adapter: **BUILD SUCCESSFUL in 7m 14s**, 299 total / 298 pass / 1 skip; lint 0 errors / 7 warnings;
-4 stdlib exported-DDL/DAO-SQL/transaction/backup tests pass. Generated v1 schema committed. Android database execution unverified.
-Queue state foundation: **BUILD SUCCESSFUL in 2m 27s**, 296 total / 295 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
-5 new store/state/privacy/recovery tests pass; first run caught numeric HTTP_403 error-name validation, fixed. Room and Home integration not yet implemented.
-Current resolve-reuse/timing increment: **BUILD SUCCESSFUL in 2m 48s**, 291 total / 290 pass / 1 skip / 0 failures/errors;
-lint 0 errors / 7 known warnings. 4 new fake-Engine regressions cover same-link reuse, explicit refresh, expiry/closed/consumed input,
-and timing allowlist. No live extraction speedup measured; repeat extraction after download intentionally stays fresh. APK remains e37686c.
-Historical tester/helper checks below:
-Phone-free helper final default run: **BUILD SUCCESSFUL in 3m 44s**, 24 stdlib regressions and 96 video / 9 exact-audio selector cases passed.
-Report `C:\Users\Malku\AppData\Local\Temp\opencode\ytdlp-phone-free-kvjj2y5b\summary.md`: PASS_HOST_CHECKS_DEVICE_REQUIRED;
-JSON device_verification=NOT_RUN, runtime_copy=REMOVED; directory contains only the two reports. No installs or APK changes.
-Earlier baseline-enabled helper: **BUILD SUCCESSFUL in 2m 39s**, full assets/native/manifest/icon identical to verified `f96194e`.
-Required wrapper check also ran offline with stamped property: **BUILD SUCCESSFUL in 19s** (tests/lint up-to-date, not another fresh test run).
-Prior stamped APK helper: **BUILD SUCCESSFUL in 2m 45s** (tests/lint), **BUILD SUCCESSFUL in 54s** (APK).
-Fresh reports: 284 total / 283 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Five state/label safety tests passed before UI wiring, BUILD SUCCESSFUL in 36s; existing Home/audio/runner/replay/foreground/redaction tests green.
-Offline WebM synthetic replay CLI emitted 251/NA/NA and 251/none/opus with socket connections blocked; no media downloaded.
-Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
-Unchanged `dist/app-debug.apk`: actual DEX stamp `e37686c`, **70,276,358 bytes**, built/copied/SHA256SUMS agree:
-`C923865E6A01F464358F2B30570FF5A25A84DD5275B7E5FDF8DEA245EAAD4FE6`.
-Signature verifies and matches `f96194e`; exact engine/notices, seven native entries, manifest and three icon entries unchanged.
-Video planner/dependencies/permissions unchanged; separate original audio UI/Home/save routing CLI-tested, phone-untested. 96 video selector cases
-also passed on verified 2026.10.26 with sockets blocked; host harness only changed the historical checker's expected pin, not the repo tool.
-OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
-Tester `e37686c`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `f96194e`, no new permissions.
+Earlier verified queue/storage/recovery/exact-picker/reuse increments and superseded tester/helper hashes live in `docs/PROGRESS.md`
+(grep, never read whole). OpenCode fallback/runtime checks remain untested; old handoff checker lacked PyYAML (not installed).
 
-## Current Phase 1 exit checklist (continue within this approved phase)
+## Phase 1 delivery checklist (STOP; unchecked device/policy gates remain deferred)
 Owner cadence supersedes the previous phone-report/new-feature-area stop (R75). Verified internal commits; one final phase report.
 Passing CLI checks is not phone verification. Existing phone checks remain deferred; do not claim overall reliability/playback.
 - [x] Compact mode-specific picker: video first, at most 3 source-backed container/codec quick audio rows (+ current variant),
@@ -120,7 +91,7 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
 - [x] Resolve performance foundation: bounded task-private same-link chooser reuse before consumption, explicit Refresh always re-extracts;
         init/subprocess/metadata-replay timing allowlist. No live extraction speedup measured; consumed snapshots never cached/replayed twice.
 - [x] Owner-approved temporary/removable phone-free verifier: stdlib regressions, fresh offline tests/lint, APK/source/signing/payload
-        checks and synthetic selectors; default and optional-baseline runs passed. Current tester remains `e37686c`; no phone/device test performed.
+        checks and synthetic selectors; final delivered tester `56c15c4` passed default checks. No phone/device test performed.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
 - [ ] 0b. OWNER: try a second available preset, confirm selected dimensions and playback with sound; send its post-download log.
@@ -155,8 +126,9 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
 - [x] 4. Advanced source-backed exact-video picker, typed selectors, strict ID/dimension/audio evidence, Home/history/fresh-retry wiring;
         20 socket-blocked engine selector cases pass. Separate exact-stream merges use MKV; no different-video fallback/transcode.
         Standard resolution mode remains default. Thumbnail embedding deliberately deferred; device playback unverified.
-- [ ] 5. Broader engine update policy remains gated; approved APK-only freshness investigation is prioritized in 1f (R72).
-- [ ] Integrated queue/history/progress/recovery UI and host recovery/privacy tests; stamped APK/source/signature/payload inspection and phase report.
+- [ ] 5. Broader engine update policy is excluded/gated for Phase 2; approved APK-only bundled freshness investigation is delivered (R72).
+- [x] Integrated queue/history/progress/recovery UI and host recovery/privacy tests; stamped APK/source/signature/payload inspection and
+        phase report delivered: `docs/evidence/phase1-delivery.md`. Android acceptance remains deferred, not waived/passed. STOP for `next`.
 
 ## Open owner checks (cannot be automated)
 Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
