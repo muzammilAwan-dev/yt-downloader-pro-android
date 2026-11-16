@@ -392,6 +392,17 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Plugin portal page fetch returned HTTP 400; AGP 9.5.1/Gradle 9.6 compatibility and dependency resolution
   remain UNTESTED. Do not install the 180 MB release bundle; resolve only required Gradle plugin/artifacts.
 
+- **R77 (16 Nov 2026, queue integration design):** Rechecked Room 2.8.5 release/compiler options and AGP built-in
+  Kotlin migration docs. KSP recommended; no org.jetbrains.kotlin.android/kapt plugin or new SDK/ABI/permission needed.
+  https://developer.android.com/build/migrate-to-built-in-kotlin
+  https://developer.android.com/build/migrate-to-ksp
+  https://developer.android.com/jetpack/androidx/releases/room#2.8.5
+  Use stable androidx.room 2.8.5 APIs (current unversioned guides reference room3; do not copy those new APIs).
+  MVP queue concurrency remains one explicit user-started task: persist before work, revision-fence mutations,
+  process-once interrupted recovery to PAUSED, fresh extraction and explicit confirmation on retry, no boot/background
+  reschedule or repeated publication. Unknown/signed source query parameters are not persisted; require link re-entry
+  after process loss. Keep single-use snapshots process-private. These are design decisions, runtime integration untested.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

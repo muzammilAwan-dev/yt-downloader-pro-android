@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R76);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R77);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -59,6 +59,8 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Queue state foundation: **BUILD SUCCESSFUL in 2m 27s**, 296 total / 295 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
+5 new store/state/privacy/recovery tests pass; first run caught numeric HTTP_403 error-name validation, fixed. Room and Home integration not yet implemented.
 Current resolve-reuse/timing increment: **BUILD SUCCESSFUL in 2m 48s**, 291 total / 290 pass / 1 skip / 0 failures/errors;
 lint 0 errors / 7 known warnings. 4 new fake-Engine regressions cover same-link reuse, explicit refresh, expiry/closed/consumed input,
 and timing allowlist. No live extraction speedup measured; repeat extraction after download intentionally stays fresh. APK remains e37686c.
@@ -113,7 +115,8 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
         Audio exact-ID selector emits no merge/transcode flags; codec/ID/dimension/extension evidence must agree. No MP3 conversions in this tester.
 - [x] OWNER supplied e37686c picker/screenshots and complete post-result audio + second-video logs (R75). Audible playback/visibility,
         sustained background/Cancel/new APIs and earlier failing long videos remain deferred, not passed.
-- [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
+- [ ] 2. Durable Room queue: platform-free revision-fenced task/store/transition/privacy/recovery foundation has 5 passing tests;
+        Room adapter and Home integration still pending. Official Room 2.8.5/KSP 2.3.14 researched (R76/R77), not resolved yet.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-video-format picker (original audio moved earlier and delivered above). Thumbnail embedding is deliberately deferred.
 - [ ] 5. Broader engine update policy remains gated; approved APK-only freshness investigation is prioritized in 1f (R72).

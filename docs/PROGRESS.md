@@ -1403,3 +1403,9 @@ Continue full Phase 1; no intermediate APK or phone-install request.
 Snapshot availability does not expose payload, reset age, copy or consume replay. UI Refresh explicitly bypasses reuse. Download and terminal/changed-link paths retain single-use cleanup fences.
 Adapter records initialization/subprocess/metadata-replay durations separately; subprocess still includes network/QuickJS, no attribution or live speedup claim. Repeat after completed download intentionally re-extracts.
 Wrapper BUILD SUCCESSFUL in 2m 48s; 291 total / 290 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. No APK/device change; continue Phase 1 Room and recovery integration.
+
+### Durable task state foundation — 16 Nov 2026
+5 tests-first store/state/privacy regressions cover typed persisted selections, default-deny signed/unknown query persistence, stale revision fences, interrupted process pause/idempotence, fresh resolve retry, and active/publication removal fences.
+TaskRepository/TaskStore are platform-free and not wired yet; no replay/formats/headers/cookies/stderr in task records. R77 documents stable Room APIs and conservative one-task explicit recovery design.
+First run BUILD FAILED in 2m 40s: reason validator rejected digits in HTTP_403_ON_MEDIA. Fixed to permit bounded uppercase/digit/underscore codes; regression passed.
+Required wrapper BUILD SUCCESSFUL in 2m 27s; 296 total / 295 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Continue Room adapter and Home/UI wiring; no APK/device test.
