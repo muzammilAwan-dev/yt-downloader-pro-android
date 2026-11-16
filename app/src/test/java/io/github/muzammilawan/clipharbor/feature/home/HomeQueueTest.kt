@@ -30,6 +30,8 @@ class HomeQueueTest {
     private var holdPublish = false
     private var space: StorageSpace? = null
     private var spaceAfterTransfer: StorageSpace? = null
+    private var badExactEvidence = false
+    private var lastRequest: DownloadRequest? = null
     private val phasesAtWork = mutableListOf<TaskPhase>()
     private val engine = object : Engine by fake {
         override suspend fun resolveForTask(url: String, processId: String): Result<ResolveOutcome> {
@@ -39,13 +41,18 @@ class HomeQueueTest {
         override suspend fun download(request: DownloadRequest, onProgress: (ProgressEvent) -> Unit,
             onLine: (String) -> Unit): Result<DownloadOutcome> {
             downloads++
+            lastRequest = request
             phasesAtWork += store.rows.value.last().phase
             if (holdDownload) awaitCancellation()
             if (failDownload) return Result.failure(EngineFailure(DownloadError(failureCode, Stage.DOWNLOADING)))
             request.outputDirectory.mkdirs()
             val file = File(request.outputDirectory, "test.mp4").apply { writeText("bytes") }
             spaceAfterTransfer?.let { space = it }
-            return Result.success(DownloadOutcome(listOf(file), 0, 1, emptyList(), listOf("18"), 360, selectedWidth = 640))
+            val exact = request.exactVideoPlan
+            return Result.success(if (exact != null) DownloadOutcome(listOf(file), 0, 1, emptyList(),
+                if (badExactEvidence) listOf("18") else listOf(exact.choice.formatId) + exact.audioIds.take(1),
+                exact.choice.height, selectedWidth = exact.choice.width)
+            else DownloadOutcome(listOf(file), 0, 1, emptyList(), listOf("18"), 360, selectedWidth = 640))
         }
     }
 
@@ -86,6 +93,62 @@ class HomeQueueTest {
         assertEquals(1, downloads)
         assertEquals(0, publishes)
         assertEquals("NO_SPACE", store.rows.value.single().reason)
+        home.close()
+    }
+
+    @Test fun exactVideoIsExclusivePersistsOnlyTypedIdAndPublishesOnlyMatchingEvidence() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        home.selectExactVideo("137")
+        assertEquals("137", home.state.value.selectedExactVideoId)
+        assertNull(home.state.value.selectedQuality)
+        assertNull(home.state.value.selectedAudioFormatId)
+        home.selectAudio("140")
+        assertNull(home.state.value.selectedExactVideoId)
+        home.selectQuality(VideoQuality.P720)
+        assertNull(home.state.value.selectedAudioFormatId)
+        home.selectExactVideo("missing")
+        assertEquals(VideoQuality.P720, home.state.value.selectedQuality)
+        home.selectExactVideo("137")
+        home.download(); advanceUntilIdle()
+        assertNull(lastRequest!!.qualityPlan)
+        assertNull(lastRequest!!.audioPlan)
+        assertEquals("137", lastRequest!!.exactVideoPlan!!.choice.formatId)
+        assertEquals("137", store.rows.value.single().selection.videoFormatId)
+        assertEquals(TaskPhase.DONE, store.rows.value.single().phase)
+        assertEquals(1, publishes)
+        home.close()
+    }
+
+    @Test fun exactVideoFakeEngineMismatchNeverPublishesOrFallsBack() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        home.selectExactVideo("137")
+        badExactEvidence = true
+        home.download(); advanceUntilIdle()
+        assertEquals(0, publishes)
+        assertEquals("POST_PROCESS_FAILED", store.rows.value.single().reason)
+        assertEquals(1, downloads)
+        home.close()
+    }
+
+    @Test fun exactVideoQueueRetryReextractsAndRestoresOnlyTheStillAvailableExactId() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        home.selectExactVideo("137")
+        failDownload = true
+        home.download(); advanceUntilIdle()
+        failDownload = false
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals("137", home.state.value.selectedExactVideoId)
+        assertEquals(2, fake.resolveCalls)
+        assertEquals(1, downloads)
+        home.download(); advanceUntilIdle()
+        assertEquals(TaskPhase.DONE, store.rows.value.single().phase)
+        assertEquals(1, publishes)
         home.close()
     }
 

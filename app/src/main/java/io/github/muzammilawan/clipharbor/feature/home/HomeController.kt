@@ -9,6 +9,9 @@ import io.github.muzammilawan.clipharbor.core.DownloadRequest
 import io.github.muzammilawan.clipharbor.core.Engine
 import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.ErrorRecovery
+import io.github.muzammilawan.clipharbor.core.ExactVideoChoice
+import io.github.muzammilawan.clipharbor.core.ExactVideoFormats
+import io.github.muzammilawan.clipharbor.core.ExactVideoPlan
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.QualityChoice
 import io.github.muzammilawan.clipharbor.core.VideoQualities
@@ -54,6 +57,8 @@ data class HomeState(
     val selectedQuality: VideoQuality? = null,
     val audioChoices: List<AudioChoice> = emptyList(),
     val selectedAudioFormatId: String? = null,
+    val exactVideoChoices: List<ExactVideoChoice> = emptyList(),
+    val selectedExactVideoId: String? = null,
     val progress: Int? = null,
     val status: String = "Preparing the bundled engine…",
     val saved: PublishedMedia? = null,
@@ -63,8 +68,9 @@ data class HomeState(
     val failureCode: ErrorCode? = null,
 ) {
     val canDownload: Boolean get() = phase == HomePhase.CHOOSING && engineReady &&
-        ((selectedAudioFormatId == null && qualities.any { it.available && it.quality == selectedQuality }) ||
-            (selectedQuality == null && audioChoices.any { it.formatId == selectedAudioFormatId }))
+        listOf(selectedQuality, selectedAudioFormatId, selectedExactVideoId).count { it != null } == 1 &&
+        (qualities.any { it.available && it.quality == selectedQuality } || audioChoices.any { it.formatId == selectedAudioFormatId } ||
+            exactVideoChoices.any { it.formatId == selectedExactVideoId })
     val downloadLabel: String get() = if (selectedAudioFormatId != null) "Download audio only" else "Download video + audio"
     val busy: Boolean get() = phase in setOf(HomePhase.INITIALIZING, HomePhase.STAGING, HomePhase.RESOLVING, HomePhase.DOWNLOADING,
         HomePhase.PUBLISHING, HomePhase.PAUSING)
@@ -110,7 +116,7 @@ class HomeController(
 
     private class Prepared(val task: String, val url: String, val snapshot: ResolvedSnapshot?, val createdAt: Long,
         val plans: Map<VideoQuality, VideoQualityPlan>, val audioPlans: Map<String, AudioPlan>, val recordId: String?,
-        val videoEstimates: Map<VideoQuality, Long?>, val audioEstimates: Map<String, Long?>)
+        val videoEstimates: Map<VideoQuality, Long?>, val audioEstimates: Map<String, Long?>, val exactPlans: Map<String, ExactVideoPlan>)
 
     fun initialize() {
         if (closed || job?.isActive == true || state.value.engineReady) return
@@ -138,7 +144,8 @@ class HomeController(
         reviewedRecord = null
         discardPrepared()
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
-            title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null,
+            title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null,
+            exactVideoChoices = emptyList(), selectedExactVideoId = null, saved = null,
             phase = HomePhase.READY, pauseReason = null, storageReport = null, failureCode = null, status = "Review the link, then find formats.") }
     }
 
@@ -156,7 +163,8 @@ class HomeController(
                     reviewedRecord = null
                     discardPrepared()
                     mutable.update { it.copy(url = input.url, inputError = null, title = null,
-                        qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null, pauseReason = null, failureCode = null,
+                        qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null,
+                        exactVideoChoices = emptyList(), selectedExactVideoId = null, saved = null, pauseReason = null, failureCode = null,
                         phase = if (it.engineReady) HomePhase.READY else it.phase,
                         status = "Shared link ready. Review it before finding formats.") }
                 }
@@ -198,7 +206,8 @@ class HomeController(
         activeTask = task
         mutable.update { it.copy(phase = HomePhase.RESOLVING, url = url, inputError = null,
             saved = null, title = null, qualities = emptyList(), selectedQuality = null,
-            audioChoices = emptyList(), selectedAudioFormatId = null, progress = null, pauseReason = null, storageReport = null, failureCode = null,
+            audioChoices = emptyList(), selectedAudioFormatId = null, exactVideoChoices = emptyList(), selectedExactVideoId = null,
+            progress = null, pauseReason = null, storageReport = null, failureCode = null,
             status = "Finding available video and audio formats…") }
         job = scope.launch {
             var snapshot: ResolvedSnapshot? = null
@@ -225,17 +234,21 @@ class HomeController(
                 val audioPlans = audioChoices.associate { choice ->
                     choice.formatId to checkNotNull(AudioFormats.plan(outcome.media.formats, choice.formatId))
                 }
+                val exactChoices = ExactVideoFormats.choices(outcome.media.formats)
+                val exactPlans = exactChoices.associate { it.formatId to checkNotNull(ExactVideoFormats.plan(outcome.media.formats, it.formatId)) }
                 if (plans.isEmpty() && audioPlans.isEmpty()) throw EngineFailure(DownloadError(ErrorCode.FORMATS_WITHHELD, Stage.RESOLVING))
                 val defaultVideo = requestedSelection?.videoHeight?.let { pixels -> plans.keys.firstOrNull { it.pixels == pixels } }
                     ?: VideoQualities.default(qualities)
                 val defaultAudio = requestedSelection?.audioFormatId?.takeIf { it in audioPlans }
                     ?: if (plans.isEmpty()) audioChoices.first().formatId else null
-                val selection = if (defaultAudio != null) TaskSelection(audioFormatId = defaultAudio)
+                val defaultExact = requestedSelection?.videoFormatId?.takeIf { it in exactPlans }
+                val selection = if (defaultExact != null) TaskSelection(videoFormatId = defaultExact)
+                    else if (defaultAudio != null) TaskSelection(audioFormatId = defaultAudio)
                     else TaskSelection(videoHeight = defaultVideo?.pixels)
                 persistPhase(recordId, TaskPhase.CHOOSING, selection = selection, title = outcome.media.title)
                 prepared = Prepared(task, url, snapshot, clockMs(), plans, audioPlans, recordId,
                     plans.mapValues { StorageBudget.estimate(outcome.media.formats, it.value) },
-                    audioChoices.associate { it.formatId to it.approxBytes })
+                    audioChoices.associate { it.formatId to it.approxBytes }, exactPlans)
                 snapshot = null // Ownership is transferred to the chooser, not persisted in UI/history.
                 observer.event(task, Stage.RESOLVING.name, "ok", mapOf("formats" to outcome.media.formats.size.toString(),
                     "ms" to (clockMs() - started).coerceAtLeast(0).toString(),
@@ -243,8 +256,9 @@ class HomeController(
                     "visibleResolutions" to VideoQualities.visibleChoices(qualities).map { minOf(it.width!!, it.height!!) }.joinToString(",").ifEmpty { "none" },
                     "audioChoices" to audioChoices.size.toString()))
                 mutable.update { it.copy(phase = HomePhase.CHOOSING, title = outcome.media.title,
-                    qualities = qualities, selectedQuality = if (defaultAudio == null) defaultVideo else null,
-                    audioChoices = audioChoices, selectedAudioFormatId = defaultAudio,
+                    qualities = qualities, selectedQuality = if (defaultAudio == null && defaultExact == null) defaultVideo else null,
+                    audioChoices = audioChoices, selectedAudioFormatId = if (defaultExact == null) defaultAudio else null,
+                    exactVideoChoices = exactChoices, selectedExactVideoId = defaultExact,
                     status = "Choose video + audio or an original audio-only stream. Then confirm Download.") }
             } catch (canceled: CancellationException) {
                 canceled(task, recordId)
@@ -261,15 +275,22 @@ class HomeController(
     fun selectQuality(quality: VideoQuality) {
         if (!closed && state.value.phase == HomePhase.CHOOSING &&
             state.value.qualities.any { it.quality == quality && it.available }) {
-            mutable.update { it.copy(selectedQuality = quality, selectedAudioFormatId = null) }
+            mutable.update { it.copy(selectedQuality = quality, selectedAudioFormatId = null, selectedExactVideoId = null) }
             observer.event(prepared?.task, Stage.RESOLVING.name, "select_video", mapOf("requestedResolution" to quality.pixels.toString()))
         }
     }
 
     fun selectAudio(formatId: String) {
         if (!closed && state.value.phase == HomePhase.CHOOSING && prepared?.audioPlans?.containsKey(formatId) == true) {
-            mutable.update { it.copy(selectedQuality = null, selectedAudioFormatId = formatId) }
+            mutable.update { it.copy(selectedQuality = null, selectedAudioFormatId = formatId, selectedExactVideoId = null) }
             observer.event(prepared?.task, Stage.RESOLVING.name, "select_audio", mapOf("formatId" to formatId, "mediaMode" to "audio"))
+        }
+    }
+
+    fun selectExactVideo(formatId: String) {
+        if (!closed && state.value.phase == HomePhase.CHOOSING && prepared?.exactPlans?.containsKey(formatId) == true) {
+            mutable.update { it.copy(selectedQuality = null, selectedAudioFormatId = null, selectedExactVideoId = formatId) }
+            observer.event(prepared?.task, Stage.RESOLVING.name, "select_exact_video", mapOf("formatId" to formatId))
         }
     }
 
@@ -278,9 +299,11 @@ class HomeController(
         val input = prepared ?: return
         val plan = state.value.selectedQuality?.let(input.plans::get)
         val audio = state.value.selectedAudioFormatId?.let(input.audioPlans::get)
-        if ((plan == null) == (audio == null)) return
+        val exact = state.value.selectedExactVideoId?.let(input.exactPlans::get)
+        if (listOf(plan, audio, exact).count { it != null } != 1) return
         val mode = if (audio != null) "audio" else "video"
-        if (clockMs() - input.createdAt !in 0..ResolvedSnapshot.MAX_AGE_MS) {
+        if (clockMs() - input.createdAt !in 0..ResolvedSnapshot.MAX_AGE_MS ||
+            input.snapshot?.availableFor(input.url, input.task) == false) {
             discardPrepared()
             resolve()
             return // Refresh requires another explicit download confirmation.
@@ -298,10 +321,11 @@ class HomeController(
                 currentCoroutineContext().ensureActive()
                 storageSpace?.let { probe ->
                     checkStorage(StorageBudget.download(probe(), if (audio != null) input.audioEstimates[audio.formatId]
-                        else input.videoEstimates[plan?.quality], merging = audio == null), input.task, Stage.DOWNLOADING)
+                        else exact?.estimatedBytes ?: input.videoEstimates[plan?.quality], merging = audio == null), input.task, Stage.DOWNLOADING)
                 }
                 persistPhase(input.recordId, TaskPhase.DOWNLOADING, selection = if (audio != null)
-                    TaskSelection(audioFormatId = audio.formatId) else TaskSelection(videoHeight = plan?.quality?.pixels))
+                    TaskSelection(audioFormatId = audio.formatId) else if (exact != null) TaskSelection(videoFormatId = exact.choice.formatId)
+                    else TaskSelection(videoHeight = plan?.quality?.pixels))
                 val admitted = foreground.acquire(input.task)
                 lease = admitted
                 currentCoroutineContext().ensureActive()
@@ -312,7 +336,7 @@ class HomeController(
                 val lastLoggedProgress = AtomicInteger(-1)
                 val outcome = engine.download(DownloadRequest(input.url, plan?.quality?.pixels ?: 1080, directory, input.task,
                     mergeContainer = if ((plan?.quality?.pixels ?: 0) >= 1440) "mkv" else "mp4/mkv",
-                    resolvedSnapshot = input.snapshot, qualityPlan = plan, audioPlan = audio), onProgress = { event ->
+                    resolvedSnapshot = input.snapshot, qualityPlan = plan, audioPlan = audio, exactVideoPlan = exact), onProgress = { event ->
                     event.percent?.takeIf { it.isFinite() && it in 0f..100f }?.toInt()?.let { percent ->
                         if (!closed && activeTask == input.task && state.value.phase == HomePhase.DOWNLOADING) {
                             mutable.update {
@@ -336,6 +360,10 @@ class HomeController(
                     outcome.selectedFormatIds != listOf(audio.formatId) || outcome.selectedWidth != null || outcome.selectedHeight != null)) {
                     throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING,
                         detail = "Original audio result does not match the selected plan"))
+                }
+                if (exact != null && !ExactVideoFormats.matches(exact, outcome.selectedFormatIds, outcome.selectedWidth, outcome.selectedHeight)) {
+                    throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING,
+                        detail = "Exact video result does not match the selected plan"))
                 }
                 observer.event(input.task, Stage.DOWNLOADING.name, "selected_formats", mapOf(
                     "ids" to outcome.selectedFormatIds.joinToString("+").ifEmpty { "unknown" },

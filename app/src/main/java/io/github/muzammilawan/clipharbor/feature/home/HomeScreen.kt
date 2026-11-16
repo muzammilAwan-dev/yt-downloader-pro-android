@@ -78,6 +78,7 @@ fun HomeScreen(
     onStageLink: () -> Unit = {},
     onReviewTask: (String, Boolean) -> Unit = { _, _ -> },
     onRemoveTask: (String) -> Unit = {},
+    onSelectExactVideo: (String) -> Unit = {},
 ) {
     val enabled = !state.busy && !externalBusy
     val focusManager = LocalFocusManager.current
@@ -123,7 +124,7 @@ fun HomeScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("2 · Choose what to save", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
                         Text(state.title.orEmpty(), style = MaterialTheme.typography.titleSmall)
-                        FormatPicker(state, enabled, onSelectQuality, onSelectAudio)
+                        FormatPicker(state, enabled, onSelectQuality, onSelectAudio, onSelectExactVideo)
                         Text("Optional notifications show progress and Cancel while downloading. Cancel is unavailable once saving begins. Downloads also work without notification permission.",
                             style = MaterialTheme.typography.bodySmall)
                         when (notificationAccess) {

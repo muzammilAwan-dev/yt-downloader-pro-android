@@ -59,6 +59,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Exact-video Home/UI: **BUILD SUCCESSFUL in 3m 7s**, 326 total / 325 pass / 1 skip; lint 0 errors / 7 warnings.
+3 fake-Engine exclusivity/typed-history/evidence-refusal/fresh-retry regressions pass. Standard video remains default;
+advanced exact stream list is bounded, original audio separate. No device playback/visual verification.
 Exact-video foundation: **BUILD SUCCESSFUL in 2m 43s**, then exporter **BUILD SUCCESSFUL in 1m 18s**;
 323 total / 322 pass / 1 skip; lint 0 errors / 7 warnings. 20 actual Kotlin selectors passed on socket-blocked pinned yt-dlp.
 Typed source/selector/evidence/runner tests pass; exact source cannot fall back to different video. Home/UI wiring pending.
@@ -140,7 +143,9 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
 - [x] 3. Contract-checked error/retry UI; explicit fresh resolution after media 403 and safe failures, timeout wait, pre-flight
         free-space and actual-byte publication checks. Login/client/runtime/folder/raw-part recovery unavailable in Phase 1 and explained;
         no automatic connectivity resume/rescheduling or general 403 reliability claim.
-- [ ] 4. Exact-video-format picker (original audio moved earlier and delivered above). Thumbnail embedding is deliberately deferred.
+- [x] 4. Advanced source-backed exact-video picker, typed selectors, strict ID/dimension/audio evidence, Home/history/fresh-retry wiring;
+        20 socket-blocked engine selector cases pass. Separate exact-stream merges use MKV; no different-video fallback/transcode.
+        Standard resolution mode remains default. Thumbnail embedding deliberately deferred; device playback unverified.
 - [ ] 5. Broader engine update policy remains gated; approved APK-only freshness investigation is prioritized in 1f (R72).
 - [ ] Integrated queue/history/progress/recovery UI and host recovery/privacy tests; stamped APK/source/signature/payload inspection and phase report.
 

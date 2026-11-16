@@ -1445,3 +1445,9 @@ Storage/retry is host-verified, not phone reliability or a guaranteed 403 fix; c
 Advanced separate-stream merges explicitly use MKV; muxed source is not transcoded. Existing standard planner, replay/native/permissions remain unchanged; original audio is still separate and mutually exclusive.
 Foundation wrapper BUILD SUCCESSFUL in 2m 43s; exporter wrapper BUILD SUCCESSFUL in 1m 18s; 323 total / 322 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
 tools/check_exact_video_selectors.py passed 20 actual Kotlin selectors on SHA-verified 2026.10.26 with sockets blocked: portrait/landscape, AAC/Opus, muxed and absent-video/audio refusal; no media download. Continue Home/UI wiring, device unverified.
+
+### Exact-video Home, queue and compact advanced picker — 16 Nov 2026
+3 tests-first fake-Engine regressions cover video/audio/exact exclusivity, typed exact ID history, strict evidence refusal before publication and same-row fresh retry with new confirmation.
+Standard resolution mode remains default; explicit advanced control exposes bounded original source dimensions/codec/fps/IDs. Exact video never falls back to a different stream; auto audio uses only reported candidates, separate streams merge to MKV without transcode.
+Closed/consumed chooser input refreshes before transfer; record stores only typed ID, never format inventory/replay. Required wrapper BUILD SUCCESSFUL in 3m 7s; 326 total / 325 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
+UI/a11y/exact-codec/MKV playback remain device-unverified. Remaining Phase 1: publication/recovery hardening and final stamped APK/report.

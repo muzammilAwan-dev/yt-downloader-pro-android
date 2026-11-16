@@ -29,12 +29,15 @@ import io.github.muzammilawan.clipharbor.core.VideoQuality
 
 /** Only the selected media mode is expanded. Variant lists scroll in a bounded viewport. */
 @Composable
-internal fun FormatPicker(state: HomeState, enabled: Boolean, onVideo: (VideoQuality) -> Unit, onAudio: (String) -> Unit) {
+internal fun FormatPicker(state: HomeState, enabled: Boolean, onVideo: (VideoQuality) -> Unit, onAudio: (String) -> Unit,
+    onExactVideo: (String) -> Unit) {
     val videos = VideoQualities.visibleChoices(state.qualities)
     val audioMode = state.selectedAudioFormatId != null || videos.isEmpty()
     var allAudio by remember(state.audioChoices) { mutableStateOf(false) }
+    var exactVideo by remember(state.exactVideoChoices) { mutableStateOf(false) }
+    val exactMode = exactVideo || state.selectedExactVideoId != null
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(onClick = { VideoQualities.default(state.qualities)?.let(onVideo) },
+        OutlinedButton(onClick = { exactVideo = false; VideoQualities.default(state.qualities)?.let(onVideo) },
             enabled = enabled && videos.isNotEmpty(), modifier = Modifier.weight(1f)) {
             Text(if (!audioMode) "✓ Video + audio" else "Video + audio")
         }
@@ -49,6 +52,11 @@ internal fun FormatPicker(state: HomeState, enabled: Boolean, onVideo: (VideoQua
             val visible = if (allAudio) state.audioChoices else AudioPresentation.quickChoices(state.audioChoices, state.selectedAudioFormatId)
             visible.forEach { choice ->
                 FormatRow(choice.label, choice.detail, state.selectedAudioFormatId == choice.formatId, enabled) { onAudio(choice.formatId) }
+            }
+        } else if (exactMode) {
+            Text("Exact video source · no different-video fallback", style = MaterialTheme.typography.bodySmall)
+            state.exactVideoChoices.forEach { choice ->
+                FormatRow(choice.label, choice.detail, state.selectedExactVideoId == choice.formatId, enabled) { onExactVideo(choice.formatId) }
             }
         } else {
             Text("Reported resolution · H.264/AAC preferred", style = MaterialTheme.typography.bodySmall)
@@ -66,7 +74,16 @@ internal fun FormatPicker(state: HomeState, enabled: Boolean, onVideo: (VideoQua
             }
         }
     } else {
-        Text("Short-edge resolution includes portrait video. No upscaling; lower resolution may be used. High-resolution merges use MKV. Saved results report actual dimensions.",
+        if (state.exactVideoChoices.isNotEmpty()) OutlinedButton(onClick = {
+            exactVideo = !exactMode
+            if (!exactVideo) VideoQualities.default(state.qualities)?.let(onVideo)
+            else state.exactVideoChoices.firstOrNull()?.let { onExactVideo(it.formatId) }
+        }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+            Text(if (exactMode) "Standard resolution choices" else "Exact video streams · advanced")
+        }
+        if (exactMode) Text("Original video codec, not converted. Separate video/audio merge into MKV; muxed streams keep their source container. Device playback is not guaranteed. Review the checked source before Download.",
+            style = MaterialTheme.typography.bodySmall)
+        else Text("Short-edge resolution includes portrait video. No upscaling; lower resolution may be used. High-resolution merges use MKV. Saved results report actual dimensions.",
             style = MaterialTheme.typography.bodySmall)
     }
 }

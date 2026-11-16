@@ -176,6 +176,7 @@ class MainActivity : ComponentActivity() {
                 }, onOpenFile = ::openSaved,
                 tasks = tasks, durableQueue = home.hasDurableQueue,
                 onStageLink = { if (!state.busy) home.stageCurrentLink() },
+                onSelectExactVideo = { id -> if (!state.busy) home.selectExactVideo(id) },
                 onReviewTask = { id, accepted -> if (!state.busy) home.reviewTask(id, accepted) },
                 onRemoveTask = { id -> if (!state.busy) home.removeTask(id) },
                 onDiagnostics = {
