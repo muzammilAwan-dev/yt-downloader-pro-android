@@ -1340,3 +1340,10 @@ Exact ba[format_id='…'] has no other-ID/video fallback or conversion; original
 Five foundation tests first ran: 4 failed / 1 passed, BUILD FAILED in 48s; full checks BUILD SUCCESSFUL in 1m 42s, 262 total / 261 passed / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
 Verified payload offline smoke: 9 selector/missing-ID/muxed-rejection cases passed on yt-dlp 2026.10.26 with socket connections blocked. No extraction/media access.
 Not connected to Home/runner/UI yet; no new APK, runtime/dependency/permission or MP3 conversion change. Continue runner evidence then user flow and stamped tester.
+
+### Original audio runner + explicit evidence — 16 Nov 2026
+AudioPlan now selects only its original audio ID, retains replay/fragments/progress/cancellation/redaction and verifies final in-staging file; no merge/transcode flags on audio tasks, video path unchanged.
+Requires ordinary ID selection plus explicit vcodec=none/acodec evidence, no video dimensions, exact original container; missing/contradictory/muxed evidence or conflicting typed plans fail before publication.
+Six new offline runner/evidence tests: initial JUnit non-Unit signature caused initializationError (BUILD FAILED in 1m 23s), corrected; then 4 fail / 2 pass, BUILD FAILED in 29s, before implementation. Full checks BUILD SUCCESSFUL in 2m 13s; 268 total / 267 passed / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Verified bundled 2026.10.26 CLI with synthetic --load-info-json/--skip-download and socket connections blocked emitted CLIPHARBOR_SELECTED:140/NA/NA and CLIPHARBOR_AUDIO:140/none/mp4a.40.2; no network/download.
+Tests cover replay cleanup, wrong/missing/muxed evidence, both-plan rejection, stale marker reset, original WebM and task cancellation; still no Home/UI/audio publication hookup or stamped APK. Continue without stopping at this intermediate commit.
