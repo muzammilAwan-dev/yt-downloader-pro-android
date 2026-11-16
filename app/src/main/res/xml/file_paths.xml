@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Only the private log folder is shareable, via FileProvider (docs/12 §4 "Share log"). -->
+    <!-- Narrow log and API 24-28 saved-media roots only; no staging/replay or broad filesystem grant. -->
     <files-path name="logs" path="logs/" />
+    <external-files-path name="legacy_downloads" path="Download/YTDLP/" />
+    <files-path name="legacy_fallback" path="YTDLP/" />
 </paths>

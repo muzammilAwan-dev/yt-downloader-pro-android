@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.core.content.FileProvider
 import io.github.muzammilawan.clipharbor.AppInfo
 import java.io.File
 
@@ -18,7 +19,7 @@ import java.io.File
  */
 class MediaStorePublisher(private val context: Context) {
     fun publish(source: File, mimeType: String = "video/mp4"): Result<Uri> = runCatching {
-        require(source.exists()) { "source file missing" }
+        require(source.isFile && source.length() > 0) { "source file missing or empty" }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             publishViaMediaStore(source, mimeType)
         } else {
@@ -35,19 +36,14 @@ class MediaStorePublisher(private val context: Context) {
             put(MediaStore.MediaColumns.RELATIVE_PATH, RELATIVE_PATH)
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
-        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            ?: error("MediaStore refused the insert")
-        try {
+        return PublicationFiles.pending(insert = { resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) }, copy = { uri ->
             resolver.openOutputStream(uri)?.use { output ->
-                source.inputStream().use { input -> input.copyTo(output) }
+                source.inputStream().use { input -> check(input.copyTo(output) == source.length()) { "Publication copy is incomplete" } }
             } ?: error("MediaStore returned no output stream")
+        }, commit = { uri ->
             val done = ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }
             resolver.update(uri, done, null, null)
-            return uri
-        } catch (error: Exception) {
-            runCatching { resolver.delete(uri, null, null) }
-            throw error
-        }
+        }, discard = { uri -> resolver.delete(uri, null, null) })
     }
 
     @Suppress("DEPRECATION")
@@ -56,9 +52,8 @@ class MediaStorePublisher(private val context: Context) {
             context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir,
             AppInfo.DISPLAY_NAME,
         ).apply { mkdirs() }
-        val target = File(dir, source.name)
-        source.copyTo(target, overwrite = true)
-        return Uri.fromFile(target)
+        val target = PublicationFiles.legacy(source, dir)
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
     }
 
     companion object {

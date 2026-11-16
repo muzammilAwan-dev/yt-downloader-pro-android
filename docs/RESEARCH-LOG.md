@@ -425,3 +425,11 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   reserve reported candidate parts + merge + public copy (3x video / 2x audio) plus 64 MiB DB/log headroom.
   Unknown sizes remain unknown with only reserve admission; recheck actual bytes immediately before publication.
   No promise that estimates prevent disk-full during transfer; no SAF/folder permission UI introduced in Phase 1.
+
+- **R79 (16 Nov 2026, publication boundary):** Official AndroidX FileProvider guidance uses content URIs and
+  narrow files-path/external-files-path roots to grant temporary viewer access without storage permission.
+  https://developer.android.com/reference/androidx/core/content/FileProvider
+  API 24-28 saves now use only app-specific Download/YTDLP or private YTDLP fallback roots, never staging/replay.
+  Prior file:// return could not be viewed and failed durable content-URI validation; corrected inside Phase 1.
+  MediaStore commit must update exactly one pending row before success; copy/commit failures attempt row cleanup.
+  Host transaction/file/provider-root tests do not establish OEM gallery visibility or viewer playback.

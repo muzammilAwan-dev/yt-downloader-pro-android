@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R78);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R79);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -59,6 +59,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Publication mechanics: **BUILD SUCCESSFUL in 1m 36s**, 331 total / 330 pass / 1 skip; lint 0 errors / 7 warnings.
+5 pending-commit/copy-failure/legacy collision/content-provider-root tests pass. API 24-28 uses narrow content-URI grants;
+MediaStore success requires one committed row. Android provider/gallery execution unverified; no added permissions.
 Exact-video Home/UI: **BUILD SUCCESSFUL in 3m 7s**, 326 total / 325 pass / 1 skip; lint 0 errors / 7 warnings.
 3 fake-Engine exclusivity/typed-history/evidence-refusal/fresh-retry regressions pass. Standard video remains default;
 advanced exact stream list is bounded, original audio separate. No device playback/visual verification.

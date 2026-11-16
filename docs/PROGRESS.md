@@ -1451,3 +1451,9 @@ tools/check_exact_video_selectors.py passed 20 actual Kotlin selectors on SHA-ve
 Standard resolution mode remains default; explicit advanced control exposes bounded original source dimensions/codec/fps/IDs. Exact video never falls back to a different stream; auto audio uses only reported candidates, separate streams merge to MKV without transcode.
 Closed/consumed chooser input refreshes before transfer; record stores only typed ID, never format inventory/replay. Required wrapper BUILD SUCCESSFUL in 3m 7s; 326 total / 325 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
 UI/a11y/exact-codec/MKV playback remain device-unverified. Remaining Phase 1: publication/recovery hardening and final stamped APK/report.
+
+### Publication commit and legacy viewer safety — 16 Nov 2026
+5 tests-first pending-copy/commit/cleanup/insert-refusal, legacy collision/exact bytes, empty-source and narrow-provider-root cases. MediaStore returns only after exactly one pending row is committed; failures attempt cleanup.
+API 24-28 now returns content URI from narrow app-specific Download/YTDLP/private fallback roots; no file:// URI or broad staging/replay grants (R79). Legacy saves reserve unique filenames instead of overwriting previous files.
+Initial BUILD FAILED in 2m 19s caught generic test-lambda inference; explicit type fixed. Wrapper BUILD SUCCESSFUL in 1m 34s, then warning-free test-source wrapper BUILD SUCCESSFUL in 1m 36s; 331 total / 330 pass / 1 skip, lint 0 errors / 7 warnings.
+Android provider/gallery/playback remain unverified; continue interrupted-publication/late-writer fences and final Phase 1 packaging.
