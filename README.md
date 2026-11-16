@@ -16,15 +16,17 @@ country — you are responsible for what you download.
 |---|---|
 | Environment setup | done on the owner's PC (`docs/dev-setup.md`) |
 | Phase 0 — engine spike on a real arm64 phone | **passed 15 Nov 2026** on an Infinix X682B (Android 10, arm64): 7/7 self-test, merged MP4 published via MediaStore. Evidence: `docs/evidence/phase0.md` |
-| Phase 1 — MVP (share target, picker, queue, notifications) | **in progress**: engine replay and actual 1080p video/audio selection verified on the owner's phone; local tests/lint green. MVP UI/queue/service still pending (`docs/PROGRESS.md`) |
+| Phase 1 — MVP (share target, picker, queue, notifications) | **in progress**: Home/share, source-backed video/original-audio picker, foreground ownership and full-session logs are CLI-tested. Video replay/merge/save verified on the owner's phone; new picker/audio, sustained background/Cancel and durable queue remain open (`docs/STATE.md`) |
 | Phase 2 — parity (playlists, trim, audio, subs, cookies, updates) | not started |
 | Phase 3 — release (baseline profiles, a11y, signing, F-Droid metadata) | not started |
 
-The current UI is still the diagnostics spike: it unpacks the yt-dlp engine, runs a 7-check self-test, and can download
-1080p video + audio, merge them and publish the result to `Download/YTDLP`. The engine fixes were checked on a real arm64
-phone (Infinix X682B, Android 10): self-test 7/7, task-private metadata replay, actual `299+140`/1080 selection and successful
-MP4 publishing. Playback/audio/gallery confirmation and cancellation checks remain pending (`docs/PROGRESS.md`). Older
-files remain in `Download/ClipHarbor`; the rename does not move or delete them. New debug logs use `Download/YTDLP-logs`.
+Home offers available video + audio presets and separate original audio streams, with explicit Download confirmation,
+MediaStore publication to `Download/YTDLP`, and Diagnostics/self-test/Share session log. No audio conversion or durable queue yet.
+The owner-installed engine tester `f96194e` ran bundled yt-dlp 2026.10.26 / EJS 0.8.0 on an Infinix X682B (Android 10),
+replay-selected `299+140`/1920×1080 and saved a 314,296,147-byte MP4 without 403. This is one sample, not a general 403 fix.
+New original-audio/UI playback, second video preset, sustained background/lock and Cancel checks remain pending;
+the new tester's exact artifact/phone sequence is in `docs/evidence/original-audio-tester.md`.
+Older files remain in `Download/ClipHarbor`; the rename does not move or delete them. New debug logs use `Download/YTDLP-logs`.
 The launcher icon is the owner's supplied desktop artwork, with its MIT notice included in the APK.
 
 The product it is catching up with is the owner's Windows app,
@@ -85,6 +87,7 @@ Start with `AGENTS.md` (contribution rules), then `docs/STATE.md` (current state
 | `docs/11-BRANDING-AND-UX.md` | naming, identity, UX principles |
 | `docs/12-AUTOMATED-TESTS-AND-DEEP-LOGGING.md` | tests, diagnostics screen, log format |
 | `docs/13-LOCAL-BUILD-AND-INSTALL.md` | build on the PC, install on the phone |
+| `docs/evidence/original-audio-tester.md` | available video + original audio tester verification and phone/log sequence |
 | `docs/14-AGENT-SETUP-TASK.md` | the one-time environment setup (done 14 Nov 2026) |
 | `docs/15-UI-UX-DESIGN-RESEARCH.md` | UI/UX research and screenshot checklist |
 | `docs/16-BROWSER-AUTH-AND-MEDIA-DISCOVERY.md` | browser/login research (not implemented) |

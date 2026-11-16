@@ -12,7 +12,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - **Phase 1 (MVP): in progress.** Done and unit-tested: logging/redaction, engine-version reporting, task-private replay
   (`--load-info-json`), download evidence, home controller, Material 3 home + paste/share, eight standard quality tiers with private
   typed selection plan, YTDLP branding and icon. Phone-verified earlier (`ec146df`): resolve, 1080p select, merge, MediaStore publish, playback with sound.
-- Latest/owner-installed tester: **`f96194e`** (APK-only engine refresh), artifact stamp/asset/signature/copied SHA-256 verified.
+- Latest ready tester: **`e37686c`** — source-backed available video rows + separate original audio, CLI-tested and stamped APK verified;
+  phone-untested. Artifact/phone sequence: `docs/evidence/original-audio-tester.md`. OWNER next: in-place install, picker/audio/video/log report.
+- Previous owner-installed tester: **`f96194e`** (APK-only engine refresh), artifact stamp/asset/signature/copied SHA-256 verified.
   Owner log 16 Nov confirms Android 10 startup and one completed download; this is not a general 403 fix. Helper checks: BUILD SUCCESSFUL in 2m 3s, 251 pass / 1 skip;
   lint 0 errors / 7 known warnings; APK BUILD SUCCESSFUL in 32s. Tester hash/phone sequence: `docs/evidence/engine-refresh-2026.10.26.md`.
 - Owner evidence for `74ce7cf` (R61): dark portrait standard picker with disabled QHD/4K; 1080×1920 `137+140` download,
@@ -50,19 +52,23 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 3m 14s** (separate original audio picker).
+Stamped helper (checks enabled): **BUILD SUCCESSFUL in 2m 45s** (tests/lint), **BUILD SUCCESSFUL in 54s** (APK).
+Earlier `.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 3m 14s** (integrated picker).
 Fresh reports: 284 total / 283 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
 Five state/label safety tests passed before UI wiring, BUILD SUCCESSFUL in 36s; existing Home/audio/runner/replay/foreground/redaction tests green.
 Offline WebM synthetic replay CLI emitted 251/NA/NA and 251/none/opus with socket connections blocked; no media downloaded.
 Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
-No new APK: `dist/app-debug.apk` remains stamped `f96194e`, 70,342,176 bytes; SHA-256 rechecked unchanged
-`9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`. Prior helper checks BUILD SUCCESSFUL in 2m 3s; APK in 32s.
-Video planner/icon/dependencies/permissions unchanged; separate audio UI/Home/save routing CLI-tested; stamped helper build next, phone-untested.
+New `dist/app-debug.apk`: actual DEX stamp `e37686c`, **70,276,358 bytes**, built/copied/SHA256SUMS agree:
+`C923865E6A01F464358F2B30570FF5A25A84DD5275B7E5FDF8DEA245EAAD4FE6`.
+Signature verifies and matches `f96194e`; exact engine/notices, seven native entries, manifest and three icon entries unchanged.
+Video planner/dependencies/permissions unchanged; separate original audio UI/Home/save routing CLI-tested, phone-untested. 96 video selector cases
+also passed on verified 2026.10.26 with sockets blocked; host harness only changed the historical checker's expected pin, not the repo tool.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
-Tester `f96194e`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `6bb477b`, no new permissions.
+Tester `e37686c`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `f96194e`, no new permissions.
 
 ## Next steps (do in order, one per `/next`)
-Owner cadence (R65): push verified increments; owner now runs engine tester `f96194e`; keep `dist` unchanged until the next meaningful tester.
+Owner cadence (R65): verified increments pushed; ready tester `e37686c` replaces `dist`, previous owner-installed is `f96194e`.
+Current next action is the owner's audio/video/picker/log report; stop here, do not start Room or a new major feature area in this handoff.
 Passing CLI checks is not phone verification. Existing phone checks and the major-feature-area gate remain open.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
@@ -80,14 +86,16 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
         Brief background continuation is observed, not sustained background/lock or Cancel verification. Keep native runtime/planner/replay/logs.
 - [x] Owner priority (16 Nov), first increment: hide unavailable video rows and label actual source resolution; CLI checks green, new UI phone-untested.
         This supersedes the older disabled-row design, not the standard typed planner. No exact-format picker/new tester in this increment.
-- [ ] Next owner priority: separate source-backed audio-only choices (before Room). MP3 conversion options must be labelled separately from source formats.
+- [x] Owner priority: separate source-backed original audio-only choices before Room, verified stamped tester `e37686c` ready (phone-untested).
         Supplied screenshots are behavior references only; do not copy code/assets. No browser/login/subtitle work.
         Owner now requests continuing through a verified stamped APK, not stopping after intermediate commits (16 Nov).
-        Typed original-audio choices/plan, runner/evidence, Home/publication and separate UI CLI-tested; next stamped tester.
+        Typed choices/plan, runner/evidence, Home/publication and separate UI CLI-tested; stamped APK inspected, exact artifact/phone sequence in evidence doc.
         Audio exact-ID selector emits no merge/transcode flags; codec/ID/dimension/extension evidence must agree. No MP3 conversions in this tester.
+- [ ] OWNER: install `e37686c` over `f96194e`, send picker screenshot(s), M4A/WebM playback/visibility and post-result session logs;
+        confirm second video preset/dimensions/picture + sound, then retry earlier failing long video while visible. No broader 403 fix claimed.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
-- [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)
+- [ ] 4. Exact-video-format picker (original audio moved earlier and delivered above). Thumbnail embedding is deliberately deferred.
 - [ ] 5. Broader engine update policy remains gated; approved APK-only freshness investigation is prioritized in 1f (R72).
 
 ## Open owner checks (cannot be automated)

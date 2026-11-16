@@ -65,8 +65,13 @@ edit/ask AI -> .\tools\build-debug.ps1 -> adb install -r dist\*.apk (or copy to 
 
 - Install the newly handed-off, stamped APK over the previous local debug build; confirm the stamp in Copy summary/log.
 - Open Home, paste one HTTPS link and tap **Find formats**. Choose an available standard video+audio preset
-  (144/240/360/480/720/1080/1440/2160p), then tap **Download video + audio**. Missing tiers must be disabled, not fake
-  promises. 1440 is QHD; 2160 is 4K. The cap uses the shorter edge, including portrait video. No upscaling.
+  (144/240/360/480/720/1080/1440/2160p), then tap **Download video + audio**. Missing tiers are hidden, not disabled
+  placeholders or fake promises. Labels use the reported source resolution; 1440 is QHD, 2160 is 4K. The cap uses
+  the shorter edge, including portrait video. No upscaling.
+- In the original-audio tester, **Audio only** is a separate section with reported streams, not converted MP3 choices.
+  Selecting it clears video selection and changes the button to **Download audio only**; selecting video clears audio.
+  Verify original M4A/AAC and WebM/Opus if offered, playback with sound, file visibility and post-result session logs.
+  Detailed artifact/phone sequence: `docs/evidence/original-audio-tester.md`. Its UI/audio playback are not phone-verified yet.
 - Try a lower preset and a higher available one on the same source; compare the selected dimensions in completion/logs.
   Nonstandard source sizes are shown honestly; lower bounded fallbacks are possible. High-resolution merges use MKV,
   lower merges prefer MP4/MKV, and filenames retain the true extension with an `up-to-…p` ceiling tag.
@@ -92,4 +97,5 @@ edit/ask AI -> .\tools\build-debug.ps1 -> adb install -r dist\*.apk (or copy to 
 
 Owner confirmed first-preview `ec146df` playback with sound and supplied dark Home/picker/progress/saved screenshots.
 Second-preset playback/dimensions and MKV playback still need their own phone checks. The foreground milestone is an
-in-process preview, not finished Phase 1: no durable queue or process-death recovery, thumbnail embedding or audio-only/exact-format selection.
+in-process preview, not finished Phase 1: no durable queue/process-death recovery, thumbnail embedding, audio conversion or exact-video-format picker.
+Original audio-only selection is CLI-tested in the new tester; Android playback and radio interaction still require the owner's report.
