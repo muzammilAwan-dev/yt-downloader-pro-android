@@ -35,14 +35,17 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - R72 packaging investigation: official stable yt-dlp 2026.10.26 zipapp + EJS 0.8.0 verified against signed SHA-256; existing
   Python 3.12.11/QuickJS 2025-04-26 meet tagged requirements. Library remains 0.18.1; host-only offline smokes passed.
   Local installer foundation now has 22 offline tests: size/hash verification, synced staging, failure/interruption preservation,
-  narrow cleanup/retry and cross-instance serialization. Atomic replacement is injected; no Android/adapter wiring or new APK yet.
-  Next: bundle payload/notices and process-wide pre-init gate/version reporting. Android runtime/download compatibility untested.
+  narrow cleanup/retry and cross-instance serialization. Official asset/notices now bundled unchanged; six offline payload tests pass.
+  Packaging-check APK inspected: exact asset digest/full embedded notices, seven native entries match `6bb477b`; `dist` tester unchanged.
+  Atomic replacement is injected; no Android/adapter wiring or activated tester yet. Next: process-wide pre-init gate/version reporting.
+  Android runtime/download compatibility untested.
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
-## Last recorded check — 15 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 2m 6s** (local installer foundation).
-Fresh test/lint execution: 228 total / 227 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-22 installer tests first failed 22/22 against placeholder (BUILD FAILED in 46s), then passed (BUILD SUCCESSFUL in 9s); full suite above.
+## Last recorded check — 16 Nov 2026
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 1m 58s** (bundled payload/notices).
+Fresh tests/lint analyses: 234 total / 233 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Six packaging tests first failed 6/6 (BUILD FAILED in 1m 43s), then passed (BUILD SUCCESSFUL in 21s); 22 installer tests remain green.
+`assembleDebug`: **BUILD SUCCESSFUL in 15s**; 70,276,358-byte packaging-check APK, exact 3,073,072-byte asset SHA-256 verified.
 12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
 Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
 Foreground cancellation-first/timeout-first and permission/service tests remain green. No runner/planner/icon/dependency/permission change.
@@ -64,8 +67,8 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
         Android 10 (API 29) remains the primary phone baseline; minSdk stays 24. Newer API checks do not raise the app's minimum.
 - [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), stamped APK built.
 - [ ] 1f. `6bb477b` installed; media 403 also reproduced while visible on owner-reported stable Wi-Fi (R70), not fixed. Prioritize
-        approved APK-bundled engine-only spike (R72): pinned asset verified; local installer foundation tested, not wired into adapter.
-        Next bundle payload/licenses, Android atomic replacement and process-wide pre-init/version reporting; stamped tester after checks.
+        approved APK-bundled engine-only spike (R72): payload/licenses bundled and APK-inspected; local installer tested, not wired into adapter.
+        Next Android atomic replacement and process-wide pre-init/version reporting; stamped tester after checks.
         Keep native runtime/planner/replay/cancellation/logs; no runtime downloads/login/new permissions. Android 10 baseline/minSdk 24.
         No reinstall yet; after reliable foreground transfers, retest background/lock. Cancel/cleanup/playback still open.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
@@ -77,7 +80,7 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
 
 ## Risks to keep visible
-- **Engine age:** `youtubedl-android` 0.18.1 bundles yt-dlp 2025.11.12; upstream stable was 2026.10.26 (recorded in PROGRESS). YouTube
+- **Engine age:** active `youtubedl-android` 0.18.1 engine is 2025.11.12; bundled 2026.10.26 candidate is not activated yet. YouTube
   extraction is the first thing to break. Updating yt-dlp at runtime downloads code, which conflicts with "no remote code execution"
   in `AGENTS.md`; R72 approves only a verified APK bundle, not runtime updates. Candidate Android behavior remains untested.
 - Name: the display name is `YTDLP`; the spaced expansion contains "You Tube" while `AGENTS.md` forbids "YouTube" in the app name. Open.

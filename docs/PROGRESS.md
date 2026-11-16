@@ -1292,3 +1292,13 @@ Cross-instance lock serializes installation only; adapter must gate once before 
 Next: bundle verified 2026.10.26/EJS 0.8.0/licenses, Android replacement + process-wide pre-init/version reporting, then stamped tester. No runtime downloads/new permissions.
 > .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 2m 6s
 Fresh reports: 228 total / 227 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. Existing fake-Engine/replay/cancel/log tests green.
+
+### Verified engine payload/notices packaging — 16 Nov 2026
+Official stable still 2026.10.26; signed checksum reverified (Good signature/VALIDSIG, upstream key trust undefined), copied unchanged into app assets.
+Asset: 3,073,072 bytes, SHA-256 e51e69e89489f199530f13d32a4342da3ddb2cf34842f364603a066db05afbf3; EJS 0.8.0 with full Meriyah ISC/Astring MIT notices embedded.
+Six offline tests first failed 6/6 before payload/index update (BUILD FAILED in 1m 43s); then 6/6 passed (BUILD SUCCESSFUL in 21s).
+> .\gradlew.bat testDebugUnitTest lintDebug --console=plain — BUILD SUCCESSFUL in 1m 58s
+Fresh tests/lint analyses: 234 total / 233 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+> .\gradlew.bat assembleDebug --console=plain — BUILD SUCCESSFUL in 15s; packaging-check APK 70,276,358 bytes.
+Actual APK asset/digest/solver hashes/full notices verified; all seven native entries byte-identical to 6bb477b. dist/app-debug.apk remains unchanged.
+Not activated/no phone tester yet; Android runtime/403 behavior untested. Next: atomic Android replacement + process-wide pre-init/version reporting; no runtime downloads/new permissions.

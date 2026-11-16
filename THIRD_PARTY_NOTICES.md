@@ -6,7 +6,10 @@ files yet (tracked as item C.3 in `docs/10-VERIFICATION-LOG.md`).
 
 | Component | Used for | License | Status |
 |---|---|---|---|
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | the download engine (Python zipapp bundled inside youtubedl-android) | Unlicense (public domain) | Verified: the zipapp in 0.18.1 is **yt-dlp 2025.11.12** and carries `yt_dlp_ejs`; upstream LICENSE read 15 Nov 2026 |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | the download engine (Python zipapp) | Unlicense (public domain) | Verified: official **2026.10.26** candidate ships unchanged at `app/src/main/assets/engine/yt-dlp-2026.10.26`, with signed SHA-256 verified (R72). Startup activation follows separately; `library` 0.18.1 still includes its original **2025.11.12** payload. Upstream LICENSE read 15 Nov 2026 |
+| [yt-dlp-ejs](https://github.com/yt-dlp/ejs) | locally bundled JavaScript solver scripts | Unlicense (public domain) | **EJS 0.8.0** included in the candidate zipapp under `yt_dlp_ejs/yt/solver/`; both `core.min.js` and `lib.min.js` retain the upstream Unlicense headers |
+| Meriyah 6.1.4 | EJS JavaScript parser | ISC | Complete copyright and ISC notice preserved inside the candidate zipapp's `yt_dlp_ejs/yt/solver/lib.min.js` header; offline packaging test verifies the full text |
+| Astring 1.9.0 | EJS JavaScript code generator | MIT | Complete copyright and MIT notice preserved inside the same `lib.min.js` header; offline packaging test verifies the full text |
 | [youtubedl-android](https://github.com/yausername/youtubedl-android) | Android packaging of yt-dlp + CPython, `library`/`ffmpeg` modules | GPL-3.0 (Maven Central POM) | Verified for `library` and `ffmpeg` **0.18.1** (pinned in `gradle/libs.versions.toml`) |
 | CPython | Python runtime bundled by youtubedl-android | PSF-2.0 | **Version verified from the artifact: CPython 3.12** (`usr/lib/python3.12/`, `libpython3.12.so`). No license text ships inside the payload → include the PSF license in the release package (Phase 3) |
 | FFmpeg (`ffmpeg` module) | merging video + audio, remuxing | **GPL build** — the payload contains `libx264.so.164` | Compatible with this app's GPL-3.0, but a **source offer for the exact ffmpeg build is required before release** (Phase 3). The payload has no LICENSE/COPYING file |
@@ -22,8 +25,9 @@ between the two repositories. The owner's supplied launcher artwork is now share
 notice above; no desktop source-code port is included in this branding change.
 
 The approved engine-freshness spike is **APK-bundled only** (R72). Historical runtime-updater plans are not authorization
-to download code on the phone. Candidate yt-dlp 2026.10.26/EJS 0.8.0 is verified but not bundled yet; its Unlicense,
-Meriyah ISC and Astring MIT notices must accompany integration. Existing native release obligations remain open.
+to download code on the phone. Candidate yt-dlp 2026.10.26/EJS 0.8.0 is now bundled, unchanged, with the notices above
+embedded in its local solver scripts. It is not activated yet; Android runtime/download compatibility is untested.
+Existing native release obligations remain open.
 
 ## Rules for contributors
 
