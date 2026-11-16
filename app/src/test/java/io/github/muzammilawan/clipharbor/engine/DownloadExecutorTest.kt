@@ -8,6 +8,7 @@ import io.github.muzammilawan.clipharbor.core.FormatInfo
 import io.github.muzammilawan.clipharbor.core.VideoQualities
 import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.core.FormatPlanner
+import io.github.muzammilawan.clipharbor.core.ExactVideoFormats
 import io.github.muzammilawan.clipharbor.testing.FakeEngine
 import java.io.File
 import java.io.IOException
@@ -133,6 +134,25 @@ class DownloadExecutorTest {
         assertEquals(1, engine.resolveCalls)
         assertEquals(FakeEngine.SAMPLE_MEDIA, resolved.media)
         assertNull(resolved.resolvedSnapshot)
+    }
+
+    @Test fun exactVideoRunnerUsesOnlyTypedSourceAndRejectsWrongIdDimensionsOrAudio() = runBlocking {
+        val plan = ExactVideoFormats.plan(listOf(FormatInfo("v", "mp4", "avc1", "none", 1920, 1080),
+            FormatInfo("a", "m4a", "none", "mp4a")), "v")!!
+        for (selected in listOf("v+a\t1920\t1080", "wrong+a\t1920\t1080", "v+a\t1280\t720", "v\t1920\t1080", "v+other\t1920\t1080")) {
+            val directory = temporary.newFolder()
+            val runner = Runner().apply { action = { _, _, _ ->
+                val file = File(directory, "exact.mkv").apply { writeText("fixture") }
+                EngineResponse(0, "${DownloadEvidence.SELECTION_MARKER}$selected\n${DownloadEvidence.FILE_MARKER}${file.absolutePath}", "")
+            } }
+            val result = DownloadExecutor(runner, EngineExecution(runner::destroy), temporary.newFolder())
+                .download(request(directory).copy(exactVideoPlan = plan), {}, {})
+            assertEquals(selected.startsWith("v+a\t1920"), result.isSuccess)
+            val options = runner.commands.single().options
+            assertEquals(ExactVideoFormats.selector(plan), options.single { it.first == "-f" }.second)
+            assertEquals("mkv", options.single { it.first == "--merge-output-format" }.second)
+            assertFalse(options.any { it.first.contains("recode") || it.first.contains("convert") || it.first == "--exec" })
+        }
     }
 
     @Test

@@ -1439,3 +1439,9 @@ Continue Phase 1 contract recovery/exact-video/final packaging; no phone request
 Explicit supported retry always re-extracts and requires Download again; network timeout waits at least 5 seconds in the current process, no automatic retry/resume/reschedule. Queue and Home both gate unsupported failures.
 2 added fake-Engine cases cover destination full after transfer and timeout wait/unsupported-sign-in admission. Required wrapper BUILD SUCCESSFUL in 2m 55s; 317 total / 316 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
 Storage/retry is host-verified, not phone reliability or a guaranteed 403 fix; continue exact-video/publication hardening and final stamped APK.
+
+### Exact video source planning and runner foundation — 16 Nov 2026
+5 core tests-first cases (including actual-selector export) + runner fixture cover bounded unique safe IDs, source dimensions/codec/fps, muxed vs bounded auto-audio, exact video no-fallback and evidence mismatch refusal.
+Advanced separate-stream merges explicitly use MKV; muxed source is not transcoded. Existing standard planner, replay/native/permissions remain unchanged; original audio is still separate and mutually exclusive.
+Foundation wrapper BUILD SUCCESSFUL in 2m 43s; exporter wrapper BUILD SUCCESSFUL in 1m 18s; 323 total / 322 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+tools/check_exact_video_selectors.py passed 20 actual Kotlin selectors on SHA-verified 2026.10.26 with sockets blocked: portrait/landscape, AAC/Opus, muxed and absent-video/audio refusal; no media download. Continue Home/UI wiring, device unverified.

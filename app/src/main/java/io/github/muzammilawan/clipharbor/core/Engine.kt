@@ -102,6 +102,8 @@ data class DownloadRequest(
     val qualityPlan: VideoQualityPlan? = null,
     /** App-owned original audio selection; mutually exclusive with [qualityPlan]. */
     val audioPlan: AudioPlan? = null,
+    /** Advanced exact video source; mutually exclusive with the other app-owned plans. */
+    val exactVideoPlan: ExactVideoPlan? = null,
 )
 
 data class DownloadOutcome(

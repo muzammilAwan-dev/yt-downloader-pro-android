@@ -8,6 +8,7 @@ import io.github.muzammilawan.clipharbor.core.DownloadRequest
 import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.ErrorMapper
 import io.github.muzammilawan.clipharbor.core.FormatPlanner
+import io.github.muzammilawan.clipharbor.core.ExactVideoFormats
 import io.github.muzammilawan.clipharbor.core.ProgressEvent
 import io.github.muzammilawan.clipharbor.core.SnapshotUnavailableException
 import io.github.muzammilawan.clipharbor.core.Stage
@@ -45,9 +46,11 @@ internal class DownloadExecutor(
             require(request.mergeContainer in setOf("mp4", "mkv", "mp4/mkv")) { "Unsupported merge container" }
             val plan = request.qualityPlan
             val audio = request.audioPlan
-            require(plan == null || audio == null) { "Video and audio-only plans are mutually exclusive" }
+            val exact = request.exactVideoPlan
+            require(listOf(plan, audio, exact).count { it != null } <= 1) { "App-owned plans are mutually exclusive" }
             require(plan == null || request.maxHeight == plan.quality.pixels) { "Quality ceiling does not match plan" }
-            val selector = audio?.let(AudioFormats::selector) ?: plan?.let(FormatPlanner::selector) ?: FormatPlanner.selector(request.maxHeight)
+            val selector = audio?.let(AudioFormats::selector) ?: exact?.let(ExactVideoFormats::selector)
+                ?: plan?.let(FormatPlanner::selector) ?: FormatPlanner.selector(request.maxHeight)
             return execution.run(request.processId) { internalId ->
                 val directory = request.outputDirectory
                 check(directory.isDirectory || directory.mkdirs()) { "Cannot create staging directory" }
@@ -56,10 +59,10 @@ internal class DownloadExecutor(
                         add("--ignore-config" to null)
                         add("-v" to null)
                         add("-f" to selector)
-                        if (audio == null) add("--merge-output-format" to request.mergeContainer)
+                        if (audio == null) add("--merge-output-format" to (exact?.mergeContainer ?: request.mergeContainer))
                         add("-P" to directory.absolutePath)
                         add("-o" to (if (audio != null) AudioFormats.outputTemplate()
-                            else plan?.let { FormatPlanner.outputTemplate(it.quality) } ?: FormatPlanner.outputTemplate()))
+                            else exact?.let(ExactVideoFormats::outputTemplate) ?: plan?.let { FormatPlanner.outputTemplate(it.quality) } ?: FormatPlanner.outputTemplate()))
                         add("-N" to CONCURRENT_FRAGMENTS.toString())
                         listOf("--windows-filenames", "--no-playlist", "--no-mtime", "--newline", "--progress", "--no-simulate", "--clean-info-json")
                             .forEach { add(it to null) }
@@ -113,6 +116,10 @@ internal class DownloadExecutor(
                         files.singleOrNull()?.extension?.lowercase() != audio.extension)) {
                         throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING,
                             detail = "Selection evidence does not substantiate original audio", stderrTail = outputTail()))
+                    }
+                    if (exact != null && !ExactVideoFormats.matches(exact, evidence.formatIds(), evidence.width(), evidence.height())) {
+                        throw EngineFailure(DownloadError(ErrorCode.POST_PROCESS_FAILED, Stage.POST_PROCESSING,
+                            detail = "Selection evidence does not substantiate the exact video source", stderrTail = outputTail()))
                     }
                     return DownloadOutcome(
                         files, response.exitCode, (System.nanoTime() - started) / 1_000_000, outputTail(),

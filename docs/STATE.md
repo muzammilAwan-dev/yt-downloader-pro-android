@@ -59,6 +59,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Exact-video foundation: **BUILD SUCCESSFUL in 2m 43s**, then exporter **BUILD SUCCESSFUL in 1m 18s**;
+323 total / 322 pass / 1 skip; lint 0 errors / 7 warnings. 20 actual Kotlin selectors passed on socket-blocked pinned yt-dlp.
+Typed source/selector/evidence/runner tests pass; exact source cannot fall back to different video. Home/UI wiring pending.
 Contract recovery: **BUILD SUCCESSFUL in 2m 55s**, 317 total / 316 pass / 1 skip; lint 0 errors / 7 warnings.
 Taxonomy/retry flags matched against contracts/errors.json; safe explicit fresh retries, 5-second timeout wait, no automatic reschedule.
 Unsupported sign-in/client/runtime/folder/raw-part actions honestly explained. Destination-full-after-transfer and retry-capability tests pass.
