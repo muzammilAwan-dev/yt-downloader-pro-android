@@ -1391,3 +1391,9 @@ Owner approved replacing small-step/phone-report stops with full-phase delivery 
 e37686c session + four screenshots reviewed: 22 audio rows before video; resolves 42,545/38,261 ms; WebM/Opus 251-drc (24,965,341 bytes) and 720p 136+140-3 (1280×720, 108,448,544 bytes) saved; no recorded 403. Sound/visibility remain unconfirmed.
 AGENTS/STATE/evidence updated; R75 owner scope and R76 official Room 2.8.5/KSP 2.3.14 research recorded; Gradle compatibility still untested. No app change/test/build in this documentation increment; previous checks remain historical.
 Continue Phase 1 compact picker/performance/Room/recovery/exact-video/UI integration; no login/playlists/conversions/runtime-code download or new phone-install request.
+
+### Compact mode-specific picker — 16 Nov 2026
+Tests-first bounded AudioPresentation: 22 variants reduce to 2 container/codec quick rows; at most 3 plus current explicit variant; all exact streams retained. No claimed best-quality/language recommendation or size ranking.
+Original Compose picker defaults to video, switches exclusively through existing Home selectors, keeps variants/resolutions in 340dp viewport and Download outside it. No planner/runtime/icon/permission changes.
+Initial wrapper run hit harness 120s timeout after tests; retry BUILD SUCCESSFUL in 1m 53s, tests up-to-date from initial execution. XML: 287 total / 286 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. UI/device/a11y unverified.
+Continue full Phase 1; no intermediate APK or phone-install request.

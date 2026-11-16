@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
@@ -26,7 +24,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -37,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -46,7 +42,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
-import io.github.muzammilawan.clipharbor.core.VideoQualities
 import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
 
@@ -118,49 +113,7 @@ fun HomeScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("2 · Choose what to save", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
                         Text(state.title.orEmpty(), style = MaterialTheme.typography.titleSmall)
-                        // One radio group across both sections: choosing audio clears video and vice versa.
-                        Column(Modifier.selectableGroup()) {
-                            Text("Audio only", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
-                            Text("Original reported streams · no conversion or invented MP3 bitrate choices.", style = MaterialTheme.typography.bodySmall)
-                            if (state.audioChoices.isEmpty()) {
-                                Text("No supported original audio-only streams were reported.", style = MaterialTheme.typography.bodySmall)
-                            }
-                            state.audioChoices.forEach { choice ->
-                                Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).selectable(
-                                    selected = state.selectedAudioFormatId == choice.formatId, enabled = enabled,
-                                    role = Role.RadioButton, onClick = { onSelectAudio(choice.formatId) }),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    RadioButton(selected = state.selectedAudioFormatId == choice.formatId, onClick = null, enabled = enabled)
-                                    Column(Modifier.weight(1f).padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
-                                        Text(choice.label, style = MaterialTheme.typography.titleSmall)
-                                        Text(choice.detail, style = MaterialTheme.typography.bodySmall)
-                                    }
-                                }
-                            }
-                            Text("Video + audio", Modifier.padding(top = 16.dp).semantics { heading() }, style = MaterialTheme.typography.titleMedium)
-                            val visibleVideo = VideoQualities.visibleChoices(state.qualities)
-                            if (visibleVideo.isEmpty()) {
-                                Text("No selectable video + audio qualities were reported.", style = MaterialTheme.typography.bodySmall)
-                            } else {
-                                Text("Best reported resolution first; H.264/AAC preferred.", style = MaterialTheme.typography.bodySmall)
-                                visibleVideo.forEach { choice ->
-                                    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).selectable(
-                                        selected = state.selectedQuality == choice.quality, enabled = enabled,
-                                        role = Role.RadioButton, onClick = { onSelectQuality(choice.quality) }),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        RadioButton(selected = state.selectedQuality == choice.quality, onClick = null, enabled = enabled)
-                                        Column(Modifier.weight(1f).padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
-                                            Text(choice.label, style = MaterialTheme.typography.titleSmall)
-                                            Text(choice.detail, style = MaterialTheme.typography.bodySmall)
-                                        }
-                                    }
-                                }
-                                Text("Only qualities in the reported formats are shown. Labels describe the shorter edge, including portrait video. No upscaling; a lower resolution may be used. The saved result reports selected dimensions. High-resolution merges use MKV.",
-                                    style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
+                        FormatPicker(state, enabled, onSelectQuality, onSelectAudio)
                         Text("Optional notifications show progress and Cancel while downloading. Cancel is unavailable once saving begins. Downloads also work without notification permission.",
                             style = MaterialTheme.typography.bodySmall)
                         when (notificationAccess) {

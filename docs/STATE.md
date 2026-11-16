@@ -80,7 +80,8 @@ Tester `e37686c`: minSdk 24 / target 37 / arm64; same signing certificate/native
 ## Current Phase 1 exit checklist (continue within this approved phase)
 Owner cadence supersedes the previous phone-report/new-feature-area stop (R75). Verified internal commits; one final phase report.
 Passing CLI checks is not phone verification. Existing phone checks remain deferred; do not claim overall reliability/playback.
-- [ ] Compact mode-specific picker: video first, bounded original-audio defaults with explicit variant access; truthful source labels.
+- [x] Compact mode-specific picker: video first, at most 3 source-backed container/codec quick audio rows (+ current variant),
+        explicit all-stream access and 340dp scrolling viewport. 3 new host tests pass; visual/a11y/device checks deferred.
 - [ ] Resolve performance: private bounded same-link reuse before download, explicit refresh, detailed timing; no claimed live speedup without evidence.
 - [x] Owner-approved temporary/removable phone-free verifier: stdlib regressions, fresh offline tests/lint, APK/source/signing/payload
         checks and synthetic selectors; default and optional-baseline runs passed. Current tester remains `e37686c`; no phone/device test performed.
