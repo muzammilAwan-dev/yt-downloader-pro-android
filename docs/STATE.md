@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R74);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R76);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -12,8 +12,12 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - **Phase 1 (MVP): in progress.** Done and unit-tested: logging/redaction, engine-version reporting, task-private replay
   (`--load-info-json`), download evidence, home controller, Material 3 home + paste/share, eight standard quality tiers with private
   typed selection plan, YTDLP branding and icon. Phone-verified earlier (`ec146df`): resolve, 1080p select, merge, MediaStore publish, playback with sound.
-- Latest ready tester: **`e37686c`** — source-backed available video rows + separate original audio, CLI-tested and stamped APK verified;
-  phone-untested. Artifact/phone sequence: `docs/evidence/original-audio-tester.md`. OWNER next: in-place install, picker/audio/video/log report.
+- Latest owner-tested artifact: **`e37686c`** — source-backed video + original audio. Owner log confirms WebM/Opus `251-drc`
+  (24,965,341 bytes) and 720p `136+140-3` (1280×720, 108,448,544 bytes) saved without recorded 403. Sound/visibility unconfirmed.
+  Four screenshots show 22 audio choices before video; resolve took 42,545/38,261 ms. Evidence: `docs/evidence/phase1-owner-feedback.md`.
+- Owner approved full Phase 1 delivery in tested internal increments (16 Nov): compact picker, resolve performance, durable queue,
+  errors/retry/storage and remaining MVP wiring, then verified stamped APK/report and STOP for `next`. Device tests deferred until
+  the full project is built, never waived/passed. No new installation request now; Phase 2 and runtime-code download remain gated.
 - Owner-approved lightweight phone-free helper: `python -I tools/phone-free.py` (Windows, existing stdlib/SDK/JDK/cached Gradle only).
   Fresh host checks, stamped/source/signature/assets checks and offline selectors passed; removes its own unchanged temp copy, retains local reports.
   No APK rebuild/replacement, phone connection, emulator, dependency install or device-verification claim. Usage/removal: `docs/13-LOCAL-BUILD-AND-INSTALL.md`.
@@ -73,10 +77,11 @@ also passed on verified 2026.10.26 with sockets blocked; host harness only chang
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
 Tester `e37686c`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `f96194e`, no new permissions.
 
-## Next steps (do in order, one per `/next`)
-Owner cadence (R65): verified increments pushed; ready tester `e37686c` replaces `dist`, previous owner-installed is `f96194e`.
-Current next action is the owner's audio/video/picker/log report; stop here, do not start Room or a new major feature area in this handoff.
-Passing CLI checks is not phone verification. Existing phone checks and the major-feature-area gate remain open.
+## Current Phase 1 exit checklist (continue within this approved phase)
+Owner cadence supersedes the previous phone-report/new-feature-area stop (R75). Verified internal commits; one final phase report.
+Passing CLI checks is not phone verification. Existing phone checks remain deferred; do not claim overall reliability/playback.
+- [ ] Compact mode-specific picker: video first, bounded original-audio defaults with explicit variant access; truthful source labels.
+- [ ] Resolve performance: private bounded same-link reuse before download, explicit refresh, detailed timing; no claimed live speedup without evidence.
 - [x] Owner-approved temporary/removable phone-free verifier: stdlib regressions, fresh offline tests/lint, APK/source/signing/payload
         checks and synthetic selectors; default and optional-baseline runs passed. Current tester remains `e37686c`; no phone/device test performed.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
@@ -100,12 +105,13 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
         Owner now requests continuing through a verified stamped APK, not stopping after intermediate commits (16 Nov).
         Typed choices/plan, runner/evidence, Home/publication and separate UI CLI-tested; stamped APK inspected, exact artifact/phone sequence in evidence doc.
         Audio exact-ID selector emits no merge/transcode flags; codec/ID/dimension/extension evidence must agree. No MP3 conversions in this tester.
-- [ ] OWNER: install `e37686c` over `f96194e`, send picker screenshot(s), M4A/WebM playback/visibility and post-result session logs;
-        confirm second video preset/dimensions/picture + sound, then retry earlier failing long video while visible. No broader 403 fix claimed.
+- [x] OWNER supplied e37686c picker/screenshots and complete post-result audio + second-video logs (R75). Audible playback/visibility,
+        sustained background/Cancel/new APIs and earlier failing long videos remain deferred, not passed.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-video-format picker (original audio moved earlier and delivered above). Thumbnail embedding is deliberately deferred.
 - [ ] 5. Broader engine update policy remains gated; approved APK-only freshness investigation is prioritized in 1f (R72).
+- [ ] Integrated queue/history/progress/recovery UI and host recovery/privacy tests; stamped APK/source/signature/payload inspection and phase report.
 
 ## Open owner checks (cannot be automated)
 Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.

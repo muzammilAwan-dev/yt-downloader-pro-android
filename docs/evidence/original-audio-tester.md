@@ -3,7 +3,9 @@
 ## Scope
 
 Owner requested continuing through a meaningful stamped APK, not stopping at intermediate commits.
-**Verified stamped tester `e37686c` is ready for the owner's phone report.** UI/audio playback remain phone-untested.
+**Verified stamped tester `e37686c` was installed by the owner.** Supplied logs confirm original WebM audio and a
+720p MP4 save; screenshots confirm the overlong picker. Audible playback remains unconfirmed. Updated evidence
+and phase-level cadence: `phase1-owner-feedback.md`. Historical artifact/install sequence below is not a new request.
 
 - Only source-backed video rows are shown; labels use actual reported short-edge resolution, including portrait/nonstandard sizes.
 - Separate **Audio only** and **Video + audio** sections share one exclusive selection and an explicit Download confirmation.

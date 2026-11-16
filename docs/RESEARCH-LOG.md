@@ -377,6 +377,21 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   Offer only reported original streams with separate video/audio selection; no synthetic MP3 bitrate or conversion options.
   Owner's screenshots are behavior references only; no third-party code/assets were read/copied. Android audio playback remains unverified.
 
+- **R75 (16 Nov 2026, owner evidence/cadence):** e37686c owner log and four supplied picker screenshots confirm
+  22 original-audio rows before video, resolve 42,545/38,261 ms, WebM/Opus 251-drc and 720p 136+140-3 saves.
+  Open-file launches do not verify sound; no recorded 403 is not a general reliability result.
+  Owner explicitly approved full Phase 1 delivery in tested internal increments and deferred phone testing until
+  the full project is built. Supersedes the previous small-step/phone-report gate, not the runtime-code prohibition.
+  Evidence and remaining phase scope: docs/evidence/phase1-owner-feedback.md.
+
+- **R76 (16 Nov 2026, Room/KSP version investigation):** Official Android Room release page reports stable
+  2.8.5 (9 Sep 2026), minSdk 23, Kotlin 2.0+, Kotlin consumers should use KSP; coroutine APIs are in runtime.
+  https://developer.android.com/jetpack/androidx/releases/room
+  Official google/ksp latest GitHub release is 2.3.14, published 13 Nov 2026:
+  https://github.com/google/ksp/releases/tag/2.3.14 (API /repos/google/ksp/releases/latest).
+  Plugin portal page fetch returned HTTP 400; AGP 9.5.1/Gradle 9.6 compatibility and dependency resolution
+  remain UNTESTED. Do not install the 180 MB release bundle; resolve only required Gradle plugin/artifacts.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

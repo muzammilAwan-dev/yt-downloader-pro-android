@@ -4,11 +4,14 @@ YTDLP: an unofficial, free, GPL-3.0 Android front end for yt-dlp. No ads, no ana
 Current state: `docs/STATE.md` (loaded for you via `opencode.jsonc`). Plan: `docs/01-PLAN.md`. Doc index: `README.md`.
 OpenCode does not follow file references inside this file: open detail docs yourself, and only the one the current step needs.
 
-## How to work (one small step at a time)
-1. Take the next unchecked item in `docs/STATE.md`. Say what you will change (about 5 files at most).
+## How to work (one full phase per owner request; 16 Nov 2026)
+1. Take the current phase's unchecked work in `docs/STATE.md`. Work in small tested increments (about 5 files each);
+   state the phase scope first. The owner approved continuing through the full phase, not stopping after each increment.
 2. Tests first for logic (fake `Engine`), smallest change, then run `.\gradlew.bat testDebugUnitTest lintDebug --console=plain`
    (Windows) or `./gradlew ...` (Linux/macOS). Quote the real `BUILD` line and test/lint counts.
-3. Commit (Conventional Commits). Update `docs/STATE.md`; append at most 10 lines to `docs/PROGRESS.md`. Stop and report.
+3. Commit each verified increment (Conventional Commits). Update `docs/STATE.md`; append at most 10 lines per increment
+   to `docs/PROGRESS.md`. Continue within the approved phase; finish with a verified stamped APK and phase report, then
+   STOP for the owner's `next` before starting another phase. Never label a partial phase complete.
 Slash commands: `/next` does the loop, `/verify` runs the checks, `/review` asks the read-only reviewer, `/handoff` refreshes STATE.md.
 Do not read `docs/PROGRESS.md` or `docs/RESEARCH-LOG.md` in full; `grep` them. After a context reset, re-read this file and `docs/STATE.md` only.
 
@@ -16,8 +19,9 @@ Do not read `docs/PROGRESS.md` or `docs/RESEARCH-LOG.md` in full; `grep` them. A
 - Be factual. Never claim a build or test passed unless you ran it and saw the output. Mark unrun code "untested".
 - Never invent versions or APIs. Look them up (newest sources first) or mark `TODO(verify)`. Log research in `docs/RESEARCH-LOG.md`.
 - If research contradicts `docs/`, write the conflict and a recommendation in `docs/RESEARCH-LOG.md` and ask the owner.
-- Stop at gates and wait for the owner. Current gate: the owner's phone report on the next stamped APK before starting a new
-  major feature area (browser/login, playlists, engine update).
+- Stop at phase gates and wait for the owner. Current approval: finish Phase 1 with phone-free checks; device-only testing
+  is deferred by the owner until the full project is built, not waived or passed. Phase 2 browser/login, playlists and broader
+  engine-update work still require the owner's `next`. Keep runtime-code-download prohibition and security constraints.
 
 ## Never
 - Copy code from Snaptube, Seal, YTDLnis or NewPipe, or use those names or "YouTube" in the app name/icon/package id. Reading public GPL projects to

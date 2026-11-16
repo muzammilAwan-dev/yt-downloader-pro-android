@@ -1385,3 +1385,9 @@ Default report: C:\Users\Malku\AppData\Local\Temp\opencode\ytdlp-phone-free-kvjj
 Required wrapper tests/lint also BUILD SUCCESSFUL in 19s (up-to-date, not fresh); helper invokes already-extracted cached distribution directly to prevent wrapper downloads, offline rerun-tasks with actual APK stamp and child-only non-daemon setting.
 e37686c APK remains 70,276,358 bytes / C923865E6A01F464358F2B30570FF5A25A84DD5275B7E5FDF8DEA245EAAD4FE6; own DEX stamp/source ancestry/build-input fence, copy/signature/engine/EJS/notices/permissions/SDK checks pass. No app/planner/icon/runtime/permission changes.
 Usage/removal in docs/13-LOCAL-BUILD-AND-INSTALL.md; STATE refreshed. STOP for in-place e37686c install, picker/audio/video sound/visibility and complete session logs; sustained background/Cancel/new APIs/long-sample 403 remain device-open, no new feature area approved.
+
+### Full Phase 1 delivery authorization and owner evidence — 16 Nov 2026
+Owner approved replacing small-step/phone-report stops with full-phase delivery in tested internal increments, then stamped APK/report and wait for next; phone-only tests deferred until full project completion, not passed.
+e37686c session + four screenshots reviewed: 22 audio rows before video; resolves 42,545/38,261 ms; WebM/Opus 251-drc (24,965,341 bytes) and 720p 136+140-3 (1280×720, 108,448,544 bytes) saved; no recorded 403. Sound/visibility remain unconfirmed.
+AGENTS/STATE/evidence updated; R75 owner scope and R76 official Room 2.8.5/KSP 2.3.14 research recorded; Gradle compatibility still untested. No app change/test/build in this documentation increment; previous checks remain historical.
+Continue Phase 1 compact picker/performance/Room/recovery/exact-video/UI integration; no login/playlists/conversions/runtime-code download or new phone-install request.
