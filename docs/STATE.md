@@ -12,8 +12,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - **Phase 1 (MVP): in progress.** Done and unit-tested: logging/redaction, engine-version reporting, task-private replay
   (`--load-info-json`), download evidence, home controller, Material 3 home + paste/share, eight standard quality tiers with private
   typed selection plan, YTDLP branding and icon. Phone-verified earlier (`ec146df`): resolve, 1080p select, merge, MediaStore publish, playback with sound.
-- Latest tester: **`6bb477b`** (foreground + full-session logs), `dist/app-debug.apk` embedded stamp verified; signature and copied SHA-256 match.
-  Helper checks: BUILD SUCCESSFUL in 59s, 206 tests (205 pass / 1 skip), lint 0 errors / 7 known warnings; APK BUILD SUCCESSFUL in 7s.
+- Latest tester: **`f96194e`** (APK-only engine refresh), `dist/app-debug.apk` stamp/asset/signature/copied SHA-256 verified; **phone untested**.
+  Owner's installed build remains `6bb477b` until confirmed. Helper checks: BUILD SUCCESSFUL in 2m 3s, 251 pass / 1 skip;
+  lint 0 errors / 7 known warnings; APK BUILD SUCCESSFUL in 32s. Tester hash/phone sequence: `docs/evidence/engine-refresh-2026.10.26.md`.
 - Owner evidence for `74ce7cf` (R61): dark portrait standard picker with disabled QHD/4K; 1080×1920 `137+140` download,
   resolve replay reused, MP4 merge and 7,737,267-byte MediaStore save; later self-test 7/7. Only one quality download.
 - Still unverified: second preset, new file playback with sound, QHD/4K MKV playback; earlier `ec146df` playback remains confirmed.
@@ -36,27 +37,27 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Python 3.12.11/QuickJS 2025-04-26 meet tagged requirements. Library remains 0.18.1; host-only offline smokes passed.
   Local installer foundation now has 22 offline tests: size/hash verification, synced staging, failure/interruption preservation,
   narrow cleanup/retry and cross-instance serialization. Official asset/notices now bundled unchanged; six offline payload tests pass.
-  Validation APK inspected: exact asset digest, startup class packaged, seven native entries/binary manifest match `6bb477b`; `dist` unchanged.
+  Stamped `f96194e` APK inspected: exact asset/full notices, startup class/commit field, seven native entries/binary manifest match `6bb477b`.
   R73 adapter wiring now uses Android Os.rename and one process-wide install-before-library-init gate; 18 startup tests pass.
   Failed/interrupted startup does not publish readiness; retry is allowed. A ready process never reinstalls over an active worker.
   Reports verified installed yt-dlp/EJS pin, not stale updater preferences; later verbose runtime versions remain observable.
-  No stamped activated tester yet; Android replacement/runtime/download compatibility untested. Next: stamped tester.
+  Stamped tester ready in `dist`; Android replacement/runtime/download compatibility untested. Next: OWNER installs/tests while visible.
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 1m 32s** (pre-init activation; shell-only non-daemon retry).
-Reports: 252 total / 251 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Full tests executed before first lint daemon disappearance; test task UP-TO-DATE on successful retry, lint reran. No project config workaround.
+`powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-debug.ps1`: checks **BUILD SUCCESSFUL in 2m 3s**, APK **BUILD SUCCESSFUL in 32s**.
+Fresh tests/lint execution with `-PgitSha=f96194e`: 252 total / 251 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Shell-only non-daemon setting; no persistent/project workaround. Actual APK BuildConfig field, signature and copied SHA-256 verified.
 18 startup tests first failed 18/18 (BUILD FAILED in 41s), then passed (BUILD SUCCESSFUL in 13s); installer/payload tests remain green.
-`assembleDebug`: **BUILD SUCCESSFUL in 22s**; 70,342,167-byte validation APK, exact asset/native/binary manifest checks pass; no stamped handoff yet.
+`dist/app-debug.apk`: 70,342,176 bytes; SHA-256 `9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`.
 12 new session-log tests incl. fake-Engine timeline; initial 9/9 failed against placeholder, then email/resolve-diagnostics gaps failed before fixes.
 Tested exact tap cutoff, rotation/2 MB survival, concurrency, clear/restart, redaction and no partial export on failure; one phone export received (R69).
 Foreground cancellation-first/timeout-first and permission/service tests remain green. No runner/planner/icon/dependency/permission change.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
-Helper reran checks and built `6bb477b`: 67,308,714 bytes, minSdk 24 / target 37 / arm64; 4 Android permissions + pre-existing AndroidX local signature permission.
+Tester `f96194e`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `6bb477b`, no new permissions.
 
 ## Next steps (do in order, one per `/next`)
-Owner cadence (R65): push verified increments; foreground + full-session logging APK `6bb477b` is ready for the next meaningful reinstall.
+Owner cadence (R65): push verified increments; APK-only engine tester `f96194e` is ready for the next meaningful reinstall over `6bb477b`.
 Passing CLI checks is not phone verification. Existing phone checks and the major-feature-area gate remain open.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
 - [x] 0a. OWNER: install `74ce7cf`, send standard portrait picker screenshot and one planner-driven 1080p post-download log (R61).
@@ -71,9 +72,10 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [x] Owner priority: full session Share log + action/deep-log coverage before more features; CLI checks green (R68), stamped APK built.
 - [ ] 1f. `6bb477b` installed; media 403 also reproduced while visible on owner-reported stable Wi-Fi (R70), not fixed. Prioritize
         approved APK-bundled engine-only spike (R72/R73): payload/licenses and pre-init adapter wiring implemented; CLI checks green.
-        Next stamped tester after checks; verify actual APK asset/native packaging/permissions/signature/stamp before owner handoff.
+        Stamped `f96194e` tester verified/ready: OWNER install over `6bb477b` without clearing data; confirm stamp/runtime versions.
         Keep native runtime/planner/replay/cancellation/logs; no runtime downloads/login/new permissions. Android 10 baseline/minSdk 24.
-        No reinstall yet; after reliable foreground transfers, retest background/lock. Cancel/cleanup/playback still open.
+        Test failing long video + earlier working sample on same Wi-Fi while visible; share full logs/dimensions/playback with sound.
+        Wait for owner report; only after reliable visible transfers retest background/lock. Cancel/cleanup/playback still open.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
 - [ ] 4. Exact-format and audio-only picker. (Thumbnail embedding is deliberately deferred.)

@@ -1312,3 +1312,13 @@ Initial daemon disappeared during lint after full test execution; retry test tas
 > .\gradlew.bat assembleDebug --console=plain — BUILD SUCCESSFUL in 22s; validation APK 70,342,167 bytes.
 Actual APK asset/digest/startup class verified; all seven native entries and binary manifest identical to 6bb477b. Runner/resolve/download/replay/cancel/parser unchanged.
 dist tester unchanged, no stamped handoff yet; next stamped tester + owner visible-app same-Wi-Fi transfers. Android replacement/runtime/403 behavior untested; no runtime downloads/new permissions.
+
+### Stamped APK-only engine tester handoff — 16 Nov 2026
+Built clean implementation f96194e with tools/build-debug.ps1; shell-only GRADLE_OPTS=-Dorg.gradle.daemon=false, no app/config edits in this step.
+> Helper testDebugUnitTest/lintDebug — BUILD SUCCESSFUL in 2m 3s; fresh 252 total / 251 passed / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+> Helper assembleDebug — BUILD SUCCESSFUL in 32s.
+dist/app-debug.apk: 70,342,176 bytes; SHA-256 9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495; actual DEX GIT_SHA=f96194e, copied bytes/checksum agree.
+Actual APK engine digest/versions/solver hashes/full notices verified; seven native entries/binary manifest identical to 6bb477b, minSdk 24 / target 37 / arm64 / YTDLP.
+APK v2 signature verifies; certificate matches previous local tester, no new permissions. Previous 6bb477b hash-verified/preserved in approved temp before replacing dist.
+OWNER: install over 6bb477b without data clearing, confirm stamp/runtime versions, retry failing long video + earlier working sample while visible on same Wi-Fi; share full logs/dimensions/sound.
+Phone replacement/runtime/download/403/background/Cancel untested; wait for owner report. Evidence and artifact checks: docs/evidence/engine-refresh-2026.10.26.md.
