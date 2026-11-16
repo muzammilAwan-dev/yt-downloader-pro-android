@@ -18,12 +18,14 @@ class DownloadEvidence {
             text.startsWith(AUDIO_MARKER) -> {
                 selectedAudioId = null
                 val fields = text.removePrefix(AUDIO_MARKER).split('\t')
-                if (fields.size == 3 && fields[1] == "none" && fields[2] != "none" &&
+                if (fields.size == 3 && fields[1] == "none" && fields[2] !in setOf("none", "NA") &&
                     Regex("[A-Za-z0-9_.-]{1,128}").matches(fields[2])) {
                     selectedAudioId = parseIds(fields[0])?.singleOrNull()
                 }
             }
             text.startsWith(SELECTION_MARKER) -> {
+                // Even a malformed later selection cannot reuse earlier audio-only evidence.
+                selectedAudioId = null
                 val fields = text.removePrefix(SELECTION_MARKER).split('\t')
                 if (fields.size !in 2..3) return
                 val ids = parseIds(fields[0]) ?: return

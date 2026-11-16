@@ -1354,3 +1354,9 @@ Home retains task-private video/audio plans and exclusive selection; audio-only 
 Audio reuses the foreground admission, progress, Cancel, timeout and saving commit boundary; final ID/container/no-video-dimensions checked before audio-MIME publication. WebM publishes as audio/webm via the existing MediaStore publisher.
 Editing/sharing/resolving/failure/Cancel/timeout clears audio choices; resolve logs reported max short-edge, visible resolutions and audio count, plus selection/mediaMode events without raw URLs/JSON/notes.
 No UI hookup/new APK yet, no permissions/runtime/planner/icon/dependencies changed. Continue Compose wiring and stamped tester; phone playback/background checks remain open.
+
+### Audio evidence fail-closed edge cases — 16 Nov 2026
+Pre-tester review found yt-dlp's NA codec placeholder and malformed later selection could retain usable-looking audio evidence; two new offline runner regressions reproduced both.
+Initial test compile failed in 43s because EngineResponse is not a data class; corrected constructor, then 2 fail / 6 pass, BUILD FAILED in 1m 13s before implementation.
+Audio evidence now rejects NA and is invalidated at the start of every explicit selection marker, even malformed. Existing video selection behavior unchanged; full checks BUILD SUCCESSFUL in 2m 19s, 279 total / 278 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+R74 records original exact-selector/CLI offline smokes and official audio/webm guidance. No new runtime/dependency/permission/APK; continue picker integration then stamped tester.

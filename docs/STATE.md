@@ -2,7 +2,7 @@
 
 Loaded automatically through `opencode.jsonc` `instructions`. Keep it SHORT. Long history lives in `docs/PROGRESS.md`
 (append-only: `grep`/`tail` it, never read it whole) and `docs/RESEARCH-LOG.md` (look up by `R<number>`).
-Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R73);
+Update this file at the end of every step (`/handoff`). Facts here come from `docs/PROGRESS.md` and `docs/RESEARCH-LOG.md` (up to R74);
 anything not re-run since is marked untested. Run `git log -5 --oneline` for the real HEAD.
 
 ## Where we are
@@ -50,10 +50,10 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 3m 21s** (original-audio Home/publication).
-Fresh reports: 277 total / 276 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Nine Home tests first ran 8 fail / 1 pass, **BUILD FAILED in 1m 46s**; then 9/9 pass in 1m 6s. Full run caught log field order
-regression (BUILD FAILED in 38s); old formats/ms prefix restored, full tests/lint green above.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 2m 19s** (audio evidence fail-closed edges).
+Fresh reports: 279 total / 278 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Two new runner regressions first ran 2 fail / 6 pass, **BUILD FAILED in 1m 13s**, after corrected test constructor compile error.
+NA codec placeholders and malformed later selection now invalidate audio evidence; old video selection behavior unchanged.
 Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
 No new APK: `dist/app-debug.apk` remains stamped `f96194e`, 70,342,176 bytes; SHA-256 rechecked unchanged
 `9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`. Prior helper checks BUILD SUCCESSFUL in 2m 3s; APK in 32s.

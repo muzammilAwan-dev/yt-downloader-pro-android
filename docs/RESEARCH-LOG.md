@@ -368,6 +368,15 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   New process rechecks the pin; no runtime downloads/updater preference writes/native-runtime changes. Android atomic/runtime/download behavior untested;
   file sync + rename is not a verified abrupt-power-loss durability guarantee. R72 scope/phone test plan remains unchanged.
 
+- **R74 (16 Nov 2026, original audio selector/evidence and MIME):** The verified bundled 2026.10.26 zipapp passed nine
+  host-only exact `ba[format_id='…']` selector/missing-ID/muxed-rejection cases with socket connections blocked (previous increment).
+  Its synthetic replay CLI `--load-info-json --skip-download --no-simulate` emitted selected ID with NA/NA dimensions and
+  the explicit before_dl vcodec=none/acodec marker; no extraction/media request or real playback was tested.
+  [WebM Project container guidelines](https://www.webmproject.org/docs/container/) (last modified 2026-05-07, re-read today)
+  specify audio-only MIME **audio/webm** and Vorbis/Opus audio. Original WebM audio must not inherit the video/webm publisher default.
+  Offer only reported original streams with separate video/audio selection; no synthetic MP3 bitrate or conversion options.
+  Owner's screenshots are behavior references only; no third-party code/assets were read/copied. Android audio playback remains unverified.
+
 ## Still unverified (carried forward)
 
 - Whether AGP 9.5.1 accepts `compileSdk = 37` with `build-tools;37.0.0` — **proved**: `assembleDebug` succeeded and `aapt2` reports

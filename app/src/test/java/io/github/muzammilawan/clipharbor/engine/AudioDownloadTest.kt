@@ -99,6 +99,24 @@ class AudioDownloadTest {
         assertNull(evidence.audioFormatId())
     }
 
+    @Test fun unknownAudioCodecPlaceholderCannotSubstantiateAudio(): Unit = runBlocking {
+        val directory = temporary.newFolder()
+        val runner = Runner().apply { action = { response(directory, audio = "NA") } }
+        val result = DownloadExecutor(runner, EngineExecution(runner::destroy), temporary.newFolder())
+            .download(request(directory), {}, {})
+        assertTrue(result.isFailure)
+    }
+
+    @Test fun malformedLaterSelectionInvalidatesPreviousAudioEvidence(): Unit = runBlocking {
+        val directory = temporary.newFolder()
+        val runner = Runner().apply { action = {
+            response(directory).let { EngineResponse(it.exitCode, it.out + "\n${DownloadEvidence.SELECTION_MARKER}140\t0\t0", it.err) }
+        } }
+        val result = DownloadExecutor(runner, EngineExecution(runner::destroy), temporary.newFolder())
+            .download(request(directory), {}, {})
+        assertTrue(result.isFailure)
+    }
+
     @Test fun webmAudioKeepsItsOriginalContainer() = runBlocking {
         val directory = temporary.newFolder()
         val opus = AudioFormats.plan(listOf(FormatInfo("251", "webm", "none", "opus")), "251")!!
