@@ -67,6 +67,18 @@ class TaskRepositoryTest {
         assertThrows(IllegalArgumentException::class.java) { TaskRecord("invalid", "https://example.invalid/a?token=secret") }
     }
 
+    @Test fun lateChooserDismissalCannotCancelANewerResolveOrDownloadRevision() = runTest {
+        repository.stage("one", "https://example.invalid/a")
+        repository.transition("one", TaskPhase.RESOLVING)
+        val chooser = repository.transition("one", TaskPhase.CHOOSING)
+        repository.transition("one", TaskPhase.RESOLVING)
+        assertFalse(repository.dismissChooser("one", chooser.revision))
+        val newer = repository.transition("one", TaskPhase.CHOOSING)
+        assertFalse(repository.dismissChooser("one", chooser.revision))
+        assertTrue(repository.dismissChooser("one", newer.revision))
+        assertEquals(TaskPhase.CANCELED, store.rows.value.single().phase)
+    }
+
     @Test fun removalCannotDeleteActiveOrSavingTasksAndOnlySafeSelectionDataIsStored() = runTest {
         repository.stage("one", "https://example.invalid/a")
         repository.transition("one", TaskPhase.RESOLVING)

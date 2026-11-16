@@ -59,6 +59,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Save/recovery fences: **BUILD SUCCESSFUL in 2m 17s**, 334 total / 333 pass / 1 skip; lint 0 errors / 7 warnings.
+3 regressions pass: failed DONE write retains published URI, saving timeout requires explicit folder check, stale chooser cleanup cannot
+cancel a newer revision. 24 helper regressions / 4 exported-schema tests and 20 socket-blocked exact selectors passed. No device result.
 Publication mechanics: **BUILD SUCCESSFUL in 1m 36s**, 331 total / 330 pass / 1 skip; lint 0 errors / 7 warnings.
 5 pending-commit/copy-failure/legacy collision/content-provider-root tests pass. API 24-28 uses narrow content-URI grants;
 MediaStore success requires one committed row. Android provider/gallery execution unverified; no added permissions.

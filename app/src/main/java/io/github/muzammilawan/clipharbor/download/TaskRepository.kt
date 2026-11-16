@@ -78,6 +78,14 @@ class TaskRepository(private val store: TaskStore, private val clockMs: () -> Lo
 
     suspend fun get(id: String): TaskRecord? = store.get(id)
 
+    /** Late Activity/session cleanup may dismiss only the exact chooser revision it owned. */
+    suspend fun dismissChooser(id: String, expectedRevision: Long): Boolean = lock.withLock {
+        val previous = store.get(id) ?: return@withLock false
+        if (previous.phase != TaskPhase.CHOOSING || previous.revision != expectedRevision) return@withLock false
+        store.replace(previous.copy(phase = TaskPhase.CANCELED, reason = "CHOOSER_DISMISSED",
+            revision = previous.revision + 1, updatedAt = clockMs()), previous.revision)
+    }
+
     suspend fun transition(id: String, next: TaskPhase, selection: TaskSelection? = null, title: String? = null,
         reason: String? = null, savedUri: String? = null, savedName: String? = null, savedMime: String? = null): TaskRecord = lock.withLock {
         val previous = checkNotNull(store.get(id)) { "Task record unavailable" }

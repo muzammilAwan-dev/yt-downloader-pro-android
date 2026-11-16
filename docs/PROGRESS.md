@@ -1457,3 +1457,9 @@ UI/a11y/exact-codec/MKV playback remain device-unverified. Remaining Phase 1: pu
 API 24-28 now returns content URI from narrow app-specific Download/YTDLP/private fallback roots; no file:// URI or broad staging/replay grants (R79). Legacy saves reserve unique filenames instead of overwriting previous files.
 Initial BUILD FAILED in 2m 19s caught generic test-lambda inference; explicit type fixed. Wrapper BUILD SUCCESSFUL in 1m 34s, then warning-free test-source wrapper BUILD SUCCESSFUL in 1m 36s; 331 total / 330 pass / 1 skip, lint 0 errors / 7 warnings.
 Android provider/gallery/playback remain unverified; continue interrupted-publication/late-writer fences and final Phase 1 packaging.
+
+### Interrupted publication and stale chooser cleanup fences — 16 Nov 2026
+3 tests-first regressions cover failed DONE history write after publication, foreground timeout while saving and exact chooser revision dismissal. Direct/same-link retries require explicit interrupted-save review; known published URI stays openable after failed history write.
+Terminal uncertainty pauses the durable record as PUBLICATION_INTERRUPTED; timeout/cancellation never invents publication success. Late chooser cleanup uses revision-fenced CAS and cannot cancel newer extraction. Success-only staging cleanup failure is logged, not turned into an ambiguous save failure.
+Required wrapper BUILD SUCCESSFUL in 2m 17s; 334 total / 333 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. 24 helper / 4 schema regressions and 20 socket-blocked exact selectors passed.
+Continue final evidence invalidation/task-scoped review and stamped APK/report; no phone or Android execution claim.

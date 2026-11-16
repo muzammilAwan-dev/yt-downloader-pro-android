@@ -66,6 +66,7 @@ data class HomeState(
     val pauseReason: ErrorCode? = null,
     val storageReport: StorageReport? = null,
     val failureCode: ErrorCode? = null,
+    val publicationReviewRequired: Boolean = false,
 ) {
     val canDownload: Boolean get() = phase == HomePhase.CHOOSING && engineReady &&
         listOf(selectedQuality, selectedAudioFormatId, selectedExactVideoId).count { it != null } == 1 &&
@@ -116,7 +117,8 @@ class HomeController(
 
     private class Prepared(val task: String, val url: String, val snapshot: ResolvedSnapshot?, val createdAt: Long,
         val plans: Map<VideoQuality, VideoQualityPlan>, val audioPlans: Map<String, AudioPlan>, val recordId: String?,
-        val videoEstimates: Map<VideoQuality, Long?>, val audioEstimates: Map<String, Long?>, val exactPlans: Map<String, ExactVideoPlan>)
+        val videoEstimates: Map<VideoQuality, Long?>, val audioEstimates: Map<String, Long?>, val exactPlans: Map<String, ExactVideoPlan>,
+        val chooserRevision: Long?)
 
     fun initialize() {
         if (closed || job?.isActive == true || state.value.engineReady) return
@@ -138,6 +140,7 @@ class HomeController(
 
     fun editUrl(text: String) {
         if (closed || state.value.busy) return
+        if (state.value.publicationReviewRequired && text.trim() == state.value.url) return
         if (text == state.value.url && state.value.phase == HomePhase.CHOOSING) return
         abandonChooser()
         currentRecord = null
@@ -146,7 +149,8 @@ class HomeController(
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
             title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null,
             exactVideoChoices = emptyList(), selectedExactVideoId = null, saved = null,
-            phase = HomePhase.READY, pauseReason = null, storageReport = null, failureCode = null, status = "Review the link, then find formats.") }
+            phase = HomePhase.READY, pauseReason = null, storageReport = null, failureCode = null, publicationReviewRequired = false,
+            status = "Review the link, then find formats.") }
     }
 
     fun receiveShared(text: String) {
@@ -154,6 +158,7 @@ class HomeController(
         when (val input = MediaEntry.shared(text)) {
             is MediaEntry.Input.Invalid -> mutable.update { it.copy(inputError = input.message) }
             is MediaEntry.Input.Link -> {
+                if (state.value.publicationReviewRequired && input.url == state.value.url) return
                 if (input.url == state.value.url && state.value.phase == HomePhase.CHOOSING && reusable(input.url)) return
                 if (state.value.busy && state.value.phase != HomePhase.INITIALIZING) {
                     mutable.update { it.copy(pendingUrl = input.url) }
@@ -181,6 +186,9 @@ class HomeController(
 
     fun resolve(forceRefresh: Boolean = false) {
         if (closed || state.value.busy || job?.isActive == true || !state.value.engineReady) return
+        if (state.value.publicationReviewRequired) {
+            mutable.update { it.copy(status = "Check Downloads for an existing file, then use the queue's explicit interrupted-save review.") }; return
+        }
         state.value.failureCode?.let { code ->
             val recovery = ErrorRecovery.forCode(code)
             if (!recovery.freshResolve || clockMs() < retryAfterMs) {
@@ -245,10 +253,10 @@ class HomeController(
                 val selection = if (defaultExact != null) TaskSelection(videoFormatId = defaultExact)
                     else if (defaultAudio != null) TaskSelection(audioFormatId = defaultAudio)
                     else TaskSelection(videoHeight = defaultVideo?.pixels)
-                persistPhase(recordId, TaskPhase.CHOOSING, selection = selection, title = outcome.media.title)
+                val chooser = persistPhase(recordId, TaskPhase.CHOOSING, selection = selection, title = outcome.media.title)
                 prepared = Prepared(task, url, snapshot, clockMs(), plans, audioPlans, recordId,
                     plans.mapValues { StorageBudget.estimate(outcome.media.formats, it.value) },
-                    audioChoices.associate { it.formatId to it.approxBytes }, exactPlans)
+                    audioChoices.associate { it.formatId to it.approxBytes }, exactPlans, chooser?.revision)
                 snapshot = null // Ownership is transferred to the chooser, not persisted in UI/history.
                 observer.event(task, Stage.RESOLVING.name, "ok", mapOf("formats" to outcome.media.formats.size.toString(),
                     "ms" to (clockMs() - started).coerceAtLeast(0).toString(),
@@ -375,12 +383,14 @@ class HomeController(
                     "reusedResolve" to outcome.reusedResolve.toString()))
                 storageSpace?.let { probe -> checkStorage(StorageBudget.publication(probe(), file.length()), input.task, Stage.PUBLISHING) }
                 persistPhase(input.recordId, TaskPhase.PUBLISHING)
-                mutable.update { it.copy(phase = HomePhase.PUBLISHING, progress = null, status = "Saving the finished file…") }
+                mutable.update { it.copy(phase = HomePhase.PUBLISHING, progress = null, publicationReviewRequired = true,
+                    status = "Saving the finished file…") }
                 admitted.publishing()
                 val publicationStarted = clockMs()
                 observer.event(input.task, Stage.PUBLISHING.name, "start")
                 currentCoroutineContext().ensureActive()
                 val saved = if (audio != null) publishAudio(file, audio.mimeType) else publish(file)
+                mutable.update { it.copy(saved = saved, status = "File published; recording the result…") }
                 persistPhase(input.recordId, TaskPhase.DONE, saved = saved)
                 observer.event(input.task, Stage.PUBLISHING.name, "ok", mapOf("uri" to saved.uri,
                     "bytes" to file.length().toString(), "mime" to saved.mimeType,
@@ -390,11 +400,11 @@ class HomeController(
                 val actual = if (width != null && height != null) "$width × $height (${minOf(width, height)}p short edge)"
                     else "dimensions not fully reported"
                 val ids = outcome.selectedFormatIds.joinToString("+").ifEmpty { "unreported" }
-                mutable.update { it.copy(phase = HomePhase.DONE, saved = saved,
+                mutable.update { it.copy(phase = HomePhase.DONE, saved = saved, publicationReviewRequired = false,
                     status = if (audio != null) "Saved. Original audio · ${audio.extension.uppercase(Locale.ROOT)} · format $ids."
                         else "Saved. Selected video: $actual · formats $ids.") }
                 // Success only; cancellation does not prove native descendants have released staging files.
-                directory.deleteRecursively()
+                if (!runCatching { directory.deleteRecursively() }.getOrDefault(false)) observer.event(input.task, "CLEANUP", "staging_retained")
             } catch (canceled: CancellationException) {
                 canceled(input.task, input.recordId)
                 throw canceled
@@ -459,12 +469,14 @@ class HomeController(
 
     private suspend fun finishTimeout(task: String, recordId: String?) {
         if (timeoutTask != task) return
-        persistTerminal(recordId, TaskPhase.PAUSED, ErrorCode.FGS_TIMEOUT.name)
+        persistTerminal(recordId, TaskPhase.PAUSED,
+            if (state.value.publicationReviewRequired) "PUBLICATION_INTERRUPTED" else ErrorCode.FGS_TIMEOUT.name)
         timeoutTask = null
         if (closed) return
         mutable.update { it.copy(phase = HomePhase.PAUSED, pauseReason = ErrorCode.FGS_TIMEOUT, progress = null,
             qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null,
-            status = "Paused: Android's background time limit was reached. Automatic rescheduling is not available yet. Find formats again to start a new attempt.") }
+            status = if (it.publicationReviewRequired) "Paused while saving. Check Downloads first, then explicitly review the interrupted save in the queue."
+                else "Paused: Android's background time limit was reached. Automatic rescheduling is not available yet. Find formats again to start a new attempt.") }
         observer.event(task, Stage.DOWNLOADING.name, "paused", mapOf(
             "code" to ErrorCode.FGS_TIMEOUT.name, "recovery" to "PAUSE_AND_RESCHEDULE", "rescheduled" to "false"))
     }
@@ -481,7 +493,9 @@ class HomeController(
     }
 
     private suspend fun canceled(task: String, recordId: String? = null) {
-        if (timeoutTask != task) persistTerminal(recordId, TaskPhase.CANCELED, ErrorCode.CANCELED.name)
+        if (timeoutTask != task) persistTerminal(recordId,
+            if (state.value.publicationReviewRequired) TaskPhase.PAUSED else TaskPhase.CANCELED,
+            if (state.value.publicationReviewRequired) "PUBLICATION_INTERRUPTED" else ErrorCode.CANCELED.name)
         if (!closed && timeoutTask != task) {
             observer.event(task, "ANY", "canceled")
             mutable.update { it.copy(phase = HomePhase.CANCELED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null,
@@ -491,7 +505,8 @@ class HomeController(
 
     private suspend fun fail(task: String?, throwable: Throwable, stage: Stage, recordId: String? = null) {
         val error = (throwable as? EngineFailure)?.error ?: DownloadError(ErrorCode.UNAVAILABLE, stage, detail = throwable.message)
-        persistTerminal(recordId, TaskPhase.FAILED, error.code.name)
+        persistTerminal(recordId, if (state.value.publicationReviewRequired) TaskPhase.PAUSED else TaskPhase.FAILED,
+            if (state.value.publicationReviewRequired) "PUBLICATION_INTERRUPTED" else error.code.name)
         if (closed) return
         observer.failure(task, error)
         discardPrepared()
@@ -500,7 +515,8 @@ class HomeController(
         observer.event(task, stage.name, "recovery", mapOf("code" to error.code.name, "contractAction" to recovery.contractAction,
             "freshResolveAvailable" to recovery.freshResolve.toString(), "automatic" to "false"))
         mutable.update { it.copy(phase = HomePhase.FAILED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null,
-            failureCode = error.code, status = recovery.explanation) }
+            failureCode = error.code, status = recovery.explanation + if (it.publicationReviewRequired)
+                " Saving may already have produced a file. Check Downloads before explicit interrupted-save review in the queue." else "") }
     }
 
     fun stageCurrentLink() {
@@ -557,6 +573,9 @@ class HomeController(
                     mutable.update { it.copy(phase = HomePhase.READY,
                         status = "Saving was interrupted. Check Downloads for an existing file before explicitly confirming a new attempt.") }; return@launch
                 }
+                if (acceptPublicationRetry && row.reason == "PUBLICATION_INTERRUPTED") {
+                    mutable.update { it.copy(publicationReviewRequired = false, failureCode = null) }
+                }
                 mutable.update { it.copy(phase = HomePhase.READY) }
                 if (row.sourceUrl == null) {
                     editUrl("")
@@ -584,9 +603,9 @@ class HomeController(
     }
 
     private suspend fun persistPhase(recordId: String?, phase: TaskPhase, selection: TaskSelection? = null,
-        title: String? = null, saved: PublishedMedia? = null) {
-        if (queue == null || recordId == null) return
-        queue.transition(recordId, phase, selection = selection, title = title,
+        title: String? = null, saved: PublishedMedia? = null): TaskRecord? {
+        if (queue == null || recordId == null) return null
+        return queue.transition(recordId, phase, selection = selection, title = title,
             savedUri = saved?.uri, savedName = saved?.name, savedMime = saved?.mimeType)
     }
 
@@ -594,13 +613,19 @@ class HomeController(
         if (queue == null || recordId == null) return@withContext
         try {
             val previous = queue.get(recordId) ?: return@withContext
+            if (previous.phase == phase && previous.reason == reason) return@withContext
             if (previous.phase != TaskPhase.DONE) queue.transition(recordId, phase, reason = reason)
         } catch (error: Exception) { observer.event(recordId, "QUEUE", "write_failed") }
     }
 
     private fun abandonChooser() {
-        val row = prepared?.recordId ?: return
-        scope.launch(start = CoroutineStart.UNDISPATCHED) { persistTerminal(row, TaskPhase.CANCELED, "CHOOSER_DISMISSED") }
+        val chooser = prepared ?: return
+        val row = chooser.recordId ?: return
+        val revision = chooser.chooserRevision ?: return
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { withContext(NonCancellable) {
+            try { queue?.dismissChooser(row, revision) }
+            catch (error: Exception) { observer.event(row, "QUEUE", "write_failed") }
+        } }
     }
 
     private fun checkStorage(report: StorageReport, task: String, stage: Stage) {

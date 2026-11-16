@@ -244,6 +244,46 @@ class HomeQueueTest {
         home.close()
     }
 
+    @Test fun publishedFileWithFailedDoneWriteRequiresExplicitFolderCheckBeforeAnyRetry() = runTest {
+        val broken = object : TaskStore by store {
+            override suspend fun replace(record: TaskRecord, expectedRevision: Long): Boolean {
+                if (record.phase == TaskPhase.DONE) error("synthetic history write failure")
+                return store.replace(record, expectedRevision)
+            }
+        }
+        val home = home(this, TaskRepository(broken))
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        home.download(); advanceUntilIdle()
+        assertEquals(1, publishes)
+        assertEquals("PUBLICATION_INTERRUPTED", store.rows.value.single().reason)
+        assertTrue(home.state.value.publicationReviewRequired)
+        assertNotNull(home.state.value.saved)
+        home.resolve(); advanceUntilIdle()
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals(1, fake.resolveCalls)
+        home.reviewTask("task-1", acceptPublicationRetry = true); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        assertEquals(1, downloads)
+        home.close()
+    }
+
+    @Test fun foregroundTimeoutWhileSavingKeepsPublicationUncertaintyAndBlocksDirectResolve() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        holdPublish = true
+        home.download(); runCurrent()
+        home.onForegroundTimeout("task-1") {}
+        advanceUntilIdle()
+        assertEquals(HomePhase.PAUSED, home.state.value.phase)
+        assertEquals("PUBLICATION_INTERRUPTED", store.rows.value.single().reason)
+        assertTrue(home.state.value.publicationReviewRequired)
+        home.resolve(); advanceUntilIdle()
+        assertEquals(1, fake.resolveCalls)
+        home.close()
+    }
+
     @Test fun failedDatabaseWritePreventsEngineAndPublicationWork() = runTest {
         val broken = object : TaskStore by store {
             override suspend fun insert(record: TaskRecord) { throw IllegalStateException("synthetic DB full") }

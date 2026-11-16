@@ -109,7 +109,7 @@ fun HomeScreen(
                         isError = state.inputError != null,
                         supportingText = { Text(state.inputError ?: "One link at a time. No command options.") })
                     OutlinedButton(onClick = onPaste, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text("Paste from clipboard") }
-                    Button(onClick = findFormats, enabled = enabled && state.engineReady &&
+                    Button(onClick = findFormats, enabled = enabled && state.engineReady && !state.publicationReviewRequired &&
                         (state.failureCode?.let { ErrorRecovery.forCode(it).freshResolve } != false),
                         modifier = Modifier.fillMaxWidth()) {
                         Text(if (state.phase == HomePhase.CHOOSING) "Refresh formats" else "Find formats")
@@ -152,7 +152,7 @@ fun HomeScreen(
                     Text(state.status, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium)
                     state.failureCode?.let { code ->
                         Text("${code.name} · ${ErrorRecovery.forCode(code).contractAction}", style = MaterialTheme.typography.bodySmall)
-                        if (ErrorRecovery.forCode(code).freshResolve) OutlinedButton(onClick = findFormats, enabled = enabled,
+                        if (ErrorRecovery.forCode(code).freshResolve && !state.publicationReviewRequired) OutlinedButton(onClick = findFormats, enabled = enabled,
                             modifier = Modifier.fillMaxWidth()) { Text("Review fresh formats · confirm download again") }
                         else OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Read local diagnostics") }
                     }
