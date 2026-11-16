@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
                     else home.receiveShared("")
                 }, onResolve = {
                     logger.action(UserAction.FIND_FORMATS, ui.phase.name)
-                    if (!state.busy) home.resolve()
+                    if (!state.busy) home.resolve(forceRefresh = home.state.value.phase == io.github.muzammilawan.clipharbor.feature.home.HomePhase.CHOOSING)
                 }, onSelectQuality = {
                     logger.action(UserAction.SELECT_QUALITY, ui.phase.name, qualityPixels = it.pixels)
                     home.selectQuality(it)

@@ -147,6 +147,66 @@ class HomeControllerTest {
         home.close()
     }
 
+    @Test fun sameLinkBeforeDownloadReusesChoicesWithoutReextractingButRefreshDoesNot() = runTest {
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.selectQuality(VideoQuality.P720)
+        home.editUrl(url)
+        home.resolve(); advanceUntilIdle()
+        assertEquals(1, fake.resolveCalls)
+        assertEquals(VideoQuality.P720, home.state.value.selectedQuality)
+        assertNull(request)
+        home.resolve(forceRefresh = true); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        assertThrows(IllegalStateException::class.java) {
+            snapshot.withFile(url, "task-1", temporary.newFolder()) { error("old input retained") }
+        }
+        home.close()
+    }
+
+    @Test fun shareOfSameLinkKeepsPrivateChooserButNeverReusesConsumedDownload() = runTest {
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        home.receiveShared(url); home.resolve(); advanceUntilIdle()
+        assertEquals(1, fake.resolveCalls)
+        home.download(); advanceUntilIdle()
+        home.resolve(); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        assertEquals(HomePhase.CHOOSING, home.state.value.phase)
+        home.close()
+    }
+
+    @Test fun expiredOrClosedSnapshotCannotServeSameLinkCache() = runTest {
+        val home = controller(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        snapshot.close()
+        home.resolve(); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        now = ResolvedSnapshot.MAX_AGE_MS + 1
+        home.resolve(); advanceUntilIdle()
+        assertEquals(3, fake.resolveCalls)
+        home.close()
+    }
+
+    @Test fun resolveTimingLogsAcceptOnlyKnownNonnegativeNumericFields() = runTest {
+        val events = mutableListOf<Map<String, String>>()
+        fake.resolveResult = Result.success(FakeEngine.SAMPLE_RESOLVE.copy(timingFields = mapOf(
+            "initMs" to 1L, "subprocessMs" to 42_000L, "metadataReplayMs" to -1L, "Cookie: secret" to 9L)))
+        val home = HomeController(engine, this, temporary.newFolder(), { error("must not publish") },
+            observer = object : HomeObserver {
+                override fun event(task: String?, stage: String, event: String, fields: Map<String, String>) {
+                    if (event == "timings") events += fields
+                }
+            }, newTaskId = { "task-${++serial}" })
+        home.initialize(); advanceUntilIdle()
+        home.editUrl(url); home.resolve(); advanceUntilIdle()
+        assertEquals(listOf(mapOf("initMs" to "1", "subprocessMs" to "42000")), events)
+        home.close()
+    }
+
     @Test fun expiredChooserRefreshesButRequiresDownloadConfirmationAgain() = runTest {
         val home = controller(this)
         home.initialize(); advanceUntilIdle()

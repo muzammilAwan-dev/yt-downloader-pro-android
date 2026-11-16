@@ -110,6 +110,7 @@ class HomeController(
 
     fun editUrl(text: String) {
         if (closed || state.value.busy) return
+        if (text == state.value.url && state.value.phase == HomePhase.CHOOSING) return
         discardPrepared()
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
             title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null,
@@ -121,6 +122,7 @@ class HomeController(
         when (val input = MediaEntry.shared(text)) {
             is MediaEntry.Input.Invalid -> mutable.update { it.copy(inputError = input.message) }
             is MediaEntry.Input.Link -> {
+                if (input.url == state.value.url && state.value.phase == HomePhase.CHOOSING && reusable(input.url)) return
                 if (state.value.busy && state.value.phase != HomePhase.INITIALIZING) {
                     mutable.update { it.copy(pendingUrl = input.url) }
                 } else {
@@ -141,7 +143,7 @@ class HomeController(
         editUrl(url)
     }
 
-    fun resolve() {
+    fun resolve(forceRefresh: Boolean = false) {
         if (closed || state.value.busy || !state.value.engineReady) return
         val input = MediaEntry.pasted(state.value.url)
         if (input is MediaEntry.Input.Invalid) {
@@ -149,6 +151,11 @@ class HomeController(
             return
         }
         val url = (input as MediaEntry.Input.Link).url
+        if (!forceRefresh && reusable(url)) {
+            observer.event(prepared?.task, Stage.RESOLVING.name, "chooser_reuse", mapOf("ms" to "0", "network" to "false"))
+            mutable.update { it.copy(status = "Using this task's recently resolved formats. Refresh explicitly for a new site check.") }
+            return
+        }
         discardPrepared()
         val task = newTaskId()
         activeTask = task
@@ -164,6 +171,8 @@ class HomeController(
                 val outcome = engine.resolveForTask(url, task).getOrThrow()
                 snapshot = outcome.resolvedSnapshot
                 currentCoroutineContext().ensureActive()
+                val timings = outcome.timingFields.filter { it.key in setOf("initMs", "subprocessMs", "metadataReplayMs") && it.value >= 0 }
+                if (timings.isNotEmpty()) observer.event(task, Stage.RESOLVING.name, "timings", timings.mapValues { it.value.toString() })
                 outcome.debugTail.takeLast(200).forEach { observer.line(task, Stage.RESOLVING.name, it) }
                 val qualities = VideoQualities.choices(outcome.media.formats)
                 val plans = qualities.filter { it.available }.associate { choice ->
@@ -371,6 +380,12 @@ class HomeController(
     private fun discardPrepared() {
         prepared?.snapshot?.close()
         prepared = null
+    }
+
+    private fun reusable(url: String): Boolean {
+        val input = prepared ?: return false
+        return state.value.phase == HomePhase.CHOOSING && input.url == url &&
+            clockMs() - input.createdAt in 0..ResolvedSnapshot.MAX_AGE_MS && input.snapshot?.availableFor(url, input.task) == true
     }
 
     private fun canceled(task: String) {

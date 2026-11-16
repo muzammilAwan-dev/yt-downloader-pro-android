@@ -121,6 +121,8 @@ data class ResolveOutcome(
     val engineInfo: EngineInfo,
     val debugTail: List<String>,
     val resolvedSnapshot: ResolvedSnapshot? = null,
+    /** Monotonic adapter timings, not an attribution of subprocess time to network vs JS. */
+    val timingFields: Map<String, Long> = emptyMap(),
 )
 
 /** Stages from `contracts/errors.json`. */

@@ -134,7 +134,9 @@ class YoutubeDlEngine(private val context: Context) : Engine {
     private suspend fun resolveInternal(url: String, processId: String?): Result<ResolveOutcome> = withContext(Dispatchers.IO) {
         try {
             requireHttpsSource(url)
+            val started = System.nanoTime()
             ensureInitialized()
+            val initializedAt = System.nanoTime()
             val response = execution.run(processId) { internalId ->
                 runner.execute(
                     EngineCommand(
@@ -144,6 +146,7 @@ class YoutubeDlEngine(private val context: Context) : Engine {
                     ), internalId, null,
                 )
             }
+            val processEndedAt = System.nanoTime()
             val stderr = response.err
             if (response.exitCode != 0) {
                 throw EngineFailure(
@@ -181,6 +184,11 @@ class YoutubeDlEngine(private val context: Context) : Engine {
                     engineInfo = cached,
                     debugTail = stderr.lines().filter { it.contains("[debug]") }.takeLast(200).map(LogRedactor::redactLine),
                     resolvedSnapshot = snapshot,
+                    timingFields = mapOf(
+                        "initMs" to ((initializedAt - started) / 1_000_000).coerceAtLeast(0),
+                        "subprocessMs" to ((processEndedAt - initializedAt) / 1_000_000).coerceAtLeast(0),
+                        "metadataReplayMs" to ((System.nanoTime() - processEndedAt) / 1_000_000).coerceAtLeast(0),
+                    ),
                 ),
             )
         } catch (cancellation: CancellationException) {

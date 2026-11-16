@@ -1397,3 +1397,9 @@ Tests-first bounded AudioPresentation: 22 variants reduce to 2 container/codec q
 Original Compose picker defaults to video, switches exclusively through existing Home selectors, keeps variants/resolutions in 340dp viewport and Download outside it. No planner/runtime/icon/permission changes.
 Initial wrapper run hit harness 120s timeout after tests; retry BUILD SUCCESSFUL in 1m 53s, tests up-to-date from initial execution. XML: 287 total / 286 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. UI/device/a11y unverified.
 Continue full Phase 1; no intermediate APK or phone-install request.
+
+### Bounded resolve reuse and extraction timing — 16 Nov 2026
+4 new fake-Engine tests: unchanged/shared same link retains private chooser before consumption; explicit Refresh closes/re-extracts; expiry/closed/consumed input cannot be reused; only allowlisted nonnegative numeric timing fields logged.
+Snapshot availability does not expose payload, reset age, copy or consume replay. UI Refresh explicitly bypasses reuse. Download and terminal/changed-link paths retain single-use cleanup fences.
+Adapter records initialization/subprocess/metadata-replay durations separately; subprocess still includes network/QuickJS, no attribution or live speedup claim. Repeat after completed download intentionally re-extracts.
+Wrapper BUILD SUCCESSFUL in 2m 48s; 291 total / 290 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. No APK/device change; continue Phase 1 Room and recovery integration.

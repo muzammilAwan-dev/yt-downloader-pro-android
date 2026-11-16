@@ -19,6 +19,11 @@ class ResolvedSnapshot internal constructor(
     }
     private val createdAt = clockMs()
 
+    /** Non-consuming eligibility check; never exposes payload or extends the original lifetime. */
+    @Synchronized
+    fun availableFor(url: String, processId: String): Boolean = payload != null && sourceUrl == url &&
+        taskId == processId && clockMs() - createdAt in 0..MAX_AGE_MS
+
     /** Runs inside the blocking engine worker; deletes the input only after that worker releases it. */
     fun <T> withFile(url: String, processId: String, directory: File, block: (File) -> T): T {
         val bytes = synchronized(this) {

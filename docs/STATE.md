@@ -59,6 +59,10 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Current resolve-reuse/timing increment: **BUILD SUCCESSFUL in 2m 48s**, 291 total / 290 pass / 1 skip / 0 failures/errors;
+lint 0 errors / 7 known warnings. 4 new fake-Engine regressions cover same-link reuse, explicit refresh, expiry/closed/consumed input,
+and timing allowlist. No live extraction speedup measured; repeat extraction after download intentionally stays fresh. APK remains e37686c.
+Historical tester/helper checks below:
 Phone-free helper final default run: **BUILD SUCCESSFUL in 3m 44s**, 24 stdlib regressions and 96 video / 9 exact-audio selector cases passed.
 Report `C:\Users\Malku\AppData\Local\Temp\opencode\ytdlp-phone-free-kvjj2y5b\summary.md`: PASS_HOST_CHECKS_DEVICE_REQUIRED;
 JSON device_verification=NOT_RUN, runtime_copy=REMOVED; directory contains only the two reports. No installs or APK changes.
@@ -82,7 +86,8 @@ Owner cadence supersedes the previous phone-report/new-feature-area stop (R75). 
 Passing CLI checks is not phone verification. Existing phone checks remain deferred; do not claim overall reliability/playback.
 - [x] Compact mode-specific picker: video first, at most 3 source-backed container/codec quick audio rows (+ current variant),
         explicit all-stream access and 340dp scrolling viewport. 3 new host tests pass; visual/a11y/device checks deferred.
-- [ ] Resolve performance: private bounded same-link reuse before download, explicit refresh, detailed timing; no claimed live speedup without evidence.
+- [x] Resolve performance foundation: bounded task-private same-link chooser reuse before consumption, explicit Refresh always re-extracts;
+        init/subprocess/metadata-replay timing allowlist. No live extraction speedup measured; consumed snapshots never cached/replayed twice.
 - [x] Owner-approved temporary/removable phone-free verifier: stdlib regressions, fresh offline tests/lint, APK/source/signing/payload
         checks and synthetic selectors; default and optional-baseline runs passed. Current tester remains `e37686c`; no phone/device test performed.
 - [x] Review and commit owner agent/config/docs edits plus supplied `74ce7cf` phone evidence; no new app feature (15 Nov 2026).
