@@ -88,11 +88,7 @@ class DownloadSession(
     @Volatile private var closed = false
 
     val home = HomeController(engine, scope, File(appContext.filesDir, "staging"), publish = { file ->
-        val mime = mimeTypeFor(file)
-        val uri = withContext(Dispatchers.IO) { publisher.publish(file, mime).getOrThrow() }
-        PublishedMedia(uri.toString(), file.name,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Downloads/${AppInfo.DISPLAY_NAME}"
-            else "App-specific downloads (removed if the app is uninstalled)", mime)
+        publishMedia(file, mimeTypeFor(file))
     }, observer = object : HomeObserver {
         override fun event(task: String?, stage: String, event: String, fields: Map<String, String>) {
             if (closed) return
@@ -107,7 +103,7 @@ class DownloadSession(
             logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
                 " V task=$task stage=$stage event=ytdlp " + line)
         }
-    }, foreground = foreground)
+    }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) })
 
     init { logger.event('I', "session_start", stage = "APP") }
 
@@ -154,6 +150,13 @@ class DownloadSession(
             logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
                 " E task=$taskId stage=${error.stage} event=ytdlp " + line)
         }
+    }
+
+    private suspend fun publishMedia(file: File, mime: String): PublishedMedia {
+        val uri = withContext(Dispatchers.IO) { publisher.publish(file, mime).getOrThrow() }
+        return PublishedMedia(uri.toString(), file.name,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Downloads/${AppInfo.DISPLAY_NAME}"
+            else "App-specific downloads (removed if the app is uninstalled)", mime)
     }
 
     private fun mimeTypeFor(file: File): String = when (file.extension.lowercase()) {

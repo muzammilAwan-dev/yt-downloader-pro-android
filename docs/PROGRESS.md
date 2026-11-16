@@ -1347,3 +1347,10 @@ Requires ordinary ID selection plus explicit vcodec=none/acodec evidence, no vid
 Six new offline runner/evidence tests: initial JUnit non-Unit signature caused initializationError (BUILD FAILED in 1m 23s), corrected; then 4 fail / 2 pass, BUILD FAILED in 29s, before implementation. Full checks BUILD SUCCESSFUL in 2m 13s; 268 total / 267 passed / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
 Verified bundled 2026.10.26 CLI with synthetic --load-info-json/--skip-download and socket connections blocked emitted CLIPHARBOR_SELECTED:140/NA/NA and CLIPHARBOR_AUDIO:140/none/mp4a.40.2; no network/download.
 Tests cover replay cleanup, wrong/missing/muxed evidence, both-plan rejection, stale marker reset, original WebM and task cancellation; still no Home/UI/audio publication hookup or stamped APK. Continue without stopping at this intermediate commit.
+
+### Original audio Home + publication — 16 Nov 2026
+Nine fake-Engine tests first reproduced 8 fail / 1 pass, BUILD FAILED in 1m 46s; implementation then passed 9/9, BUILD SUCCESSFUL in 1m 6s. Full run caught log-field ordering (BUILD FAILED in 38s); restoring old formats/ms prefix yields BUILD SUCCESSFUL in 3m 21s, 277 total / 276 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Home retains task-private video/audio plans and exclusive selection; audio-only catalogues work without dimensions. Selecting a row never starts work; expired choices re-resolve and require another Download confirmation.
+Audio reuses the foreground admission, progress, Cancel, timeout and saving commit boundary; final ID/container/no-video-dimensions checked before audio-MIME publication. WebM publishes as audio/webm via the existing MediaStore publisher.
+Editing/sharing/resolving/failure/Cancel/timeout clears audio choices; resolve logs reported max short-edge, visible resolutions and audio count, plus selection/mediaMode events without raw URLs/JSON/notes.
+No UI hookup/new APK yet, no permissions/runtime/planner/icon/dependencies changed. Continue Compose wiring and stamped tester; phone playback/background checks remain open.

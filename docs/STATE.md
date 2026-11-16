@@ -50,13 +50,14 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 2m 13s** (original-audio runner/evidence).
-Fresh reports: 268 total / 267 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Six runner/evidence tests ran 4 fail / 2 pass, **BUILD FAILED in 29s**, after a corrected JUnit signature error; all pass after implementation.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 3m 21s** (original-audio Home/publication).
+Fresh reports: 277 total / 276 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Nine Home tests first ran 8 fail / 1 pass, **BUILD FAILED in 1m 46s**; then 9/9 pass in 1m 6s. Full run caught log field order
+regression (BUILD FAILED in 38s); old formats/ms prefix restored, full tests/lint green above.
 Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
 No new APK: `dist/app-debug.apk` remains stamped `f96194e`, 70,342,176 bytes; SHA-256 rechecked unchanged
 `9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`. Prior helper checks BUILD SUCCESSFUL in 2m 3s; APK in 32s.
-Video runner/planner/icon/dependencies/permissions unchanged; audio branch uses exact ID + explicit codec evidence; Home/UI wiring not done, phone-untested.
+Video runner/planner/icon/dependencies/permissions unchanged; Home audio/save routing CLI-tested; Compose wiring next, phone-untested.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
 Tester `f96194e`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `6bb477b`, no new permissions.
 
@@ -82,7 +83,7 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [ ] Next owner priority: separate source-backed audio-only choices (before Room). MP3 conversion options must be labelled separately from source formats.
         Supplied screenshots are behavior references only; do not copy code/assets. No browser/login/subtitle work.
         Owner now requests continuing through a verified stamped APK, not stopping after intermediate commits (16 Nov).
-        Typed original-audio choices/plan and runner/evidence CLI-tested; next Home/publication, UI wiring, stamped tester.
+        Typed original-audio choices/plan, runner/evidence and Home/publication CLI-tested; next UI wiring, stamped tester.
         Audio exact-ID selector emits no merge/transcode flags; codec/ID/dimension/extension evidence must agree. No MP3 conversions in this tester.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.
