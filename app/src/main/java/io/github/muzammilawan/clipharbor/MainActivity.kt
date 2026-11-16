@@ -157,6 +157,9 @@ class MainActivity : ComponentActivity() {
                 }, onSelectQuality = {
                     logger.action(UserAction.SELECT_QUALITY, ui.phase.name, qualityPixels = it.pixels)
                     home.selectQuality(it)
+                }, onSelectAudio = {
+                    logger.action(UserAction.SELECT_AUDIO, ui.phase.name)
+                    home.selectAudio(it)
                 }, onDownload = {
                     logger.action(UserAction.DOWNLOAD, ui.phase.name, qualityPixels = ui.selectedQuality?.pixels)
                     if (!state.busy) home.download()

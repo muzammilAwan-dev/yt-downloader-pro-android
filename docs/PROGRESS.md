@@ -1360,3 +1360,10 @@ Pre-tester review found yt-dlp's NA codec placeholder and malformed later select
 Initial test compile failed in 43s because EngineResponse is not a data class; corrected constructor, then 2 fail / 6 pass, BUILD FAILED in 1m 13s before implementation.
 Audio evidence now rejects NA and is invalidated at the start of every explicit selection marker, even malformed. Existing video selection behavior unchanged; full checks BUILD SUCCESSFUL in 2m 19s, 279 total / 278 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings.
 R74 records original exact-selector/CLI offline smokes and official audio/webm guidance. No new runtime/dependency/permission/APK; continue picker integration then stamped tester.
+
+### Separate original audio picker integration — 16 Nov 2026
+Home now renders Audio only and Video + audio sections in one exclusive radio group, original format ID/size labels, empty-catalogue explanations and a matching explicit Download button. Unavailable video rows remain hidden.
+Activity connects audio selection with a fixed typed UI action; notifications use media-neutral text, audio progress promises saving rather than merging. Existing video picker/planner/foreground/save/log flow retained.
+Five state/label safety tests passed before UI hookup, BUILD SUCCESSFUL in 36s; full tests/lint BUILD SUCCESSFUL in 3m 14s, 284 total / 283 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 known warnings. Covers both modes, unknown/conflicting/missing selections, all non-choosing phases and honest metadata.
+Verified payload WebM synthetic replay CLI emitted CLIPHARBOR_SELECTED:251/NA/NA and CLIPHARBOR_AUDIO:251/none/opus; socket connections blocked, --skip-download, no extraction/media/native run.
+No Compose instrumentation/device run; scrolling, radio interaction, actual audio playback/MIME resolution and Android service behavior remain phone-untested. Continue committed stamp + checked helper build, then hand off logs sequence.

@@ -69,6 +69,7 @@ fun HomeScreen(
     onPaste: () -> Unit,
     onResolve: () -> Unit,
     onSelectQuality: (VideoQuality) -> Unit,
+    onSelectAudio: (String) -> Unit,
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onRetryEngine: () -> Unit,
@@ -115,27 +116,51 @@ fun HomeScreen(
             if (state.phase == HomePhase.CHOOSING) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("2 · Choose video quality", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
+                        Text("2 · Choose what to save", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
                         Text(state.title.orEmpty(), style = MaterialTheme.typography.titleSmall)
-                        Text("Video + audio · Best reported resolution first; H.264/AAC preferred.", style = MaterialTheme.typography.bodySmall)
+                        // One radio group across both sections: choosing audio clears video and vice versa.
                         Column(Modifier.selectableGroup()) {
-                            VideoQualities.visibleChoices(state.qualities).forEach { choice ->
-                                val canChoose = enabled && choice.available
+                            Text("Audio only", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
+                            Text("Original reported streams · no conversion or invented MP3 bitrate choices.", style = MaterialTheme.typography.bodySmall)
+                            if (state.audioChoices.isEmpty()) {
+                                Text("No supported original audio-only streams were reported.", style = MaterialTheme.typography.bodySmall)
+                            }
+                            state.audioChoices.forEach { choice ->
                                 Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).selectable(
-                                    selected = state.selectedQuality == choice.quality, enabled = canChoose,
-                                    role = Role.RadioButton, onClick = { onSelectQuality(choice.quality) }),
+                                    selected = state.selectedAudioFormatId == choice.formatId, enabled = enabled,
+                                    role = Role.RadioButton, onClick = { onSelectAudio(choice.formatId) }),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    RadioButton(selected = state.selectedQuality == choice.quality, onClick = null, enabled = canChoose)
+                                    RadioButton(selected = state.selectedAudioFormatId == choice.formatId, onClick = null, enabled = enabled)
                                     Column(Modifier.weight(1f).padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
                                         Text(choice.label, style = MaterialTheme.typography.titleSmall)
                                         Text(choice.detail, style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
+                            Text("Video + audio", Modifier.padding(top = 16.dp).semantics { heading() }, style = MaterialTheme.typography.titleMedium)
+                            val visibleVideo = VideoQualities.visibleChoices(state.qualities)
+                            if (visibleVideo.isEmpty()) {
+                                Text("No selectable video + audio qualities were reported.", style = MaterialTheme.typography.bodySmall)
+                            } else {
+                                Text("Best reported resolution first; H.264/AAC preferred.", style = MaterialTheme.typography.bodySmall)
+                                visibleVideo.forEach { choice ->
+                                    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).selectable(
+                                        selected = state.selectedQuality == choice.quality, enabled = enabled,
+                                        role = Role.RadioButton, onClick = { onSelectQuality(choice.quality) }),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        RadioButton(selected = state.selectedQuality == choice.quality, onClick = null, enabled = enabled)
+                                        Column(Modifier.weight(1f).padding(start = 12.dp, top = 8.dp, bottom = 8.dp)) {
+                                            Text(choice.label, style = MaterialTheme.typography.titleSmall)
+                                            Text(choice.detail, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    }
+                                }
+                                Text("Only qualities in the reported formats are shown. Labels describe the shorter edge, including portrait video. No upscaling; a lower resolution may be used. The saved result reports selected dimensions. High-resolution merges use MKV.",
+                                    style = MaterialTheme.typography.bodySmall)
+                            }
                         }
-                        Text("Only qualities in the reported formats are shown. Labels describe the shorter edge, including portrait video. No upscaling; a lower resolution may be used. The saved result reports selected dimensions. High-resolution merges use MKV.",
-                            style = MaterialTheme.typography.bodySmall)
                         Text("Optional notifications show progress and Cancel while downloading. Cancel is unavailable once saving begins. Downloads also work without notification permission.",
                             style = MaterialTheme.typography.bodySmall)
                         when (notificationAccess) {
@@ -150,8 +175,8 @@ fun HomeScreen(
                             NotificationAccess.DISABLED -> Text("Download notifications are turned off in Android settings. Use Home for progress and Cancel.",
                                 style = MaterialTheme.typography.bodySmall)
                         }
-                        Button(onClick = onDownload, enabled = enabled && state.selectedQuality != null,
-                            modifier = Modifier.fillMaxWidth()) { Text("Download video + audio") }
+                        Button(onClick = onDownload, enabled = enabled && state.canDownload,
+                            modifier = Modifier.fillMaxWidth()) { Text(state.downloadLabel) }
                         OutlinedButton(onClick = onCancel, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text("Dismiss selection") }
                     }
                 }
@@ -169,7 +194,8 @@ fun HomeScreen(
                         val percent = state.progress
                         if (state.phase == HomePhase.DOWNLOADING && percent != null) {
                             LinearProgressIndicator(progress = { percent / 100f }, modifier = Modifier.fillMaxWidth())
-                            Text("Current stream: $percent% · merging and saving follow", style = MaterialTheme.typography.bodySmall)
+                            Text(if (state.selectedAudioFormatId != null) "Original audio: $percent% · saving follows"
+                                else "Current stream: $percent% · merging and saving follow", style = MaterialTheme.typography.bodySmall)
                         } else LinearProgressIndicator(Modifier.fillMaxWidth())
                     }
                     if (state.phase in setOf(HomePhase.RESOLVING, HomePhase.DOWNLOADING)) {

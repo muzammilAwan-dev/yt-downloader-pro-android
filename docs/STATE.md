@@ -50,14 +50,14 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
-`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 2m 19s** (audio evidence fail-closed edges).
-Fresh reports: 279 total / 278 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
-Two new runner regressions first ran 2 fail / 6 pass, **BUILD FAILED in 1m 13s**, after corrected test constructor compile error.
-NA codec placeholders and malformed later selection now invalidate audio evidence; old video selection behavior unchanged.
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain`: **BUILD SUCCESSFUL in 3m 14s** (separate original audio picker).
+Fresh reports: 284 total / 283 passed / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings.
+Five state/label safety tests passed before UI wiring, BUILD SUCCESSFUL in 36s; existing Home/audio/runner/replay/foreground/redaction tests green.
+Offline WebM synthetic replay CLI emitted 251/NA/NA and 251/none/opus with socket connections blocked; no media downloaded.
 Shell-only non-daemon setting; no persistent/project workaround. Existing fake-Engine Home, startup, installer, replay, foreground and redaction tests green.
 No new APK: `dist/app-debug.apk` remains stamped `f96194e`, 70,342,176 bytes; SHA-256 rechecked unchanged
 `9CECFB27BF7C0F645DD03CAA5ACDACFD54B9E5D499904DBFCD0AA50DF9F8F495`. Prior helper checks BUILD SUCCESSFUL in 2m 3s; APK in 32s.
-Video runner/planner/icon/dependencies/permissions unchanged; Home audio/save routing CLI-tested; Compose wiring next, phone-untested.
+Video planner/icon/dependencies/permissions unchanged; separate audio UI/Home/save routing CLI-tested; stamped helper build next, phone-untested.
 OpenCode runtime/fallback checks remain untested; previous full handoff checker was blocked by absent PyYAML (not installed).
 Tester `f96194e`: minSdk 24 / target 37 / arm64; same signing certificate/native entries/manifest as `6bb477b`, no new permissions.
 
@@ -83,7 +83,7 @@ Passing CLI checks is not phone verification. Existing phone checks and the majo
 - [ ] Next owner priority: separate source-backed audio-only choices (before Room). MP3 conversion options must be labelled separately from source formats.
         Supplied screenshots are behavior references only; do not copy code/assets. No browser/login/subtitle work.
         Owner now requests continuing through a verified stamped APK, not stopping after intermediate commits (16 Nov).
-        Typed original-audio choices/plan, runner/evidence and Home/publication CLI-tested; next UI wiring, stamped tester.
+        Typed original-audio choices/plan, runner/evidence, Home/publication and separate UI CLI-tested; next stamped tester.
         Audio exact-ID selector emits no merge/transcode flags; codec/ID/dimension/extension evidence must agree. No MP3 conversions in this tester.
 - [ ] 2. Durable Room queue (staged tasks, survives process death); Home observes it. Add Room only with the version checked.
 - [ ] 3. Error and retry UI driven by `contracts/errors.json`; pre-flight free-space check; re-resolve on 403.

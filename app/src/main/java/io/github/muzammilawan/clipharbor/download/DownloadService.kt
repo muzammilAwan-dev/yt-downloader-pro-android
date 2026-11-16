@@ -108,7 +108,7 @@ class DownloadService : Service() {
             .setContentText(when {
                 saving -> "Saving the finished file…"
                 cancelling -> "Canceling. Waiting for task cleanup…"
-                else -> "Downloading video and audio…"
+                else -> "Downloading selected media…"
             })
             .setContentIntent(open)
             .setOngoing(true)
