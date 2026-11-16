@@ -24,12 +24,15 @@ class DownloadEvidence {
                 }
             }
             text.startsWith(SELECTION_MARKER) -> {
-                // Even a malformed later selection cannot reuse earlier audio-only evidence.
+                // A malformed later selection invalidates every previous selection claim.
                 selectedAudioId = null
+                selectedIds = emptyList()
+                selectedWidth = null
+                selectedHeight = null
                 val fields = text.removePrefix(SELECTION_MARKER).split('\t')
                 if (fields.size !in 2..3) return
                 val ids = parseIds(fields[0]) ?: return
-                if (fields.size == 3 && fields.drop(1).any { it != "NA" && it.toIntOrNull()?.let { n -> n > 0 } != true }) return
+                if (fields.drop(1).any { it != "NA" && it.toIntOrNull()?.let { n -> n > 0 } != true }) return
                 selectedIds = ids
                 selectedAudioId = null
                 selectedWidth = if (fields.size == 3) fields[1].toIntOrNull()?.takeIf { it > 0 } else null

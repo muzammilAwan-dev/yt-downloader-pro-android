@@ -59,6 +59,9 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
 
 ## Last recorded check — 16 Nov 2026
+Final evidence/task-scope hardening: **BUILD SUCCESSFUL in 1m 8s**, 338 total / 337 pass / 1 skip; lint 0 errors / 7 warnings.
+4 added regressions pass: malformed later evidence clears IDs/dimensions, uncertain-save stage/share fences, recovered review guard,
+and known URI retention through timeout. Service-loss regression now asserts paused uncertainty, not canceled/unsaved certainty.
 Save/recovery fences: **BUILD SUCCESSFUL in 2m 17s**, 334 total / 333 pass / 1 skip; lint 0 errors / 7 warnings.
 3 regressions pass: failed DONE write retains published URI, saving timeout requires explicit folder check, stale chooser cleanup cannot
 cancel a newer revision. 24 helper regressions / 4 exported-schema tests and 20 socket-blocked exact selectors passed. No device result.

@@ -68,7 +68,7 @@ data class HomeState(
     val failureCode: ErrorCode? = null,
     val publicationReviewRequired: Boolean = false,
 ) {
-    val canDownload: Boolean get() = phase == HomePhase.CHOOSING && engineReady &&
+    val canDownload: Boolean get() = phase == HomePhase.CHOOSING && engineReady && !publicationReviewRequired &&
         listOf(selectedQuality, selectedAudioFormatId, selectedExactVideoId).count { it != null } == 1 &&
         (qualities.any { it.available && it.quality == selectedQuality } || audioChoices.any { it.formatId == selectedAudioFormatId } ||
             exactVideoChoices.any { it.formatId == selectedExactVideoId })
@@ -170,6 +170,7 @@ class HomeController(
                     mutable.update { it.copy(url = input.url, inputError = null, title = null,
                         qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null,
                         exactVideoChoices = emptyList(), selectedExactVideoId = null, saved = null, pauseReason = null, failureCode = null,
+                        storageReport = null, publicationReviewRequired = false,
                         phase = if (it.engineReady) HomePhase.READY else it.phase,
                         status = "Shared link ready. Review it before finding formats.") }
                 }
@@ -474,7 +475,9 @@ class HomeController(
         timeoutTask = null
         if (closed) return
         mutable.update { it.copy(phase = HomePhase.PAUSED, pauseReason = ErrorCode.FGS_TIMEOUT, progress = null,
-            qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null, saved = null,
+            qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null,
+            exactVideoChoices = emptyList(), selectedExactVideoId = null,
+            saved = if (it.publicationReviewRequired) it.saved else null,
             status = if (it.publicationReviewRequired) "Paused while saving. Check Downloads first, then explicitly review the interrupted save in the queue."
                 else "Paused: Android's background time limit was reached. Automatic rescheduling is not available yet. Find formats again to start a new attempt.") }
         observer.event(task, Stage.DOWNLOADING.name, "paused", mapOf(
@@ -498,8 +501,10 @@ class HomeController(
             if (state.value.publicationReviewRequired) "PUBLICATION_INTERRUPTED" else ErrorCode.CANCELED.name)
         if (!closed && timeoutTask != task) {
             observer.event(task, "ANY", "canceled")
-            mutable.update { it.copy(phase = HomePhase.CANCELED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null,
-                status = "Canceled. Native process cleanup is best-effort.") }
+            mutable.update { it.copy(phase = if (it.publicationReviewRequired) HomePhase.PAUSED else HomePhase.CANCELED,
+                progress = null, audioChoices = emptyList(), selectedAudioFormatId = null,
+                status = if (it.publicationReviewRequired) "Saving was interrupted. Check Downloads first, then explicitly review the interrupted save in the queue."
+                    else "Canceled. Native process cleanup is best-effort.") }
         }
     }
 
@@ -522,6 +527,7 @@ class HomeController(
     fun stageCurrentLink() {
         val repository = queue ?: return
         if (closed || state.value.busy || job?.isActive == true) return
+        if (state.value.publicationReviewRequired) return
         val source = MediaEntry.pasted(state.value.url)
         if (source is MediaEntry.Input.Invalid) {
             mutable.update { it.copy(inputError = source.message) }; return
@@ -570,7 +576,9 @@ class HomeController(
                     }
                 }
                 if (row.reason == "PUBLICATION_INTERRUPTED" && !acceptPublicationRetry) {
-                    mutable.update { it.copy(phase = HomePhase.READY,
+                    currentRecord = row.id
+                    mutable.update { it.copy(phase = HomePhase.READY, publicationReviewRequired = true,
+                        url = row.sourceUrl ?: "", failureCode = null,
                         status = "Saving was interrupted. Check Downloads for an existing file before explicitly confirming a new attempt.") }; return@launch
                 }
                 if (acceptPublicationRetry && row.reason == "PUBLICATION_INTERRUPTED") {

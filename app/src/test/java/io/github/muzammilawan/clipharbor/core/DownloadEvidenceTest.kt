@@ -42,6 +42,19 @@ class DownloadEvidenceTest {
         assertEquals(null, evidence.height())
     }
 
+    @Test fun malformedLaterSelectionInvalidatesAllEarlierSelectionEvidence() {
+        for (later in listOf("137+140\tbad\t1080", "bad']+b\t1920\t1080", "137+140\t1080\textra\tfield",
+            "137+140\t-1", "137+140\t0")) {
+            val evidence = DownloadEvidence()
+            evidence.accept("${DownloadEvidence.SELECTION_MARKER}137+140\t1920\t1080")
+            evidence.accept(DownloadEvidence.SELECTION_MARKER + later)
+            assertTrue(evidence.formatIds().isEmpty())
+            assertEquals(null, evidence.width())
+            assertEquals(null, evidence.height())
+            assertEquals(null, evidence.audioFormatId())
+        }
+    }
+
     @Test
     fun laterFallbackReplacesSelectionAndDoesNotReuseHeight() {
         val evidence = DownloadEvidence()

@@ -114,7 +114,7 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth()) {
                         Text(if (state.phase == HomePhase.CHOOSING) "Refresh formats" else "Find formats")
                     }
-                    if (durableQueue) OutlinedButton(onClick = onStageLink, enabled = enabled && state.engineReady,
+                    if (durableQueue) OutlinedButton(onClick = onStageLink, enabled = enabled && state.engineReady && !state.publicationReviewRequired,
                         modifier = Modifier.fillMaxWidth()) { Text("Add link to queue · start later") }
                 }
             }

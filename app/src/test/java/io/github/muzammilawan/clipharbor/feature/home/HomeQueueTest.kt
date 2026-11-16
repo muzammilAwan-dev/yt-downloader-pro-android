@@ -284,6 +284,64 @@ class HomeQueueTest {
         home.close()
     }
 
+    @Test fun uncertainSaveBlocksSameLinkStageAndShareButAllowsADifferentSharedTask() = runTest {
+        val broken = object : TaskStore by store {
+            override suspend fun replace(record: TaskRecord, expectedRevision: Long): Boolean {
+                if (record.phase == TaskPhase.DONE) error("synthetic history write failure")
+                return store.replace(record, expectedRevision)
+            }
+        }
+        val home = home(this, TaskRepository(broken))
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        home.download(); advanceUntilIdle()
+        home.editUrl(" https://example.invalid/a ")
+        home.receiveShared("https://example.invalid/a")
+        home.stageCurrentLink(); advanceUntilIdle()
+        assertEquals(1, store.rows.value.size)
+        assertTrue(home.state.value.publicationReviewRequired)
+        home.receiveShared("https://example.invalid/b")
+        assertFalse(home.state.value.publicationReviewRequired)
+        home.resolve(); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        assertEquals("PUBLICATION_INTERRUPTED", store.rows.value.first().reason)
+        home.close()
+    }
+
+    @Test fun recoveredInterruptedSaveReviewCannotBeBypassedByDirectFindFormats() = runTest {
+        store.insert(TaskRecord("saving", "https://example.invalid/a", phase = TaskPhase.PUBLISHING))
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.reviewTask("saving"); advanceUntilIdle()
+        assertTrue(home.state.value.publicationReviewRequired)
+        home.resolve(); advanceUntilIdle()
+        assertEquals(0, fake.resolveCalls)
+        home.reviewTask("saving", acceptPublicationRetry = true); advanceUntilIdle()
+        assertEquals(1, fake.resolveCalls)
+        assertTrue(home.state.value.canDownload)
+        home.close()
+    }
+
+    @Test fun timeoutAfterKnownPublicationRetainsOpenableUriWhileDoneWriteIsInterrupted() = runTest {
+        val broken = object : TaskStore by store {
+            override suspend fun replace(record: TaskRecord, expectedRevision: Long): Boolean {
+                if (record.phase == TaskPhase.DONE) awaitCancellation()
+                return store.replace(record, expectedRevision)
+            }
+        }
+        val home = home(this, TaskRepository(broken))
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        home.download(); runCurrent()
+        assertNotNull(home.state.value.saved)
+        home.onForegroundTimeout("task-1") {}
+        advanceUntilIdle()
+        assertNotNull(home.state.value.saved)
+        assertTrue(home.state.value.publicationReviewRequired)
+        assertEquals("PUBLICATION_INTERRUPTED", store.rows.value.single().reason)
+        home.close()
+    }
+
     @Test fun failedDatabaseWritePreventsEngineAndPublicationWork() = runTest {
         val broken = object : TaskStore by store {
             override suspend fun insert(record: TaskRecord) { throw IllegalStateException("synthetic DB full") }

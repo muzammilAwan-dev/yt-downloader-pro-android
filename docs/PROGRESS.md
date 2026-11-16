@@ -1463,3 +1463,9 @@ Android provider/gallery/playback remain unverified; continue interrupted-public
 Terminal uncertainty pauses the durable record as PUBLICATION_INTERRUPTED; timeout/cancellation never invents publication success. Late chooser cleanup uses revision-fenced CAS and cannot cancel newer extraction. Success-only staging cleanup failure is logged, not turned into an ambiguous save failure.
 Required wrapper BUILD SUCCESSFUL in 2m 17s; 334 total / 333 pass / 1 Windows symlink skip / 0 failures/errors; lint 0 errors / 7 known warnings. 24 helper / 4 schema regressions and 20 socket-blocked exact selectors passed.
 Continue final evidence invalidation/task-scoped review and stamped APK/report; no phone or Android execution claim.
+
+### Final evidence invalidation and task-scoped interrupted-save review — 16 Nov 2026
+4 tests-first cases cover malformed later selection clearing all previous IDs/dimensions, same-link stage/share refusal, recovered interrupted-save direct-resolve fencing and known URI retention through timeout during DONE write.
+Different shared links clear only Home's task-local warning; the interrupted queue record still requires explicit acceptance. Stage and Download cannot bypass current uncertainty. Service loss while saving now reports PAUSED and folder-check warning, not a canceled/unsaved certainty.
+Initial BUILD FAILED in 2m caught the existing service-loss assertion expecting CANCELED; strengthened it to PAUSED + uncertainty + folder-check status. Required wrapper BUILD SUCCESSFUL in 1m 8s; 338 total / 337 pass / 1 skip / 0 failures/errors; lint 0 errors / 7 warnings.
+Implementation review complete; proceed only to final fresh host checks, stamped APK inspection and phase report. Device gates remain deferred.
