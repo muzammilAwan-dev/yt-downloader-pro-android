@@ -440,3 +440,13 @@ C:\Users\Malku\AppData\Local\Android\Sdk\ ANDROID_HOME
   All 2 assets/full notices, 7 native and 3 icon entries are byte-identical; signer unchanged. Optional helper baseline
   mode deliberately requires a fully identical binary manifest; not used or relaxed for this intentional Room change.
   Fresh host report PASS_HOST_CHECKS_DEVICE_REQUIRED; Android startup/service/database behavior remains NOT_RUN.
+
+- **R81 (17 Nov 2026, photo-post support and app self-update):** Primary sources read: yt-dlp issues #16328, #16951,
+  #17077 and #17133 (GitHub, 2026). Maintainers state yt-dlp is a video/audio downloader and does not download photo
+  posts; they point to gallery-dl. A workaround exists on nightly (`--write-thumbnail --ignore-no-formats-error`) for
+  image-only posts, but it is explicitly "never going to be properly supported". Owner wants Instagram/Facebook/X
+  photo posts handled anyway, so the plan adds Phase 2H as a research spike (yt-dlp workaround vs bundled gallery-dl vs
+  WebView image save), not a promise. Owner also approved an in-app APK self-update from this project's GitHub
+  Releases (DR-008) with `REQUEST_INSTALL_PACKAGES` scoped to the updater (DR-009); engine updates stay APK-bundled.
+  No runtime engine code download, no engine behavior test, and the desktop extension's exact image-saver path remains
+  unknown (`[?]`).

@@ -32,7 +32,7 @@ Do not read `docs/PROGRESS.md` or `docs/RESEARCH-LOG.md` in full; `grep` them. A
 - Persist cookies in task history or keep a cookie file after its task ends. Redact cookies, auth headers, PO tokens and signed-URL queries
   before anything is logged (the redactor has unit tests; keep them green).
 - Request permissions beyond: INTERNET, ACCESS_NETWORK_STATE, POST_NOTIFICATIONS, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC
-  (WAKE_LOCK only if proven necessary).
+  (WAKE_LOCK only if proven necessary), plus REQUEST_INSTALL_PACKAGES scoped to the in-app APK updater only (owner decision DR-009, 17 Nov 2026).
 - Push, force-push, reset --hard, or delete files outside the repo without the owner saying so.
 
 ## Identity (owner decision, 15 Nov 2026)

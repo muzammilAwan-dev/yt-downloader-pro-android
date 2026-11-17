@@ -28,12 +28,13 @@ Phase spec template (copy into `docs/phases/<id>.md` before each phase):
 | DR-000 | **Do not fork LibreTube.** Keep `yt-downloader-pro-android` as the base. | The goal is a downloader, not a streaming client. LibreTube is YouTube-only, Views-based, NewPipe-extractor-based, with no yt-dlp or FFmpeg, minSdk 26. [Web: github.com/libre-tube/LibreTube README and `app/build.gradle.kts`, read 17 Nov 2026] Its upstream also rejects AI-generated PRs. Revisit only if streaming becomes a goal. |
 | DR-001 | Native Kotlin + Compose, engine `youtubedl-android` behind the `Engine` interface, GPL-3.0. | [Docs: `docs/01-PLAN.md` §2] |
 | DR-002 | Distribution: GitHub Releases, IzzyOnDroid, F-Droid. Not Google Play. | [Docs: `docs/01-PLAN.md` §2; `docs/07`] |
-| DR-003 | No ads, analytics, accounts, remote code, cleartext HTTP. Permission budget: INTERNET, ACCESS_NETWORK_STATE, POST_NOTIFICATIONS, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC. | [Docs: `AGENTS.md`] |
+| DR-003 | No ads, analytics, accounts, remote code, cleartext HTTP. Permission budget: INTERNET, ACCESS_NETWORK_STATE, POST_NOTIFICATIONS, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC, plus `REQUEST_INSTALL_PACKAGES` for the updater only (DR-009). | [Docs: `AGENTS.md`, amended 17 Nov 2026] |
 | DR-004 | Snaptube and 1DM+ are **behaviour references only**. No code, endpoints, assets or names. | [Docs: `AGENTS.md`, `docs/03`] |
 | DR-005 | **Foreground service (`dataSync`) stays the execution owner** for long downloads. UIDT and WorkManager are not adopted. | Owner decision 17 Nov 2026. Keeps API 24-33 and 14+ on one tested path and adds no permission. [Code: `service/DownloadService.kt`, `docs/STATE.md`] |
 | DR-006 | The display name is **YTDLP only**, with **no spaced expansion**. "You Tube" / "YouTube" never appears in the app name, icon or package id. | Owner decision 17 Nov 2026. Removes the trademark conflict instead of resolving it later. [Docs: `AGENTS.md`] |
 | DR-007 | A **sandboxed in-app WebView is permitted for discovery only**, after the §2E threat model is written: HTTPS only, visible origin, no privileged JS bridge, no arbitrary intent launching, no DRM or key extraction. | Owner decision 17 Nov 2026. Still gated on the threat model before code. |
 | DR-008 | **Engine stays APK-bundled only**; no runtime engine code download. Separately, the app will check **this project's GitHub Releases** on open, notify when a newer APK exists, and on the user's tap download it and hand it to the system installer. This is an APK update, not engine code loading. | Owner decision 17 Nov 2026 (OD-5). The self-update needs a permission decision (OD-8) because installing an APK is outside the current budget. |
+| DR-009 | Add `REQUEST_INSTALL_PACKAGES` (normal permission) and a `FileProvider`, **scoped to the updater only**. The user grants "Install unknown apps" for YTDLP once; Android still shows its own install confirmation; no silent install. If the user opens the downloaded APK from Files instead, YTDLP's permission is not used. | Owner decision 17 Nov 2026 (OD-8). The in-app path needs the permission; the Files path does not. Amend the `AGENTS.md` permission budget by this one entry only. |
 
 ## 2. Decisions the owner still has to take (each blocks the phase noted)
 
@@ -41,8 +42,7 @@ Phase spec template (copy into `docs/phases/<id>.md` before each phase):
 |---|---|---|---|
 | OD-3 | ABI policy. The build is arm64-only. **Owner deferred this to Phase 3** (17 Nov 2026). | 3 | Ship ABI splits (add armeabi-v7a) so 32-bit phones are not locked out. [Code: `app/build.gradle.kts` `abiFilters`] |
 | OD-6 | Register with Google's developer verification? **Owner deferred ("decide later", 17 Nov 2026).** | 3 | See §4.4. Decide before the first public APK. |
-| OD-7 | Two unrelated policies: (a) adult-site shortcuts (porn sites) and (b) saving **photo posts** from Instagram/Facebook/X (the desktop app does this). These three are ordinary social sites, not adult sites. | 2C | No promoted adult shortcuts. Photo posts out of scope unless a non-yt-dlp tool is approved. |
-| OD-8 | May the permission budget add `REQUEST_INSTALL_PACKAGES` (plus a `FileProvider`) so the in-app updater in DR-008 can open the system installer for a downloaded APK? | 2G | Add it, scoped to the updater only; the installer still shows the system confirmation. Without it the updater can only open the release page in a browser. |
+| OD-7 | **Split and partly decided 17 Nov 2026.** (a) Adult-site shortcuts: **no promoted shortcuts** (owner). (b) Photo posts from Instagram/Facebook/X: owner wants them; yt-dlp does not support images (see Phase 2H). Instagram/Facebook/X are ordinary social sites, not adult sites. | 2C / 2H | No adult shortcuts. Photo posts go through the Phase 2H research spike, not a blind engine claim. |
 
 ---
 
@@ -161,7 +161,7 @@ Rough size is in AI sessions (one `/next` loop each) and is an inference [I], no
   reconciliation table (Appendix A) with a recommendation per option; (5) fix the stale diagnostics header (it says runtimes are missing
   while later checks find them) if still present; (6) note that `TaskPhase` lacks `MERGING`/`POST_PROCESSING` before Phase 2D needs them.
 - **Exit:** `docs/phases/R-report.md`; tests/lint counts quoted; no feature code.
-- **Stop:** owner answers OD-3, OD-6, OD-7 and OD-8 as far as they block later phases. OD-1 to OD-5 are decided (DR-005 to DR-008).
+- **Stop:** owner answers OD-3, OD-6 and OD-7 as far as they block later phases. OD-1, OD-2, OD-4, OD-5 and OD-8 are decided (DR-005 to DR-009).
 
 ### Phase 1: MVP acceptance close-out (owner-assisted; 2-3 sessions)
 - **Goal:** turn "implemented" into "accepted" before adding features.
@@ -205,7 +205,7 @@ Rough size is in AI sessions (one `/next` loop each) and is an inference [I], no
   - UI labels "Tested" versus "Best effort": any valid https link is attempted, but only tested sites are promoted.
   - YouTube degradation path: on `FORMATS_WITHHELD`, say so, show what is actually available, and offer the highest real option. Do not hard-code client lists or format ids; use what the resolve returns.
   - Candidate additions from Snaptube's catalogue behaviour (about 48 sites in its default list [Report]) are evaluated one at a time by evidence, never bulk-added.
-- **Out:** login flows, browser.
+- **Out:** login flows, browser. Photo posts are Phase 2H.
 - **Exit:** every claimed site has dated evidence; a non-blocking, owner-run canary checklist exists; README site table generated from `sites.json`.
 
 ### Phase 2D: Desktop-parity media tools (four sub-phases; each ends with a stop)
@@ -233,18 +233,35 @@ Each sub-phase needs: `DownloadRequest` fields, allowlist entries, validator tes
 - **Not included:** runtime updater, remote plugins, client roulette.
 - **Exit:** the refresh runbook succeeds from a clean checkout; error mapping covered by fixtures built from real warning text; documented limitation if a spike fails.
 
-### Phase 2G: App self-update (gated by OD-8; 1-2 sessions)
+### Phase 2G: App self-update (permission decided by DR-009; 1-2 sessions)
 - **Goal:** tell the user when a newer YTDLP APK exists and let them install it without opening a browser.
 - **Scope:**
   - At app open, and at most once per day, query **this project's** GitHub Releases over HTTPS and compare `versionCode`/`versionName`.
     No analytics, no device identifiers, no account. A failed check is silent and never blocks the app.
   - Show a non-blocking notice with the new version and a release-notes link. Never auto-install and never nag on every launch.
   - On the user's tap: download the APK, verify its published SHA-256 and the expected signer, then hand it to the system installer
-    through a `FileProvider` and `ACTION_VIEW`. Requires `REQUEST_INSTALL_PACKAGES` (OD-8); without it, open the release page instead.
+    through a `FileProvider` and `ACTION_VIEW`. This needs `REQUEST_INSTALL_PACKAGES` and a one-time "Install unknown apps" grant (DR-009).
+  - Fallback with no in-app permission: save the APK under `Download/YTDLP`, tell the user to open it from Files, and never claim it installed.
   - Fail closed: hash mismatch, wrong signer or unknown version deletes the file and explains why; nothing is installed.
 - **Not included:** runtime engine updates (DR-008), silent install, Play in-app updates, background update checks.
 - **Tests:** fake releases endpoint, version comparison, hash mismatch, offline, permission denied, and a "no update" path.
 - **Exit:** unit tests green; owner device check of download → verify → install on Android 10 and one Android 14+ device.
+
+### Phase 2H: Photo posts (owner-requested; research-gated; 1-2 sessions)
+- **Goal:** save still-image posts from Instagram, Facebook and X, where yt-dlp alone cannot.
+- **Fact:** yt-dlp does not download photo posts; maintainers say to use `gallery-dl` or a browser extension. On nightly,
+  `--write-thumbnail --ignore-no-formats-error` can return the image of an image-only post, but this is a workaround, not support.
+  [Web: yt-dlp issues #16328, #16951, #17077, #17133, read 17 Nov 2026]
+- **Research spike first (no UI commitment):** test three candidates on 2-3 public sample posts per site:
+  1. yt-dlp thumbnail workaround with `--ignore-no-formats-error` (smallest change, weakest support, may need nightly);
+  2. bundled `gallery-dl` as a second typed engine (best coverage, extra Python payload and maintenance, must be checksum-verified);
+  3. WebView-assisted image save under DR-007 (closest to the desktop extension's "save image as" path, site-specific).
+- **Decision gate:** pick the option with the least maintenance that still works on all three sites; if none is robust, keep photos
+  unsupported and say so honestly. The desktop extension source was not visible in this repo's notes, so its exact image path is
+  `[?]` until the owner supplies it or the spike answers it.
+- **Constraints:** no account cookies by default, bounded requests and rate limits, no bulk profile crawling, no DRM/key extraction,
+  image-only posts labelled separately from video.
+- **Exit:** a dated research note with per-site results and one approved approach, or an explicit "not supported" decision.
 
 ### Phase 3: Release (4-5 sessions)
 - Accessibility (TalkBack, large text, contrast, touch targets), light/dark, localisation readiness.
