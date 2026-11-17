@@ -30,18 +30,19 @@ Phase spec template (copy into `docs/phases/<id>.md` before each phase):
 | DR-002 | Distribution: GitHub Releases, IzzyOnDroid, F-Droid. Not Google Play. | [Docs: `docs/01-PLAN.md` §2; `docs/07`] |
 | DR-003 | No ads, analytics, accounts, remote code, cleartext HTTP. Permission budget: INTERNET, ACCESS_NETWORK_STATE, POST_NOTIFICATIONS, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC. | [Docs: `AGENTS.md`] |
 | DR-004 | Snaptube and 1DM+ are **behaviour references only**. No code, endpoints, assets or names. | [Docs: `AGENTS.md`, `docs/03`] |
+| DR-005 | **Foreground service (`dataSync`) stays the execution owner** for long downloads. UIDT and WorkManager are not adopted. | Owner decision 17 Nov 2026. Keeps API 24-33 and 14+ on one tested path and adds no permission. [Code: `service/DownloadService.kt`, `docs/STATE.md`] |
+| DR-006 | The display name is **YTDLP only**, with **no spaced expansion**. "You Tube" / "YouTube" never appears in the app name, icon or package id. | Owner decision 17 Nov 2026. Removes the trademark conflict instead of resolving it later. [Docs: `AGENTS.md`] |
+| DR-007 | A **sandboxed in-app WebView is permitted for discovery only**, after the §2E threat model is written: HTTPS only, visible origin, no privileged JS bridge, no arbitrary intent launching, no DRM or key extraction. | Owner decision 17 Nov 2026. Still gated on the threat model before code. |
+| DR-008 | **Engine stays APK-bundled only**; no runtime engine code download. Separately, the app will check **this project's GitHub Releases** on open, notify when a newer APK exists, and on the user's tap download it and hand it to the system installer. This is an APK update, not engine code loading. | Owner decision 17 Nov 2026 (OD-5). The self-update needs a permission decision (OD-8) because installing an APK is outside the current budget. |
 
 ## 2. Decisions the owner still has to take (each blocks the phase noted)
 
 | Id | Question | Needed by | My recommendation |
 |---|---|---|---|
-| OD-1 | Execution owner for long downloads: foreground service (`dataSync`), user-initiated data transfer job (UIDT), or WorkManager. UIDT needs `RUN_USER_INITIATED_JOBS`, outside the current permission budget. | 2B | Keep the foreground service as the baseline. Spike UIDT on Android 14+ only, with the service as fallback for API 24-33. See §4.3. |
-| OD-2 | The spaced expansion "You Tube Downloader Pro" conflicts with the no-"YouTube" naming rule. | 3 | Resolve before any public release. [Docs: `AGENTS.md`, `docs/STATE.md`] |
-| OD-3 | ABI policy. The build is arm64-only. | 3 | Ship ABI splits (add armeabi-v7a) so 32-bit phones are not locked out. [Code: `app/build.gradle.kts` `abiFilters`] |
-| OD-4 | Does a sandboxed in-app WebView conflict with the "no remote code execution" rule? | 2E | Decide in writing before any browser work. |
-| OD-5 | Runtime engine updates (desktop has them) versus APK-bundled refresh only. | 2F | Keep APK-bundled only. Current approval covers only that. [Docs: `docs/STATE.md` R72] |
-| OD-6 | Register with Google's developer verification? | 3 | See §4.4. Decide before the first public APK. |
-| OD-7 | Policy for adult-site shortcuts and for photo posts (the desktop app saves Instagram/Facebook/X photos). | 2C | Do not promote adult shortcuts. Photo posts are out of scope unless a tool other than yt-dlp is approved. |
+| OD-3 | ABI policy. The build is arm64-only. **Owner deferred this to Phase 3** (17 Nov 2026). | 3 | Ship ABI splits (add armeabi-v7a) so 32-bit phones are not locked out. [Code: `app/build.gradle.kts` `abiFilters`] |
+| OD-6 | Register with Google's developer verification? **Owner deferred ("decide later", 17 Nov 2026).** | 3 | See §4.4. Decide before the first public APK. |
+| OD-7 | Two unrelated policies: (a) adult-site shortcuts (porn sites) and (b) saving **photo posts** from Instagram/Facebook/X (the desktop app does this). These three are ordinary social sites, not adult sites. | 2C | No promoted adult shortcuts. Photo posts out of scope unless a non-yt-dlp tool is approved. |
+| OD-8 | May the permission budget add `REQUEST_INSTALL_PACKAGES` (plus a `FileProvider`) so the in-app updater in DR-008 can open the system installer for a downloaded APK? | 2G | Add it, scoped to the updater only; the installer still shows the system confirmation. Without it the updater can only open the release page in a browser. |
 
 ---
 
@@ -118,7 +119,7 @@ Reject: ad mediation, remote-updatable extractor JS, 34 permissions (install pac
 ### 4.4 Android platform facts that change the plan
 - `dataSync` foreground services get a time limit on API 35+ (6 h per 24 h, then `onTimeout` must stop the service). [Docs: `docs/06` §1, citing developer.android.com]
 - **Android 16:** background jobs started from a foreground service must obey job quotas, including WorkManager and DownloadManager. UIDT jobs are exempt. [Web: developer.android.com/develop/background-work/services/fgs/changes]
-- UIDT (Android 14+, `JobScheduler.setUserInitiated`) suits user-started, long, notified downloads; Google reports a 10%+ drop in offline-download failures for Maps after migrating. [Web: Android Developers Blog, Sep 2024] It requires a permission outside our budget (OD-1).
+- UIDT (Android 14+, `JobScheduler.setUserInitiated`) suits user-started, long, notified downloads; Google reports a 10%+ drop in offline-download failures for Maps after migrating. [Web: Android Developers Blog, Sep 2024] It requires a permission outside our budget, so it is not adopted (DR-005).
 - **Developer verification:** enforcement began 30 Sep 2026 in Brazil, Indonesia, Singapore and Thailand; global rollout is planned for 2027. Developers outside Google Play register an account, verify identity (reported: ID and a one-time fee) and register the package name. Sideloading has an "advanced flow" with a waiting period; ADB installs are exempt. [Web: pinggy.io 24 Sep 2026; nihardaily.com; consumerrights.wiki. Secondary sources; verify on Google's own page before release]
 - **Publisher disk cost:** `MediaStorePublisher` stream-copies the file, so publication needs free space equal to the file size on top of staging. During merge, parts, merged output and the published copy can coexist, so peak use may exceed 2x [I; measure in 2B].
 - **Pending-row hazard:** if the process dies mid-copy, the `IS_PENDING=1` MediaStore row is not deleted by the catch block [I; verify]. A startup sweep is needed.
@@ -160,7 +161,7 @@ Rough size is in AI sessions (one `/next` loop each) and is an inference [I], no
   reconciliation table (Appendix A) with a recommendation per option; (5) fix the stale diagnostics header (it says runtimes are missing
   while later checks find them) if still present; (6) note that `TaskPhase` lacks `MERGING`/`POST_PROCESSING` before Phase 2D needs them.
 - **Exit:** `docs/phases/R-report.md`; tests/lint counts quoted; no feature code.
-- **Stop:** owner answers OD-1 to OD-7 as far as they block 1 to 2B.
+- **Stop:** owner answers OD-3, OD-6, OD-7 and OD-8 as far as they block later phases. OD-1 to OD-5 are decided (DR-005 to DR-008).
 
 ### Phase 1: MVP acceptance close-out (owner-assisted; 2-3 sessions)
 - **Goal:** turn "implemented" into "accepted" before adding features.
@@ -190,7 +191,7 @@ Rough size is in AI sessions (one `/next` loop each) and is an inference [I], no
   - Space preflight that counts staging, merge outputs and the published copy; delete staging right after verified publication.
   - Startup sweep for orphaned `IS_PENDING` rows and staging directories.
   - Resume honesty: continue `.part` files only when format id and size match; otherwise restart and label it "Retry from start".
-  - **OD-1 spike:** UIDT on an Android 14+ device versus the foreground service; produce `docs/decisions/` record with measurements.
+  - **Execution owner is fixed (DR-005):** keep the foreground service. Do not add UIDT or WorkManager unless a measured failure reopens OD-1.
   - Make `-N` a setting with a battery-aware default.
 - **Tests:** fake-engine interruption and race tests (cancel during each stage, process death between stages, duplicate share, late callbacks); malformed partial state rejected; no duplicate save.
 - **Measure and record:** extraction time, transfer speed, battery, peak disk use, on the Android 10 phone and one Android 14+ device.
@@ -216,7 +217,7 @@ Each sub-phase needs: `DownloadRequest` fields, allowlist entries, validator tes
 - **Exit per sub-phase:** unit/fixture tests green; unsupported combinations explained in the UI; device check for sound, A/V sync, subtitles, container playback.
 
 ### Phase 2E: Browser-assisted discovery and consented sessions (gated; 4-6 sessions)
-- **Gate:** written answer to OD-4 and a threat model (untrusted pages, no privileged JS bridge, no arbitrary intent launching, HTTPS only, no insecure TLS).
+- **Gate:** the written §2E threat model required by DR-007 (untrusted pages, no privileged JS bridge, no arbitrary intent launching, HTTPS only, no insecure TLS).
 - **Scope:** in-app browser with source shortcuts, visible origin, back/forward, loading and error states; "Download this page" through the existing engine. Media-candidate detection (direct, HLS, DASH) only after the basics work; no DRM or key extraction.
 - **Sessions:** explicit consent and a clear-session action; task-private cookie file deleted after the task; session change invalidates resolved state; cookies never in Room, history or logs. Desktop rules carry over: needed login cookies present, analytics/consent cookies excluded. [Docs: `docs/08`, `docs/16`]
 - **Limits to state in the UI:** embedded Google sign-in may be rejected and a login does not remove bot checks `[?: confirm against Google and yt-dlp guidance at implementation time]`.
@@ -232,12 +233,25 @@ Each sub-phase needs: `DownloadRequest` fields, allowlist entries, validator tes
 - **Not included:** runtime updater, remote plugins, client roulette.
 - **Exit:** the refresh runbook succeeds from a clean checkout; error mapping covered by fixtures built from real warning text; documented limitation if a spike fails.
 
+### Phase 2G: App self-update (gated by OD-8; 1-2 sessions)
+- **Goal:** tell the user when a newer YTDLP APK exists and let them install it without opening a browser.
+- **Scope:**
+  - At app open, and at most once per day, query **this project's** GitHub Releases over HTTPS and compare `versionCode`/`versionName`.
+    No analytics, no device identifiers, no account. A failed check is silent and never blocks the app.
+  - Show a non-blocking notice with the new version and a release-notes link. Never auto-install and never nag on every launch.
+  - On the user's tap: download the APK, verify its published SHA-256 and the expected signer, then hand it to the system installer
+    through a `FileProvider` and `ACTION_VIEW`. Requires `REQUEST_INSTALL_PACKAGES` (OD-8); without it, open the release page instead.
+  - Fail closed: hash mismatch, wrong signer or unknown version deletes the file and explains why; nothing is installed.
+- **Not included:** runtime engine updates (DR-008), silent install, Play in-app updates, background update checks.
+- **Tests:** fake releases endpoint, version comparison, hash mismatch, offline, permission denied, and a "no update" path.
+- **Exit:** unit tests green; owner device check of download → verify → install on Android 10 and one Android 14+ device.
+
 ### Phase 3: Release (4-5 sessions)
 - Accessibility (TalkBack, large text, contrast, touch targets), light/dark, localisation readiness.
 - R8 on with keep rules; baseline profile and macrobenchmark; startup and battery numbers recorded.
 - ABI splits (OD-3); APK size budget set from measurements.
 - Signed release with published SHA-256, source correspondence, `THIRD_PARTY_NOTICES`, GPL notices.
-- Name clearance (OD-2); decision on developer verification and package registration (OD-6; the package id `io.github.muzammilawan.clipharbor` stays so installs update in place); distribution metadata for IzzyOnDroid and F-Droid; privacy statement and legal notice matching the desktop text.
+- Name clearance is closed by DR-006 (YTDLP only, no expansion); confirm no "YouTube" text remains. Decision on developer verification and package registration (OD-6; the package id `io.github.muzammilawan.clipharbor` stays so installs update in place); distribution metadata for IzzyOnDroid and F-Droid; privacy statement and legal notice matching the desktop text.
 - Final device matrix: Android 10 phone, one Android 14+ device, video and audio with sound, MP4/WebM/MKV playback, background/lock/cancel/kill/network loss, every shipped feature.
 - **Exit:** the Definition of Done in §8. Deferring device checks never counts as passing.
 
@@ -257,10 +271,11 @@ Local media preview (Media3), tablet layouts, proven faster-transfer modes, nati
 | 5 | Allowlist drift versus desktop; unsafe options added ad hoc | Medium | Security | Reconcile table, tests per flag | R, 2D |
 | 6 | Developer verification limits installs outside Google Play | Medium | Reach | Early decision on registration | 3 |
 | 7 | Legal and ToS exposure (downloading may violate site terms) | Certain, varies | Distribution | Legal notice, no endorsement claims, no DRM bypass, not on Play | 3 |
-| 8 | Name and trademark conflicts | Medium | Rebrand | OD-2 before release | 3 |
+| 8 | Name and trademark conflicts | Medium | Rebrand | DR-006: YTDLP only, no expansion; confirm at release | 3 |
 | 9 | AI context overload / drift | Medium | Wrong code | One phase per session, short STATE, evidence tags | all |
 | 10 | arm64-only build excludes 32-bit phones | Medium | Reach | ABI splits | 3 |
 | 11 | Parallel agent work re-implements a delivered subsystem from a stale snapshot (`phase/R` queue) | High while multiple agents run | Rework, duplicate classes, merge conflicts | Rule §5.12: diff before building, one plan of record, reconcile branches before merge | R, all |
+| 12 | App self-update installs a tampered or wrong APK | Low | Severe | HTTPS, published SHA-256 and signer check, fail closed, system installer confirmation, no silent install | 2G |
 
 ## 8. Definition of done for 1.0
 
