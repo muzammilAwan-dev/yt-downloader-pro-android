@@ -14,9 +14,11 @@ lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
 composeBom = "2026.09.00"
 
-# Room + KSP (docs/STATE.md item 2). KSP pin matches Kotlin 2.2.10 per the KSP compatibility chart.
+# Room + KSP (docs/STATE.md item 2).
+# KSP 2.3.6 uses standalone versioning, independent of the Kotlin compiler version, and natively supports AGP 9's
+# built-in Kotlin source sets. The old <kotlin>-<ksp> format (e.g. 2.2.10-2.0.2) is rejected by AGP 9.
 room = "2.8.5"
-ksp = "2.2.10-2.0.2"
+ksp = "2.3.6"
 
 # Test
 junit = "4.13.2"
