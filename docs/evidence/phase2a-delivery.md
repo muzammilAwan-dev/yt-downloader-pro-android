@@ -29,6 +29,8 @@ new post-processing, new permissions.
 
 Artifact: `dist/app-debug.apk`, **70,747,776 bytes**, SHA-256
 `B2D0CC9E6F7AE8E8304456FB6F220E93E62405E16448AD6051595270FB91AF9C` (matches `dist/SHA256SUMS.txt`).
+The APK was stamped from source commit `91054d2`; the following commit `5c89a80` changes documentation only, so the
+binary and this report stay in sync with no code difference.
 
 ## Tests added in this phase
 
