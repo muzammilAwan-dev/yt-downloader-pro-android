@@ -34,6 +34,16 @@ class LibraryCatalogTest {
         assertEquals(listOf("a.opus", "b.mp4"), LibraryCatalog.visible(items, "   ", null).map { it.name })
     }
 
+    @Test fun sizesStayReadableAndLocaleIndependent() {
+        assertEquals("0 B", LibraryCatalog.formatBytes(0))
+        assertEquals("0 B", LibraryCatalog.formatBytes(-5))
+        assertEquals("999 B", LibraryCatalog.formatBytes(999))
+        assertEquals("1.0 KB", LibraryCatalog.formatBytes(1024))
+        assertEquals("1.5 KB", LibraryCatalog.formatBytes(1536))
+        assertEquals("1.4 MB", LibraryCatalog.formatBytes(1_500_000))
+        assertEquals("103.4 MB", LibraryCatalog.formatBytes(108_448_544))
+    }
+
     @Test fun totalIgnoresNegativeSizes() {
         val items = listOf(item("a", "video/mp4", 1, 5), item("b", "video/mp4", 1, -3))
         assertEquals(5L, LibraryCatalog.totalBytes(items))

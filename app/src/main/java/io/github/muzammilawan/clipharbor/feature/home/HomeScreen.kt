@@ -8,16 +8,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
@@ -25,9 +24,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,8 +48,8 @@ import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
 import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.core.ErrorRecovery
+import io.github.muzammilawan.clipharbor.core.SiteShortcut
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
-import io.github.muzammilawan.clipharbor.download.TaskRecord
 
 @Composable
 fun YtdlpTheme(content: @Composable () -> Unit) {
@@ -64,6 +68,7 @@ fun HomeScreen(
     onRequestNotifications: () -> Unit,
     onUrlChange: (String) -> Unit,
     onPaste: () -> Unit,
+    onOpenSite: (SiteShortcut) -> Unit,
     onResolve: () -> Unit,
     onSelectQuality: (VideoQuality) -> Unit,
     onSelectAudio: (String) -> Unit,
@@ -73,28 +78,24 @@ fun HomeScreen(
     onPendingLink: () -> Unit,
     onOpenFile: (PublishedMedia) -> Unit,
     onDiagnostics: () -> Unit,
-    tasks: List<TaskRecord> = emptyList(),
     durableQueue: Boolean = false,
     onStageLink: () -> Unit = {},
-    onReviewTask: (String, Boolean) -> Unit = { _, _ -> },
-    onRemoveTask: (String) -> Unit = {},
     onSelectExactVideo: (String) -> Unit = {},
 ) {
     val enabled = !state.busy && !externalBusy
     val focusManager = LocalFocusManager.current
     val findFormats = { focusManager.clearFocus(); onResolve() }
-    Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), contentAlignment = Alignment.TopCenter) {
+    var showLimits by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier.widthIn(max = 640.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Image(painterResource(R.drawable.ytdlp_icon), contentDescription = null, modifier = Modifier.size(48.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(AppInfo.DISPLAY_NAME, style = MaterialTheme.typography.headlineMedium)
-                }
+                Image(painterResource(R.drawable.ytdlp_icon), contentDescription = null, modifier = Modifier.size(44.dp))
+                Text("A link. Your choice. A saved file.", Modifier.semantics { heading() },
+                    style = MaterialTheme.typography.titleLarge)
             }
-            Text("A link. Your choice. A saved file.", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleLarge)
             Text("Paste or share an HTTPS media link. You decide when to start.", style = MaterialTheme.typography.bodyMedium)
 
             Card(Modifier.fillMaxWidth()) {
@@ -117,6 +118,8 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth()) { Text("Add link to queue · start later") }
                 }
             }
+
+            SourceShortcuts(onOpenSite)
 
             if (state.phase == HomePhase.CHOOSING) {
                 Card(Modifier.fillMaxWidth()) {
@@ -191,11 +194,25 @@ fun HomeScreen(
                     }
                 }
             }
-            if (durableQueue) TaskQueue(tasks, enabled, onReviewTask, onRemoveTask, onOpenFile)
-            Text("Phase 1 preview · Host checks do not verify Android queue recovery, background execution, notification controls or playback. Device checks are deferred.",
-                style = MaterialTheme.typography.bodySmall)
-            OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Diagnostics & local logs") }
+            OutlinedButton(onClick = { showLimits = true }, modifier = Modifier.fillMaxWidth()) { Text("Help & current limits") }
             Text("Unofficial · Free and open source · ${AppInfo.ENGINE_CREDIT}", style = MaterialTheme.typography.bodySmall)
         }
+    }
+    if (showLimits) {
+        AlertDialog(
+            onDismissRequest = { showLimits = false },
+            title = { Text("What this version does and does not do") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("• One explicit link and one download at a time. Nothing starts without your confirmation.")
+                    Text("• Queued links survive an app restart; an interrupted attempt stays paused until you review it.")
+                    Text("• Cancel works while downloading, not while the finished file is being saved.")
+                    Text("• Saving goes to Download/YTDLP, or to the app's own Downloads folder below Android 10.")
+                    Text("• Private-login sites, playlists, photo posts and in-app browser login are not supported yet.")
+                    Text("• Host checks cannot verify Android queue recovery, background execution, notification controls, gallery visibility or playback. Those checks are deferred, not passed.")
+                }
+            },
+            confirmButton = { TextButton(onClick = { showLimits = false }) { Text("Close") } },
+        )
     }
 }

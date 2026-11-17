@@ -37,4 +37,18 @@ object LibraryCatalog {
     }
 
     fun totalBytes(items: List<LibraryItem>): Long = items.sumOf { it.sizeBytes.coerceAtLeast(0) }
+
+    /** Human-readable base-1024 size; negative sizes read as zero rather than as a negative file. */
+    fun formatBytes(bytes: Long): String {
+        val value = bytes.coerceAtLeast(0)
+        if (value < 1024) return "$value B"
+        val units = listOf("KB", "MB", "GB", "TB")
+        var size = value.toDouble()
+        var unit = -1
+        while (unit < units.lastIndex && size >= 1023.95) {
+            size /= 1024.0
+            unit++
+        }
+        return String.format(java.util.Locale.ROOT, "%.1f %s", size, units[unit])
+    }
 }

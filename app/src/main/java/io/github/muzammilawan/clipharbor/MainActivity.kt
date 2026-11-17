@@ -33,26 +33,34 @@ import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.SharedSessionOwner
+import io.github.muzammilawan.clipharbor.core.SiteShortcut
 import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsScreen
 import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsState
 import io.github.muzammilawan.clipharbor.diagnostics.ReportContextFactory
 import io.github.muzammilawan.clipharbor.download.DownloadService
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
 import io.github.muzammilawan.clipharbor.download.notificationAccess
+import io.github.muzammilawan.clipharbor.feature.downloads.DownloadsScreen
 import io.github.muzammilawan.clipharbor.feature.home.HomePhase
 import io.github.muzammilawan.clipharbor.feature.home.HomeScreen
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
 import io.github.muzammilawan.clipharbor.feature.home.YtdlpTheme
+import io.github.muzammilawan.clipharbor.feature.library.LibraryScreen
+import io.github.muzammilawan.clipharbor.feature.shell.AppDestination
+import io.github.muzammilawan.clipharbor.feature.shell.AppShell
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
 import io.github.muzammilawan.clipharbor.log.UserAction
+import io.github.muzammilawan.clipharbor.publish.LibraryItem
+import io.github.muzammilawan.clipharbor.publish.LibraryKind
+import io.github.muzammilawan.clipharbor.publish.MediaStoreLibrary
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Single activity: Phase 1 link review/quality picker with separately accessible local diagnostics.
- * Attaches to the shared task/service session; no process-death recovery or durable queue.
+ * Single activity: Home / Downloads / Library destinations plus separately accessible local diagnostics.
+ * Attaches to the shared task/service session; no process-death recovery beyond the durable queue.
  */
 class MainActivity : ComponentActivity() {
     private lateinit var attachment: SharedSessionOwner.Attachment<DownloadSession>
@@ -62,7 +70,14 @@ class MainActivity : ComponentActivity() {
     private val storage get() = session.storage
     private val home get() = session.home
     private val diagnostics get() = session.diagnostics
+    private val library by lazy { MediaStoreLibrary(this) }
     private var showDiagnostics by mutableStateOf(false)
+    private var destination by mutableStateOf(AppDestination.HOME)
+    private var libraryItems by mutableStateOf<List<LibraryItem>>(emptyList())
+    private var libraryLoading by mutableStateOf(false)
+    private var libraryError by mutableStateOf<String?>(null)
+    private var libraryQuery by mutableStateOf("")
+    private var libraryKind by mutableStateOf<LibraryKind?>(null)
     private var notificationVisibility by mutableStateOf(NotificationAccess.DISABLED)
     private var notificationRequestPending by mutableStateOf(false)
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -93,6 +108,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshNotificationAccess()
+        if (destination == AppDestination.LIBRARY && !showDiagnostics) refreshLibrary()
         if (::attachment.isInitialized) logger.action(UserAction.ACTIVITY_RESUME, home.state.value.phase.name)
     }
 
@@ -135,95 +151,206 @@ class MainActivity : ComponentActivity() {
         val ui by home.state.collectAsState()
         val tasks by home.tasks.collectAsState(initial = emptyList())
         val state = diagnostics
-        BackHandler(enabled = showDiagnostics) {
-            logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
-            showDiagnostics = false
+        BackHandler(enabled = showDiagnostics || destination != AppDestination.HOME) {
+            logger.action(if (showDiagnostics) UserAction.BACK_TO_DOWNLOADS else UserAction.BACK_TO_HOME, ui.phase.name)
+            if (showDiagnostics) showDiagnostics = false else destination = AppDestination.HOME
         }
-        if (!showDiagnostics) {
-            HomeScreen(state = ui, externalBusy = state.busy, onUrlChange = {
-                logger.action(UserAction.EDIT_LINK, ui.phase.name)
-                home.editUrl(it)
-            },
-                notificationAccess = notificationVisibility, notificationRequestPending = notificationRequestPending,
-                onRequestNotifications = ::requestNotifications,
-                onPaste = {
-                    logger.action(UserAction.PASTE_LINK, ui.phase.name)
-                    val text = getSystemService(ClipboardManager::class.java)?.primaryClip
-                        ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text
-                    if (text != null) home.receiveShared(text.take(MediaEntry.MAX_INPUT_CHARS + 1).toString())
-                    else home.receiveShared("")
-                }, onResolve = {
-                    logger.action(UserAction.FIND_FORMATS, ui.phase.name)
-                    if (!state.busy) home.resolve(forceRefresh = home.state.value.phase == io.github.muzammilawan.clipharbor.feature.home.HomePhase.CHOOSING)
-                }, onSelectQuality = {
-                    logger.action(UserAction.SELECT_QUALITY, ui.phase.name, qualityPixels = it.pixels)
-                    home.selectQuality(it)
-                }, onSelectAudio = {
-                    logger.action(UserAction.SELECT_AUDIO, ui.phase.name)
-                    home.selectAudio(it)
-                }, onDownload = {
-                    logger.action(UserAction.DOWNLOAD, ui.phase.name, qualityPixels = ui.selectedQuality?.pixels)
-                    if (!state.busy) home.download()
-                }, onCancel = {
-                    logger.action(UserAction.CANCEL, ui.phase.name)
-                    home.cancel()
-                }, onRetryEngine = {
-                    logger.action(UserAction.RETRY_ENGINE, ui.phase.name)
-                    if (!state.busy) home.initialize()
-                }, onPendingLink = {
-                    logger.action(UserAction.USE_PENDING_LINK, ui.phase.name)
-                    home.usePendingLink()
-                }, onOpenFile = ::openSaved,
-                tasks = tasks, durableQueue = home.hasDurableQueue,
-                onStageLink = { if (!state.busy) home.stageCurrentLink() },
-                onSelectExactVideo = { id -> if (!state.busy) home.selectExactVideo(id) },
-                onReviewTask = { id, accepted -> if (!state.busy) home.reviewTask(id, accepted) },
-                onRemoveTask = { id -> if (!state.busy) home.removeTask(id) },
-                onDiagnostics = {
-                    logger.action(UserAction.OPEN_DIAGNOSTICS, ui.phase.name)
-                    state.engineLine = "engine: " + engine.info().headerLine()
-                    state.logTail = logger.snapshot()
-                    state.verbose = logger.verbose
-                    showDiagnostics = true
-                })
+        if (showDiagnostics) {
+            Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+                OutlinedButton(onClick = {
+                    logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
+                    showDiagnostics = false
+                }, modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Text("Back")
+                }
+                DiagnosticsScreen(
+                    state = state,
+                    externalBusy = ui.busy,
+                    onUrlChange = {
+                        logger.action(UserAction.EDIT_SELFTEST_LINK, ui.phase.name)
+                        state.url = it
+                    },
+                    onRunSelfTest = {
+                        logger.action(UserAction.RUN_SELF_TEST, ui.phase.name)
+                        val current = session
+                        attachment.scope.launch {
+                            current.runSelfTest("selftest-" + java.util.UUID.randomUUID())
+                            current.diagnostics.verbose = current.logger.verbose
+                        }
+                    },
+                    onShareLog = { shareLog(state) },
+                    onCopySummary = { copySummary(state) },
+                    onClearLogs = {
+                        logger.clear()
+                        state.logTail = logger.snapshot()
+                        state.status = "Logs cleared. A new timeline starts here."
+                    },
+                    onVerboseChange = {
+                        logger.verbose = it
+                        state.verbose = it
+                        logger.action(UserAction.SET_VERBOSE, ui.phase.name, enabled = it)
+                        state.logTail = logger.snapshot()
+                    },
+                )
+            }
             return
         }
-        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-            OutlinedButton(onClick = {
-                logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
-                showDiagnostics = false
-            }, modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Back to downloads")
+        AppShell(
+            destination = destination,
+            onDestination = { next ->
+                logger.action(UserAction.OPEN_DESTINATION, ui.phase.name)
+                if (next == AppDestination.LIBRARY) refreshLibrary()
+                destination = next
+            },
+            onDiagnostics = ::openDiagnostics,
+            home = {
+                HomeScreen(state = ui, externalBusy = state.busy, onUrlChange = {
+                    logger.action(UserAction.EDIT_LINK, ui.phase.name)
+                    home.editUrl(it)
+                },
+                    notificationAccess = notificationVisibility, notificationRequestPending = notificationRequestPending,
+                    onRequestNotifications = ::requestNotifications,
+                    onPaste = {
+                        logger.action(UserAction.PASTE_LINK, ui.phase.name)
+                        val text = getSystemService(ClipboardManager::class.java)?.primaryClip
+                            ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text
+                        if (text != null) home.receiveShared(text.take(MediaEntry.MAX_INPUT_CHARS + 1).toString())
+                        else home.receiveShared("")
+                    },
+                    onOpenSite = ::openSourceSite,
+                    onResolve = {
+                        logger.action(UserAction.FIND_FORMATS, ui.phase.name)
+                        if (!state.busy) home.resolve(forceRefresh = home.state.value.phase == HomePhase.CHOOSING)
+                    }, onSelectQuality = {
+                        logger.action(UserAction.SELECT_QUALITY, ui.phase.name, qualityPixels = it.pixels)
+                        home.selectQuality(it)
+                    }, onSelectAudio = {
+                        logger.action(UserAction.SELECT_AUDIO, ui.phase.name)
+                        home.selectAudio(it)
+                    }, onDownload = {
+                        logger.action(UserAction.DOWNLOAD, ui.phase.name, qualityPixels = ui.selectedQuality?.pixels)
+                        if (!state.busy) home.download()
+                    }, onCancel = {
+                        logger.action(UserAction.CANCEL, ui.phase.name)
+                        home.cancel()
+                    }, onRetryEngine = {
+                        logger.action(UserAction.RETRY_ENGINE, ui.phase.name)
+                        if (!state.busy) home.initialize()
+                    }, onPendingLink = {
+                        logger.action(UserAction.USE_PENDING_LINK, ui.phase.name)
+                        home.usePendingLink()
+                    }, onOpenFile = ::openSaved,
+                    onDiagnostics = ::openDiagnostics,
+                    durableQueue = home.hasDurableQueue,
+                    onStageLink = { if (!state.busy) home.stageCurrentLink() },
+                    onSelectExactVideo = { id -> if (!state.busy) home.selectExactVideo(id) },
+                )
+            },
+            downloads = {
+                DownloadsScreen(
+                    tasks = tasks,
+                    enabled = !state.busy,
+                    onReview = { id, accepted -> if (!state.busy) home.reviewTask(id, accepted) },
+                    onRemove = { id -> if (!state.busy) home.removeTask(id) },
+                    onOpen = ::openSaved,
+                )
+            },
+            library = {
+                LibraryScreen(
+                    items = libraryItems,
+                    loading = libraryLoading,
+                    error = libraryError,
+                    query = libraryQuery,
+                    kind = libraryKind,
+                    onQueryChange = {
+                        logger.action(UserAction.SEARCH_LIBRARY, ui.phase.name)
+                        libraryQuery = it
+                    },
+                    onKindChange = {
+                        logger.action(UserAction.FILTER_LIBRARY, ui.phase.name)
+                        libraryKind = it
+                    },
+                    onRefresh = {
+                        logger.action(UserAction.REFRESH_LIBRARY, ui.phase.name)
+                        refreshLibrary()
+                    },
+                    onOpen = ::openLibraryItem,
+                    onShare = ::shareLibraryItem,
+                    onDelete = ::deleteLibraryItem,
+                )
+            },
+        )
+    }
+
+    private fun openDiagnostics() {
+        logger.action(UserAction.OPEN_DIAGNOSTICS, home.state.value.phase.name)
+        diagnostics.engineLine = "engine: " + engine.info().headerLine()
+        diagnostics.logTail = logger.snapshot()
+        diagnostics.verbose = logger.verbose
+        showDiagnostics = true
+    }
+
+    private fun refreshLibrary() {
+        if (libraryLoading) return
+        libraryLoading = true
+        libraryError = null
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching { library.list() } }
+            result.onSuccess { libraryItems = it }.onFailure {
+                logger.event('W', "library_list_failed", stage = "UI", fields = mapOf("error" to it.javaClass.simpleName))
+                libraryError = "Could not read saved files. Check that the Downloads folder is available, then refresh."
             }
-            DiagnosticsScreen(
-                state = state,
-                externalBusy = ui.busy,
-                onUrlChange = {
-                    logger.action(UserAction.EDIT_SELFTEST_LINK, ui.phase.name)
-                    state.url = it
-                },
-                onRunSelfTest = {
-                    logger.action(UserAction.RUN_SELF_TEST, ui.phase.name)
-                    val current = session
-                    attachment.scope.launch {
-                        current.runSelfTest("selftest-" + java.util.UUID.randomUUID())
-                        current.diagnostics.verbose = current.logger.verbose
-                    }
-                },
-                onShareLog = { shareLog(state) },
-                onCopySummary = { copySummary(state) },
-                onClearLogs = {
-                    logger.clear()
-                    state.logTail = logger.snapshot()
-                    state.status = "Logs cleared. A new timeline starts here."
-                },
-                onVerboseChange = {
-                    logger.verbose = it
-                    state.verbose = it
-                    logger.action(UserAction.SET_VERBOSE, ui.phase.name, enabled = it)
-                    state.logTail = logger.snapshot()
-                },
-            )
+            libraryLoading = false
+        }
+    }
+
+    private fun openLibraryItem(item: LibraryItem) {
+        logger.action(UserAction.OPEN_SAVED_FILE, home.state.value.phase.name)
+        if (!launchViewer(item.uri, item.mimeType)) {
+            libraryError = "No compatible viewer opened. Find the file in ${item.location}."
+        }
+    }
+
+    private fun shareLibraryItem(item: LibraryItem) {
+        logger.action(UserAction.SHARE_SAVED_FILE, home.state.value.phase.name)
+        val uri = item.uri.toUri()
+        if (uri.scheme != "content") return
+        runCatching {
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = item.mimeType
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(send, "Share saved file"))
+            logger.event('I', "library_share_launched", stage = "UI")
+        }.onFailure {
+            logger.event('W', "library_share_failed", stage = "UI", fields = mapOf("error" to it.javaClass.simpleName))
+            libraryError = "No app accepted this file. It is still saved in the Library."
+        }
+    }
+
+    private fun deleteLibraryItem(item: LibraryItem) {
+        logger.action(UserAction.DELETE_SAVED_FILE, home.state.value.phase.name)
+        libraryError = null
+        lifecycleScope.launch {
+            val removed = withContext(Dispatchers.IO) { library.delete(item) }
+            logger.event('I', "library_delete", stage = "UI", fields = mapOf("removed" to removed.toString()))
+            if (removed) {
+                libraryItems = libraryItems.filterNot { it.uri == item.uri }
+            } else {
+                libraryError = "Android did not confirm the delete. The file may still be in ${item.location}."
+            }
+        }
+    }
+
+    private fun openSourceSite(site: SiteShortcut) {
+        logger.action(UserAction.OPEN_SOURCE_SITE, home.state.value.phase.name)
+        runCatching {
+            startActivity(Intent(Intent.ACTION_VIEW, site.homeUrl.toUri()))
+            logger.event('I', "open_site_launched", stage = "UI", fields = mapOf("site" to site.id))
+        }.onFailure {
+            logger.event('W', "open_site_failed", stage = "UI", fields = mapOf("site" to site.id,
+                "error" to it.javaClass.simpleName))
         }
     }
 
@@ -238,6 +365,7 @@ class MainActivity : ComponentActivity() {
         if (intent?.action != Intent.ACTION_SEND) return
         logger.action(UserAction.SHARE_LINK_RECEIVED, home.state.value.phase.name)
         showDiagnostics = false
+        destination = AppDestination.HOME
         val text = if (intent.type == "text/plain") runCatching {
             intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
         }.getOrNull() else null
@@ -247,16 +375,25 @@ class MainActivity : ComponentActivity() {
 
     private fun openSaved(saved: PublishedMedia) {
         logger.action(UserAction.OPEN_SAVED_FILE, home.state.value.phase.name)
-        val uri = saved.uri.toUri()
-        if (uri.scheme != "content") return
-        runCatching {
-            startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, saved.mimeType)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
-            logger.event('I', "open_file_launched", stage = "UI")
-        }.onFailure {
-            logger.event('W', "open_file_failed", stage = "UI", fields = mapOf("error" to it.javaClass.simpleName))
+        if (saved.uri.toUri().scheme != "content") return
+        if (!launchViewer(saved.uri, saved.mimeType)) {
             diagnostics.status = "No compatible viewer opened. Find the file in ${saved.location}."
             showDiagnostics = true
+        }
+    }
+
+    /** Opens a content URI in whatever viewer the phone has; returns false instead of claiming success. */
+    private fun launchViewer(uri: String, mimeType: String): Boolean {
+        val parsed = uri.toUri()
+        if (parsed.scheme != "content") return false
+        return runCatching {
+            startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(parsed, mimeType)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+            logger.event('I', "open_file_launched", stage = "UI")
+            true
+        }.getOrElse {
+            logger.event('W', "open_file_failed", stage = "UI", fields = mapOf("error" to it.javaClass.simpleName))
+            false
         }
     }
 

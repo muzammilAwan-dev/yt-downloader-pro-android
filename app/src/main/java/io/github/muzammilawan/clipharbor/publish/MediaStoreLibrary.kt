@@ -2,13 +2,13 @@ package io.github.muzammilawan.clipharbor.publish
 
 import android.content.ContentUris
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import io.github.muzammilawan.clipharbor.AppInfo
 import java.io.File
 
@@ -29,7 +29,7 @@ class MediaStoreLibrary(private val context: Context) {
     /** Returns true only when the row/file itself was removed; callers must not claim more. */
     fun delete(item: LibraryItem): Boolean = runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && item.uri.startsWith("content://")) {
-            context.contentResolver.delete(Uri.parse(item.uri), null, null) == 1
+            context.contentResolver.delete(item.uri.toUri(), null, null) == 1
         } else {
             val directory = legacyDirectory() ?: return false
             File(directory, item.name).takeIf { it.isFile }?.delete() == true
