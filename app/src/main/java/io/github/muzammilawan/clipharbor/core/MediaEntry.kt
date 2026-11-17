@@ -23,7 +23,7 @@ object MediaEntry {
             uri.host.isNullOrBlank() || uri.rawUserInfo != null ||
             (uri.port != -1 && uri.port !in 1..65535)
         ) return Input.Invalid("Use one full HTTPS link without account credentials or options.")
-        return Input.Link(url)
+        return Input.Link(LinkCanonicalizer.canonicalize(url))
     }
 
     /** A title may accompany a share, but exactly one web link must be present. Never auto-resolve. */
