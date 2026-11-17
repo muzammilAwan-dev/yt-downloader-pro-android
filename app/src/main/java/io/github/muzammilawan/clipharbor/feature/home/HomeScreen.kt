@@ -92,7 +92,6 @@ fun HomeScreen(
                 Image(painterResource(R.drawable.ytdlp_icon), contentDescription = null, modifier = Modifier.size(48.dp))
                 Column(Modifier.weight(1f)) {
                     Text(AppInfo.DISPLAY_NAME, style = MaterialTheme.typography.headlineMedium)
-                    Text(AppInfo.FULL_NAME, style = MaterialTheme.typography.bodySmall)
                 }
             }
             Text("A link. Your choice. A saved file.", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleLarge)

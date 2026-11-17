@@ -20,7 +20,7 @@ class AppInfoTest {
     @Test
     fun displayNameAndExpansionMatchOwnerDecision() {
         assertEquals("YTDLP", AppInfo.DISPLAY_NAME)
-        assertEquals("You Tube Downloader Pro", AppInfo.FULL_NAME)
+        assertFalse(AppInfo.hasForbiddenBrand(AppInfo.DISPLAY_NAME))
     }
 
     @Test

@@ -61,7 +61,6 @@ fun DiagnosticsScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(AppInfo.DISPLAY_NAME, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(AppInfo.FULL_NAME, style = MaterialTheme.typography.bodyMedium)
         Text(
             "Unofficial, free and open source. Powered by yt-dlp. Local diagnostics.",
             style = MaterialTheme.typography.bodySmall,

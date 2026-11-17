@@ -9,7 +9,6 @@ package io.github.muzammilawan.clipharbor
 object AppInfo {
     /** Owner-selected desktop/Android brand (15 Nov 2026); independent of the yt-dlp project. */
     const val DISPLAY_NAME = "YTDLP"
-    const val FULL_NAME = "You Tube Downloader Pro"
 
     /** New public output paths only; previously saved ClipHarbor files are not moved or deleted. */
     const val DOWNLOAD_RELATIVE_PATH = "Download/$DISPLAY_NAME"
