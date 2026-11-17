@@ -109,7 +109,8 @@ class DownloadSession(
                 " V task=$task stage=$stage event=ytdlp " + line)
         }
     }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) },
-        repository = taskRepository)
+        repository = taskRepository,
+        freeSpaceMb = { storage.freeSpaceMb() })
 
     init { logger.event('I', "session_start", stage = "APP") }
 

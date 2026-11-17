@@ -74,8 +74,9 @@ interface HomeObserver {
 
 /**
  * One-task entry flow; the caller owns its scope. When [repository] is supplied, every stage transition during
- * download is persisted to the durable queue. The repository is optional so existing JVM tests (which pass no
- * database) continue to exercise the in-memory path only.
+ * download is persisted to the durable queue. When [freeSpaceMb] returns a non-null value below the mode-specific
+ * threshold, download is blocked before any engine or foreground work begins; the snapshot survives so the user
+ * can free space and retry with one tap. Both features are opt-in so existing JVM tests pass unchanged.
  */
 class HomeController(
     private val engine: Engine,
@@ -88,6 +89,9 @@ class HomeController(
     private val foreground: DownloadForeground = DownloadForeground.ActivityOnly,
     private val publishAudio: suspend (File, String) -> PublishedMedia = { _, _ -> error("Audio publisher is not configured") },
     private val repository: TaskRepository? = null,
+    private val freeSpaceMb: () -> Long? = { null },
+    private val minFreeMbForVideo: Long = 1024L,
+    private val minFreeMbForAudio: Long = 256L,
 ) {
     private val mutable = MutableStateFlow(HomeState())
     val state = mutable.asStateFlow()
@@ -232,6 +236,16 @@ class HomeController(
             discardPrepared()
             resolve()
             return // Refresh requires another explicit download confirmation.
+        }
+        // Pre-flight free-space gate. Warning state, not a hard failure (docs/02 §2): phase stays CHOOSING,
+        // prepared snapshot preserved, one tap after freeing space retries without re-resolving.
+        val minFreeMb = if (audio != null) minFreeMbForAudio else minFreeMbForVideo
+        val availableMb = freeSpaceMb()
+        if (availableMb != null && availableMb < minFreeMb) {
+            observer.event(input.task, Stage.DOWNLOADING.name, "insufficient_space",
+                mapOf("availableMb" to availableMb.toString(), "requiredMb" to minFreeMb.toString()))
+            mutable.update { it.copy(status = "Not enough free storage: $availableMb MB available, $minFreeMb MB required. Free some space, then tap Download again.") }
+            return
         }
         prepared = null
         activeTask = input.task
