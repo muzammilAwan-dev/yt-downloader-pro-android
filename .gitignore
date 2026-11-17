@@ -36,3 +36,7 @@ __pycache__/
 
 # Local OpenCode config may hold an API key: never commit it (the shared project config is opencode.jsonc)
 /opencode.json
+
+# ds_bridge working folders
+_ds/
+.ds_backup/
