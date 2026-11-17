@@ -9,9 +9,14 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - Product: YTDLP, an unofficial, free, GPL-3.0 Android front end for yt-dlp (package `io.github.muzammilawan.clipharbor`).
   Desktop sibling: `muzammilAwan-dev/yt-downloader-pro` (MIT), the parity target.
 - Phase 0 (engine spike): **PASSED** 15 Nov 2026 on Infinix X682B (Android 10, API 29, arm64). Evidence: `docs/evidence/phase0.md`.
-- **Phase 1 (MVP): approved implementation/host delivery complete; Android acceptance deferred, NOT PASSED. STOP for owner's `next`.**
+- **Phase 1 (MVP): approved implementation/host delivery complete; Android acceptance deferred, NOT PASSED.**
   Compact video/original-audio/exact picker, private resolve reuse/timings, Room queue/history, foreground ownership, recovery/storage,
   publication safety and full-session logs are host-tested. No Phase 2 work authorized. Report: `docs/evidence/phase1-delivery.md`.
+- **Phase 2A (three-destination shell): implementation + host checks delivered 17 Nov; screenshots and device checks deferred, NOT PASSED.**
+  Home (link, paste, 9 source shortcuts, recent saves, contextual help) / Downloads (queue card, live percentage) / Library
+  (own MediaStore rows, search, kind filter, duration, open/share/confirmed delete); share links canonicalised per recognised host
+  (unknown hosts and signed URLs untouched); `FULL_NAME` removed. No browser/login/playlist/new post-processing, no new permission.
+  Report: `docs/evidence/phase2a-delivery.md`. **STOP for the owner's `next` before Phase 2B.**
 - **17 Nov: upstream merged** (`origin/main` 7bde305, merge `33e14ad`): new owner roadmap `docs/ROADMAP.md` (phases R, 1, 2A-2F, 3, 4),
   DeepSeek build workflow `docs/DEEPSEEK_WORKFLOW.md` + `docs/DS_QUICKSTART.md`, `tools/ds_bridge.py`, `tools/ds/MASTER_PROMPT.txt`, `tools/ds.bat`.
   `docs/ROADMAP.md` §3.2 predates our Phase 1 delivery (it still calls Room/queue absent); its own Phase R says to correct that.
@@ -23,10 +28,14 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   this repo's Releases (DR-008) with `REQUEST_INSTALL_PACKAGES` scoped to the updater (DR-009); ABI and developer verification deferred;
   no promoted adult shortcuts. Photo posts need a Phase 2H spike because yt-dlp does not support images (R81).
   Implementation of Phases 2A-2H still needs the owner's `next`.
-- **Current delivered APK:** `dist/app-debug.apk`, actual full DEX stamp `56c15c4dc76a579c400e7b8a084dbb408eda299b`, 70,620,367 bytes.
+- **Current delivered APK (Phase 2A):** `dist/app-debug.apk`, full DEX stamp `91054d2`, 70,747,776 bytes,
+  SHA-256 `B2D0CC9E6F7AE8E8304456FB6F220E93E62405E16448AD6051595270FB91AF9C`; build/copy/SHA256SUMS agree,
+  V2 signer `CN=Android Debug`. Permissions unchanged (INTERNET, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC,
+  POST_NOTIFICATIONS + AndroidX receiver permission); min24 / target37. Device NOT_RUN.
+- **Previous delivered APK (Phase 1):** full DEX stamp `56c15c4dc76a579c400e7b8a084dbb408eda299b`, 70,620,367 bytes.
   SHA-256 `71BE20C713B902B57E3FAA4DA9F904EEEEFB023175BC6D928CB27D8BE38ED233`; built/copy/SHA256SUMS agree, owner signer verified.
   yt-dlp 2026.10.26 / EJS0.8.0, library0.18.1; all 2 assets/notices, 7 native and 3 icon entries match f96194e. Manifest adds only
-  Room's non-exported internal invalidation service (R80); no new requested permissions. min24 / target37 / arm64. Device NOT_RUN.
+  Room's non-exported internal invalidation service (R80).
 - Latest owner-tested artifact: **`e37686c`** — source-backed video + original audio. Owner log confirms WebM/Opus `251-drc`
   (24,965,341 bytes) and 720p `136+140-3` (1280×720, 108,448,544 bytes) saved without recorded 403. Sound/visibility unconfirmed.
   Four screenshots show 22 audio choices before video; resolve took 42,545/38,261 ms. Evidence: `docs/evidence/phase1-owner-feedback.md`.
@@ -72,6 +81,13 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   Reports verified installed yt-dlp/EJS pin, not stale updater preferences; later verbose runtime versions remain observable.
   Owner-tested runtime/merge/save on one sample; old-file replacement without data clearing and broader reliability remain unconfirmed.
   Owner approved stale QuickJS/runtime-update documentation corrections; notice corrected. See `docs/evidence/engine-refresh-2026.10.26.md`.
+
+## Final recorded checks — 17 Nov 2026 (Phase 2A)
+`.\gradlew.bat testDebugUnitTest lintDebug --console=plain` → **BUILD SUCCESSFUL in 36s**;
+**353 tests, 0 failures, 0 errors, 1 Windows symlink skip**; lint **0 errors / 7 known warnings** (count unchanged after
+removing the new `UseKtx` warning). Stamped debug APK: DEX stamp `91054d2` present, `dist` copy and `SHA256SUMS.txt` agree.
+These are host checks only: no Compose UI test dependency exists, so no screen behaviour, screenshot, gallery, thumbnail or
+three-tab layout has been observed on a device.
 
 ## Final recorded checks — 16 Nov 2026
 Fresh phone-free helper: **BUILD SUCCESSFUL in 3m 6s**, 338 total / 337 pass / 1 Windows symlink skip / 0 failures/errors;
@@ -141,8 +157,20 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
 - [x] Integrated queue/history/progress/recovery UI and host recovery/privacy tests; stamped APK/source/signature/payload inspection and
         phase report delivered: `docs/evidence/phase1-delivery.md`. Android acceptance remains deferred, not waived/passed. STOP for `next`.
 
+## Phase 2A checklist (STOP; screenshots/device gates deferred)
+- [x] Share-link canonicalisation per recognised host; unknown hosts, signed URLs, malformed input unchanged; 6 tests.
+- [x] Three destinations (Home / Downloads / Library) with one inset pass; diagnostics stays a local tool.
+- [x] Library: own MediaStore rows (API 29+) / app folder (24-28), search, kind filter, size, duration, open/share/confirmed delete.
+- [x] Downloads: queue card with live percentage for the one active download; format ids and requested ceiling; refusal to invent sizes.
+- [x] Home: source-shortcut grid from `contracts/sites.json` (contract-synced test), "how to share" card, recent saves, contextual help.
+- [x] Warnings/disclaimers moved into help dialogs and task details; protections and honesty text kept.
+- [ ] OWNER: screenshot set (dark, light, large text) for approval — cannot be produced from host checks.
+- [ ] OWNER/device: Library contents after reinstall, thumbnail (glyph fallback now), gallery visibility, share targets, large text/TalkBack.
+- [x] Stamped APK + phase report: `docs/evidence/phase2a-delivery.md`. STOP for the owner's `next` before Phase 2B.
+
 ## Open owner checks (cannot be automated)
 Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
+Phase 2A: three-tab shell layout, Library search/filter/delete, Home recent saves, Downloads percentage.
 
 ## Risks to keep visible
 - **Engine freshness:** owner-installed `f96194e` runs bundled 2026.10.26; previous `6bb477b` used 2025.11.12. YouTube

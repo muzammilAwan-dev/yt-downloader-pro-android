@@ -1488,3 +1488,10 @@ Phase/R queue is the weaker parallel design: stores raw url, autoincrement Long 
 Owner answered the roadmap questions: foreground service stays (DR-005); display name YTDLP only, no expansion (DR-006); ABI and developer verification deferred to Phase 3; sandboxed WebView allowed after a written threat model (DR-007); engine stays APK-bundled with an app APK self-update check against this repo's GitHub Releases (DR-008); REQUEST_INSTALL_PACKAGES scoped to the updater (DR-009); no promoted adult shortcuts.
 Roadmap adds Phase 2G (self-update) and Phase 2H (photo-post research spike). AGENTS.md permission budget amended by REQUEST_INSTALL_PACKAGES only. R81 records yt-dlp photo-post evidence (issues #16328/#16951/#17077/#17133): images are unsupported; gallery-dl or a WebView image save are the alternatives.
 No feature code written; no build re-run after these docs/rule edits.
+
+## 2026-11-17 Phase 2A delivered: three-destination shell (host checks only)
+Commits 395e930, 797bff4, c16b5bf, 60402ab, 91054d2: host-specific link canonicalisation, FULL_NAME removal, Library catalog + MediaStore reader, AppShell/Downloads/Library screens, source shortcuts, recent saves, live percentage, durations.
+Fresh testDebugUnitTest+lintDebug: BUILD SUCCESSFUL in 36s, 353 tests / 0 failures / 0 errors / 1 Windows symlink skip; lint 0 errors / 7 known warnings.
+Stamped dist/app-debug.apk 70,747,776 bytes, full-DEX stamp 91054d2, SHA-256 B2D0CC9E6F7AE8E8304456FB6F220E93E62405E16448AD6051595270FB91AF9C (matches dist/SHA256SUMS.txt); V2 CN=Android Debug; permissions unchanged.
+No Compose UI tests, no device run, no screenshots: three-tab layout, Library search/filter/open/share/delete, gallery visibility, thumbnails and durations are deferred, NOT passed.
+Report docs/evidence/phase2a-delivery.md; STOP for the owner's next before Phase 2B.
