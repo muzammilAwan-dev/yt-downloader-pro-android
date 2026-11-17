@@ -10,11 +10,14 @@ import io.github.muzammilawan.clipharbor.core.Engine
 import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.QualityChoice
+import io.github.muzammilawan.clipharbor.core.TaskStage
 import io.github.muzammilawan.clipharbor.core.VideoQualities
 import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.core.VideoQualityPlan
 import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
 import io.github.muzammilawan.clipharbor.core.Stage
+import io.github.muzammilawan.clipharbor.download.TaskMediaMode
+import io.github.muzammilawan.clipharbor.download.TaskRepository
 import io.github.muzammilawan.clipharbor.engine.EngineFailure
 import java.io.File
 import java.util.Locale
@@ -24,12 +27,14 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class HomePhase { INITIALIZING, READY, RESOLVING, CHOOSING, DOWNLOADING, PUBLISHING, PAUSING, PAUSED, DONE, FAILED, CANCELED }
 
@@ -55,7 +60,6 @@ data class HomeState(
     val downloadLabel: String get() = if (selectedAudioFormatId != null) "Download audio only" else "Download video + audio"
     val busy: Boolean get() = phase in setOf(HomePhase.INITIALIZING, HomePhase.RESOLVING, HomePhase.DOWNLOADING,
         HomePhase.PUBLISHING, HomePhase.PAUSING)
-    // Do not accidentally expose source/signed URLs or media titles when debugging an object.
     override fun toString(): String = "HomeState(phase=$phase)"
 }
 
@@ -68,7 +72,11 @@ interface HomeObserver {
     fun line(task: String, stage: String, line: String) { line(task, line) }
 }
 
-/** One-task entry flow; the caller owns its scope. Durable queue/foreground execution is separate. */
+/**
+ * One-task entry flow; the caller owns its scope. When [repository] is supplied, every stage transition during
+ * download is persisted to the durable queue. The repository is optional so existing JVM tests (which pass no
+ * database) continue to exercise the in-memory path only.
+ */
 class HomeController(
     private val engine: Engine,
     private val scope: CoroutineScope,
@@ -79,6 +87,7 @@ class HomeController(
     private val newTaskId: () -> String = { UUID.randomUUID().toString() },
     private val foreground: DownloadForeground = DownloadForeground.ActivityOnly,
     private val publishAudio: suspend (File, String) -> PublishedMedia = { _, _ -> error("Audio publisher is not configured") },
+    private val repository: TaskRepository? = null,
 ) {
     private val mutable = MutableStateFlow(HomeState())
     val state = mutable.asStateFlow()
@@ -233,11 +242,31 @@ class HomeController(
         job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             val directory = File(stagingRoot, input.task)
             var lease: DownloadForeground.Lease? = null
+            var dbId: Long? = null
             try {
                 currentCoroutineContext().ensureActive()
                 val admitted = foreground.acquire(input.task)
                 lease = admitted
                 currentCoroutineContext().ensureActive()
+                // Persist a durable row before engine work begins. The row starts at QUEUED (repository contract),
+                // then advances through RESOLVING and DOWNLOADING so a mid-download process death is visible in the
+                // queue table. runCatching keeps a DB hiccup from cancelling the actual download; an orphaned
+                // QUEUED row is tolerated until the queue-UI batch adds a cleanup pass.
+                dbId = if (repository == null) null else runCatching {
+                    val id = repository.create(
+                        url = input.url,
+                        mediaMode = if (audio != null) TaskMediaMode.AUDIO else TaskMediaMode.VIDEO,
+                        requestedResolution = plan?.quality?.pixels ?: 0,
+                        audioFormatId = audio?.formatId,
+                        mergeContainer = if ((plan?.quality?.pixels ?: 0) >= 1440) "mkv" else "mp4/mkv",
+                    )
+                    runCatching { repository.advance(id, TaskStage.RESOLVING) }
+                    runCatching { repository.advance(id, TaskStage.DOWNLOADING) }
+                    id
+                }.onFailure {
+                    observer.event(input.task, Stage.DOWNLOADING.name, "db_create_failed",
+                        mapOf("err" to it.javaClass.simpleName))
+                }.getOrNull()
                 observer.event(input.task, Stage.DOWNLOADING.name, "start", mapOf(
                     "mediaMode" to mode, "requestedResolution" to (plan?.quality?.pixels?.toString() ?: "none"), "qualityAxis" to "shortEdge",
                     "resolveReuse" to (input.snapshot != null).toString(),
@@ -280,10 +309,12 @@ class HomeController(
                     "reusedResolve" to outcome.reusedResolve.toString()))
                 mutable.update { it.copy(phase = HomePhase.PUBLISHING, progress = null, status = "Saving the finished file…") }
                 admitted.publishing()
+                dbId?.let { id -> runCatching { repository?.advance(id, TaskStage.PUBLISHING) } }
                 val publicationStarted = clockMs()
                 observer.event(input.task, Stage.PUBLISHING.name, "start")
                 currentCoroutineContext().ensureActive()
                 val saved = if (audio != null) publishAudio(file, audio.mimeType) else publish(file)
+                dbId?.let { id -> runCatching { repository?.publish(id, saved.uri) } }
                 observer.event(input.task, Stage.PUBLISHING.name, "ok", mapOf("uri" to saved.uri,
                     "bytes" to file.length().toString(), "mime" to saved.mimeType,
                     "ms" to (clockMs() - publicationStarted).coerceAtLeast(0).toString()))
@@ -299,10 +330,22 @@ class HomeController(
                 directory.deleteRecursively()
             } catch (canceled: CancellationException) {
                 canceled(input.task)
+                dbId?.let { id ->
+                    withContext(NonCancellable) {
+                        if (timeoutTask == input.task) runCatching { repository?.pause(id) }
+                        else runCatching { repository?.cancel(id) }
+                    }
+                }
                 throw canceled
             } catch (error: Exception) {
                 if (timeoutTask != input.task) {
                     fail(input.task, error, if (state.value.phase == HomePhase.PUBLISHING) Stage.PUBLISHING else Stage.DOWNLOADING)
+                    val code = (error as? EngineFailure)?.error?.code?.name ?: ErrorCode.UNAVAILABLE.name
+                    dbId?.let { id ->
+                        withContext(NonCancellable) {
+                            runCatching { repository?.fail(id, code) }
+                        }
+                    }
                 }
             } finally {
                 try {

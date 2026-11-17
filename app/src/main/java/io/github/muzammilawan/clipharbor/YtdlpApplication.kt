@@ -18,9 +18,11 @@ import io.github.muzammilawan.clipharbor.diagnostics.NetworkProbe
 import io.github.muzammilawan.clipharbor.diagnostics.ReportContextFactory
 import io.github.muzammilawan.clipharbor.diagnostics.SelfTestRunner
 import io.github.muzammilawan.clipharbor.diagnostics.StorageProbe
-import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
+import io.github.muzammilawan.clipharbor.download.AppDatabase
 import io.github.muzammilawan.clipharbor.download.DownloadService
 import io.github.muzammilawan.clipharbor.download.ForegroundAdmission
+import io.github.muzammilawan.clipharbor.download.TaskRepository
+import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
 import io.github.muzammilawan.clipharbor.feature.home.HomeController
 import io.github.muzammilawan.clipharbor.feature.home.HomeObserver
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
@@ -33,11 +35,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Process-local session and service wiring. No durable queue or process-death recovery. */
+/** Process-local session and service wiring. No durable queue processing yet; persistence is a per-task side effect. */
 class YtdlpApplication : Application() {
     private val engine: Engine by lazy { YoutubeDlEngine(this) }
     private val storage: StorageProbe by lazy { AndroidStorageProbe(this) }
     private val network: NetworkProbe by lazy { AndroidNetworkProbe() }
+    private val database: AppDatabase by lazy { AppDatabase.build(this) }
+    private val taskRepository: TaskRepository by lazy { TaskRepository(database.taskDao()) }
     // One flushed logger per process, so overlapping session cleanup cannot close a newer log writer.
     private val logger: AppLogger by lazy {
         AppLogger(this).also { log ->
@@ -51,7 +55,7 @@ class YtdlpApplication : Application() {
 
     val sessions: SharedSessionOwner<DownloadSession> by lazy {
         SharedSessionOwner(Dispatchers.Main.immediate, create = { scope ->
-            DownloadSession(this, scope, engine, logger, storage, network, foreground)
+            DownloadSession(this, scope, engine, logger, storage, network, foreground, taskRepository)
         }, stop = DownloadSession::close)
     }
 
@@ -81,6 +85,7 @@ class DownloadSession(
     val storage: StorageProbe,
     private val network: NetworkProbe,
     foreground: DownloadForeground,
+    taskRepository: TaskRepository,
 ) {
     private val appContext = context.applicationContext
     private val publisher = MediaStorePublisher(appContext)
@@ -103,7 +108,8 @@ class DownloadSession(
             logger.write(RotatingLog.timestamp(System.currentTimeMillis()) +
                 " V task=$task stage=$stage event=ytdlp " + line)
         }
-    }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) })
+    }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) },
+        repository = taskRepository)
 
     init { logger.event('I', "session_start", stage = "APP") }
 
