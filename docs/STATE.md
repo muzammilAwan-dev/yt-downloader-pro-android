@@ -12,6 +12,12 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
 - **Phase 1 (MVP): approved implementation/host delivery complete; Android acceptance deferred, NOT PASSED. STOP for owner's `next`.**
   Compact video/original-audio/exact picker, private resolve reuse/timings, Room queue/history, foreground ownership, recovery/storage,
   publication safety and full-session logs are host-tested. No Phase 2 work authorized. Report: `docs/evidence/phase1-delivery.md`.
+- **17 Nov: upstream merged** (`origin/main` 7bde305, merge `33e14ad`): new owner roadmap `docs/ROADMAP.md` (phases R, 1, 2A-2F, 3, 4),
+  DeepSeek build workflow `docs/DEEPSEEK_WORKFLOW.md` + `docs/DS_QUICKSTART.md`, `tools/ds_bridge.py`, `tools/ds/MASTER_PROMPT.txt`, `tools/ds.bat`.
+  `docs/ROADMAP.md` §3.2 predates our Phase 1 delivery (it still calls Room/queue absent); its own Phase R says to correct that.
+- `origin/phase/R` **NOT merged**: tested, 7 conflicts. It re-implements the queue from that stale snapshot (raw URL, autoincrement id,
+  no revision fencing/recovery/privacy filter) and duplicates `TaskEntity`/`TaskRepository`/a second `@Database` in the same package.
+  Only its `_ds/` gitignore hunk was kept. `main` stays 16 ahead; nothing pushed. Untested since merge: no build run.
 - **Current delivered APK:** `dist/app-debug.apk`, actual full DEX stamp `56c15c4dc76a579c400e7b8a084dbb408eda299b`, 70,620,367 bytes.
   SHA-256 `71BE20C713B902B57E3FAA4DA9F904EEEEFB023175BC6D928CB27D8BE38ED233`; built/copy/SHA256SUMS agree, owner signer verified.
   yt-dlp 2026.10.26 / EJS0.8.0, library0.18.1; all 2 assets/notices, 7 native and 3 icon entries match f96194e. Manifest adds only

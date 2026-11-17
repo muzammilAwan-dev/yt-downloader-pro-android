@@ -1,6 +1,7 @@
 # ROADMAP: YTDLP for Android
 
-Date: 17 Nov 2026. Owner: Muzammil Awan. Status: proposal, awaiting owner approval. **No project files were changed.**
+Date: 17 Nov 2026. Owner: Muzammil Awan. Status: proposal, awaiting owner approval. Revised 17 Nov 2026 against the live
+repo (see §3.1/§3.2): the first draft used an older Android zip, so its baseline is corrected here. **No app feature code was changed.**
 
 Goal: an Android twin of the owner's desktop app (`yt-downloader-pro`): paste or share a link, pick a format, download from YouTube and every popular platform yt-dlp supports, with Snaptube-like convenience and none of its ads, tracking or permission sprawl. Streaming is out of scope for now.
 
@@ -47,32 +48,36 @@ Phase spec template (copy into `docs/phases/<id>.md` before each phase):
 ## 3. Starting position (evidence)
 
 ### 3.1 What was examined, and its limits
-- Uploaded zips of both repos, read 17 Nov 2026: Android (64 Kotlin files, about 9,000 lines, 34 main + 30 test files) and desktop (55 files).
+- First draft: uploaded zips of both repos read 17 Nov 2026 (Android then 64 Kotlin files, about 9,000 lines, 34 main + 30 test files; desktop 55 files).
+- **Correction, same day:** the live working tree was reconciled against the zip (HEAD merge `33e14ad`). It now has **45 main + 40 test Kotlin files** and the delivered Phase 1 queue, so the zip was older than the working tree. §3.2 records the real state.
 - Owner research ZIPs for Snaptube 7.67.0 and 1DM+ 20.0: only the written reports were read, **not** the decompiled code. Both are static analyses with no runtime verification. [Report]
-- A pasted agent report describes a later state (source stamp `56c15c4`: 568 MiB 1080p MP4 saved, 7/7 self-test, a persisted queue with a privacy problem on `?si=` links). **The uploaded Android zip is older than that**: it has no Room, no WorkManager and no queue code, and `56c15c4` appears nowhere in it. Phase R fixes this discrepancy first.
-- I could not open the GitHub repos directly (automated access is blocked). Everything below came from the zips.
+- The pasted agent report (source stamp `56c15c4`: 595,245,874-byte 1080p MP4 saved, 7/7 self-test) matches the live tree: Room queue, `?si=` history records, private by default. No discrepancy remains after §3.2.
+- I could not open the GitHub repos directly (automated access is blocked). Facts below come from the zips plus the reconciled working tree.
 
-### 3.2 Android app, as found in the zip
+### 3.2 Android app, verified against the working tree (17 Nov 2026, HEAD merge `33e14ad`)
 | Area | Finding | Evidence |
 |---|---|---|
-| Stack | Compose + Material 3, single activity. Dependencies are only coroutines, Compose, `youtubedl-android` 0.18.1 (library + ffmpeg). README lists Room/DataStore/WorkManager as stack, but `AGENTS.md` says "planned". | `app/build.gradle.kts`, `gradle/libs.versions.toml` |
+| Stack | Compose + Material 3, single activity. Coroutines, Compose, `youtubedl-android` 0.18.1 (library + ffmpeg), and **Room 2.8.5 with KSP 2.3.14 are delivered** (not just planned). DataStore/WorkManager are still only listed. | `app/build.gradle.kts`, `gradle/libs.versions.toml` |
 | Engine boundary | `Engine` interface: `init`, `info`, `resolve`, `resolveForTask`, `download`, `cancel`. Resolve handles one video; `MediaInfo` says "Phase 0: no playlists". | `core/Engine.kt` |
 | Download request | Fields: url, max height, output dir, process id, merge container, resolved snapshot, quality plan, audio plan. **No** cookies, trim, subtitles, playlist items, speed or compat-mode fields. | `core/Engine.kt` |
 | Hard-coded options | `--no-playlist`, `-N 4` (`CONCURRENT_FRAGMENTS = 4`), `--windows-filenames`, `--no-mtime`, HTTPS-only source check. | `engine/DownloadExecutor.kt`, `engine/EngineExecution.kt` |
 | Output verification | After exit code 0 it still requires printed evidence of the selected format ids, dimensions and file extension, else the task fails. | `engine/DownloadExecutor.kt` |
 | Errors | 17-code taxonomy (`ErrorCode`) mirrors `contracts/errors.json`; each code has a stage and a retryable flag. | `core/Engine.kt`, `contracts/errors.json` |
-| Cancel | `Engine.cancel` is documented best-effort; real cancel cleanup is unverified. | `core/Engine.kt`, `docs/STATE.md` |
-| Publishing | Copies the finished file into MediaStore `Download/YTDLP` with `IS_PENDING`; on exception it deletes the row. API 24-28 falls back to an app-specific folder, not visible in the gallery. | `publish/MediaStorePublisher.kt` |
+| Durable queue | Room `TaskDatabase` v1 (schema exported), `TaskEntity` + `RoomTaskStore`, `TaskRepository` with a `TaskPhase` state machine, revision fencing, process-once recovery, publication-uncertainty state, and a source-privacy filter (a `?si=` link becomes a review record, not a stored URL). | `download/RoomTaskStore.kt`, `download/TaskRepository.kt` |
+| Storage | `StorageBudget` pre-flight free-space check and an actual-byte check around publication. | `core/StorageBudget.kt` |
+| Cancel | `Engine.cancel` is documented best-effort; real cancel cleanup is unverified on device. | `core/Engine.kt`, `docs/STATE.md` |
+| Publishing | Copies the finished file into MediaStore `Download/YTDLP` with `IS_PENDING`; on exception it deletes the row. API 24-28 falls back to a narrow content-URI grant, not a gallery-visible folder. | `publish/MediaStorePublisher.kt` |
 | Manifest | Permissions: INTERNET, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC, POST_NOTIFICATIONS. **ACCESS_NETWORK_STATE is in the budget but not declared.** Only a `SEND text/plain` share filter. `allowBackup=false`, cleartext off. | `AndroidManifest.xml` |
-| State holder | `HomeController` is a plain class, not an AndroidX ViewModel. Survival across configuration changes relies on `configChanges` plus `SharedSessionOwner`. | `feature/home/HomeController.kt`, `AndroidManifest.xml` |
-| Build | Release has `isMinifyEnabled = false`. arm64-only. minSdk 24, target/compile 37. | `app/build.gradle.kts` |
-| Tests | 30 test files. Last recorded: 284 total, 283 passed, 1 skipped, lint 0 errors / 7 warnings. | `docs/STATE.md` (not re-run by me) |
+| State holder | `HomeController` is a plain class, not an AndroidX ViewModel. Survival across configuration changes relies on `configChanges` plus `SharedSessionOwner`; the queue UI is `feature/home/TaskQueue.kt`. | `feature/home/HomeController.kt`, `feature/home/TaskQueue.kt` |
+| Build | Release has `isMinifyEnabled = false`. arm64-only. minSdk 24, target/compile 37. versionName `0.1.0-phase1-preview`. | `app/build.gradle.kts` |
+| Tests | 40 test files. Last recorded helper run (16 Nov, not re-run after the docs merge): 338 total, 337 passed, 1 Windows symlink skip, lint 0 errors / 7 warnings. | `docs/STATE.md`, `docs/PROGRESS.md` |
 | Sites | All 9 sites in `contracts/sites.json` have `android_status: "unknown"`. | `contracts/sites.json` |
 
 ### 3.3 Device evidence (owner-reported)
 - Passed: engine spike on an Infinix X682B (Android 10, arm64): 7/7 self-test; `299+140` 1080p merge saved; 314,296,147-byte save with no 403. [Docs: `docs/evidence/*`, `docs/STATE.md`]
-- Latest pasted report: 595,245,874-byte MP4 saved; engine 211.3 s including merge; publication 5.9 s; fresh format lookups 40.6 / 37.1 / 34.5 s. [Report: pasted agent session]
-- **Failed earlier:** `6bb477b` hit NETWORK_OFFLINE and four media 403s; cause unproven. [Docs: `docs/evidence/foreground-6bb477b.md`]
+- Passed later: `74ce7cf` saved a 1080×1920 `137+140` MP4 (7,737,267 bytes) with the resolve replay reused; `e37686c` saved WebM/Opus `251-drc` (24,965,341 bytes) and 720p `136+140` (108,448,544 bytes) with no recorded 403. [Docs: `docs/evidence/phase1-owner-feedback.md`]
+- Latest pasted report (`56c15c4`): 595,245,874-byte 1080p MP4 saved; engine 211.3 s including merge; publication 5.9 s; fresh format lookups 40.6 / 37.1 / 34.5 s; self-test 7/7. [Report: pasted agent session]
+- **Failed earlier:** `6bb477b` hit NETWORK_OFFLINE and four media 403s; cause unproven. The `f96194e` engine refresh is not a general 403 fix. [Docs: `docs/evidence/foreground-6bb477b.md`]
 - **Unproven:** sound on new files, sustained background/lock, Cancel cleanup, process-death recovery, second quality preset, QHD/4K MKV playback, light theme, TalkBack, other share targets. [Docs: `docs/STATE.md`]
 
 ### 3.4 Desktop app parity target
@@ -133,6 +138,12 @@ Reject: ad mediation, remote-updatable extractor JS, 34 permissions (install pac
 9. **Honest UI language:** "Retry from start" is not "Resume"; "unsupported" is not "untested"; a finished file says what was actually selected.
 10. **Build discipline:** version catalog only; enable R8 for release with keep rules for the engine library before 1.0; baseline profile and macrobenchmark in Phase 3; CI runs tests and lint; **live-site tests are never a required check**.
 11. **Fake engine first:** new logic is tested with `FakeEngine` and command-construction fixtures; the phone is for what automation cannot prove.
+12. **One plan, one implementation per feature:** before adding a subsystem (queue, picker, storage, retry), check whether the working
+    tree already has it; never build a second parallel version from an old snapshot. `origin/phase/R` did exactly that and produced
+    seven merge conflicts plus duplicate `TaskEntity`/`TaskRepository`/`@Database` classes. Reconcile by diff review, then delete the loser.
+13. **Stage vocabulary is a migration contract:** `TaskPhase` is persisted by name, so add values (`MERGING`, `POST_PROCESSING` before
+    Phase 2D conversion/trim) only with a schema/migration note and tests. Model recovery as explicit resumable targets; anything
+    uncertain after process death fails closed and asks the user, it never silently resumes or republishes.
 
 ---
 
@@ -140,10 +151,14 @@ Reject: ad mediation, remote-updatable extractor JS, 34 permissions (install pac
 
 Rough size is in AI sessions (one `/next` loop each) and is an inference [I], not a commitment.
 
-### Phase R: Reconcile and tidy (host-only; 1-2 sessions)
-- **Goal:** make this roadmap's baseline true.
-- **Inputs:** `AGENTS.md`, `docs/STATE.md`, this file §3, `contracts/allowed-options.json`, desktop `CommandValidator.cs`.
-- **Steps:** (1) `git log -5`, record HEAD and whether a Room queue, privacy handling for `?si=` links and the `56c15c4` stamp exist; (2) run `testDebugUnitTest lintDebug`, record counts; (3) correct §3.2 of this file if the repo has moved; (4) trim `docs/STATE.md` to under about 60 lines, moving history to `docs/PROGRESS.md`; (5) create `docs/phases/` with the template; (6) produce an allowlist reconciliation table (Appendix A) with a recommendation per option; (7) fix the stale diagnostics header (it says runtimes are missing while later checks find them) if still present.
+### Phase R: Reconcile and tidy (host-only; 0-1 sessions left, mostly done 17 Nov 2026)
+- **Goal:** make this roadmap's baseline true and leave a phase-spec scaffold.
+- **Already done (17 Nov 2026):** §3.1/§3.2 corrected against the live tree; upstream merged (`33e14ad`); the stale `origin/phase/R`
+  branch was tested and rejected (see §7). Room, revision fencing, recovery, storage preflight and publication safety are delivered.
+- **Remaining steps:** (1) record a fresh `testDebugUnitTest lintDebug` count after any code change; (2) trim `docs/STATE.md` to about
+  60 lines, moving history to `docs/PROGRESS.md`; (3) create `docs/phases/` with the §0 template; (4) produce the allowlist
+  reconciliation table (Appendix A) with a recommendation per option; (5) fix the stale diagnostics header (it says runtimes are missing
+  while later checks find them) if still present; (6) note that `TaskPhase` lacks `MERGING`/`POST_PROCESSING` before Phase 2D needs them.
 - **Exit:** `docs/phases/R-report.md`; tests/lint counts quoted; no feature code.
 - **Stop:** owner answers OD-1 to OD-7 as far as they block 1 to 2B.
 
@@ -193,7 +208,7 @@ Rough size is in AI sessions (one `/next` loop each) and is an inference [I], no
 - **Exit:** every claimed site has dated evidence; a non-blocking, owner-run canary checklist exists; README site table generated from `sites.json`.
 
 ### Phase 2D: Desktop-parity media tools (four sub-phases; each ends with a stop)
-Each sub-phase needs: `DownloadRequest` fields, allowlist entries, validator tests, command-construction fixtures and a device check.
+Each sub-phase needs: `DownloadRequest` fields, allowlist entries, validator tests, command-construction fixtures and a device check; and, where the task changes shape (convert, trim), a `TaskPhase` addition with a migration note and recovery test.
 - **2D-1 Audio and compatibility (3 sessions):** MP3, M4A, FLAC, WAV conversion as a typed job (today only original audio exists [Code: `core/AudioFormats.kt`]); compatibility mode (H.264/AAC) as a preference that never silently substitutes an exact selection; speed limit setting.
 - **2D-2 Playlists and batch (3-4 sessions):** extend `Engine` with bounded playlist discovery (entry cap), selection by ranges in the desktop syntax (`1-5, 8`), per-item outcomes, explicit batch confirmation. `--no-playlist` stays the default for single links.
 - **2D-3 Trim and subtitles (3 sessions):** validated start/end ranges via `--download-sections`; say clearly when cuts are keyframe-approximate versus accurate (`--force-keyframes-at-cuts` is a desktop-only option today); subtitles with language selection, manual versus automatic labels, sidecar first, embedding where the bundled FFmpeg supports it.
@@ -245,6 +260,7 @@ Local media preview (Media3), tablet layouts, proven faster-transfer modes, nati
 | 8 | Name and trademark conflicts | Medium | Rebrand | OD-2 before release | 3 |
 | 9 | AI context overload / drift | Medium | Wrong code | One phase per session, short STATE, evidence tags | all |
 | 10 | arm64-only build excludes 32-bit phones | Medium | Reach | ABI splits | 3 |
+| 11 | Parallel agent work re-implements a delivered subsystem from a stale snapshot (`phase/R` queue) | High while multiple agents run | Rework, duplicate classes, merge conflicts | Rule §5.12: diff before building, one plan of record, reconcile branches before merge | R, all |
 
 ## 8. Definition of done for 1.0
 
@@ -258,6 +274,17 @@ Desktop validator allows but the Android contract lacks (14): `--continue`, `--d
 Android contract only (engine-internal, mostly): `--batch-file`, `--cache-dir`, `--clean-info-json`, `--config-locations`, `--cookies`, `--downloader`, `--dump-json`, `--exec`, `--exec-before-download`, `--external-downloader-args`, `--extractor-args`, `--ffmpeg-location`, `--ignore-config`, `--js-runtimes`, `--load-info-json`, `--newline`, `--no-cache-dir`, `--no-clean-info-json`, `--no-clean-infojson`, `--no-simulate`, `--output`, `--paths`, `--plugin-dirs`, `--print`, `--remux-video`, `--user-agent`, `-P`, `-r`, `-v`.
 Action in Phase R: check whether any listed Android-only entry sits in the user-facing allowlist rather than the `blocked_always` or `engine_internal_options` sections (for example `--exec` and `--plugin-dirs` should never be user-reachable).
 
+**Checked 17 Nov 2026 [Code: `contracts/allowed-options.json` v3]:** the dangerous Android-only entries are already in `blocked_always`
+(`--exec`, `--exec-before-download`, `--batch-file`, `--config-locations`, `--plugin-dirs`, `--load-info-json`, `--ffmpeg-location`,
+`--cache-dir`, `--no-clean-info-json*`). `--load-info-json` is also app-set in `engine_internal_options`, which is the intended split.
+
+**Recommendation for the 14 desktop-only options (owner decides, not an automatic copy):**
+- Add to `engine_internal_options` only (app sets it, never an intent): `--continue`, `--no-overwrites`, `--restrict-filenames`, `-R`
+  (alias of `--retries`), `--sleep-*` and `--max-sleep-interval` (rate limiting is engine policy, a user-supplied sleep value is a DoS knob).
+- Add with a typed job in Phase 2D: `--download-archive` (2D-4 duplicate skip), `--force-keyframes-at-cuts` (2D-3, labelled approximate
+  vs accurate), `--sponsorblock-remove` (2D setting, never free text), `--write-thumbnail` (2D-4, deferred until capability-tested).
+- Do not add: `--ignore-errors` / `-i` (masks per-item failure; our evidence-over-exit-code rule depends on seeing the error).
+
 ## Appendix B: sources
 - LibreTube repo and build file: github.com/libre-tube/LibreTube (read 17 Nov 2026).
 - yt-dlp issues: #12482 (SABR), #15197, #15897, #17616, #17619, #17666 (2026).
@@ -267,4 +294,4 @@ Action in Phase R: check whether any listed Android-only entry sits in the user-
 - Owner material: both repo zips, Snaptube 7.67.0 reports, 1DM+ 20.0 reports, pasted agent report.
 
 ## Appendix C: not verified
-Device behaviour of anything in §3.3 "Unproven"; the exact current state of the Android repo beyond the zip; Library visibility after reinstall; leftover `IS_PENDING` rows after process death; peak disk multiple during merge; UIDT behaviour with a Python subprocess; the exact developer-verification requirements for the owner's region; Snaptube and 1DM+ runtime behaviour (static analysis only).
+Device behaviour of anything in §3.3 "Unproven"; Library visibility after reinstall; leftover `IS_PENDING` rows after process death; peak disk multiple during merge; UIDT behaviour with a Python subprocess; the exact developer-verification requirements for the owner's region; Snaptube and 1DM+ runtime behaviour (static analysis only). The repo state in §3.2 was verified on 17 Nov 2026 but must be re-checked (`git log -1`, test counts) before each phase.

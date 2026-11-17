@@ -1477,3 +1477,9 @@ Own DEX full stamp/source match, signature/identity/min24-target37-arm64/budget 
 Report C:\Users\Malku\AppData\Local\Temp\opencode\ytdlp-phone-free-o5y5fbwt\summary.md: PASS_HOST_CHECKS_DEVICE_REQUIRED / device NOT_RUN / runner REMOVED; only two reports retained. Full phase report docs/evidence/phase1-delivery.md.
 Approved Phase 1 implementation/host delivery complete; Android acceptance NOT PASSED and device-only gates deferred, not waived. Latest owner-tested artifact still e37686c. No live resolve-speedup or general 403 fix claim; no runtime updater/login/automatic queue scheduling.
 STOP for owner's next before Phase 2. No intermediate/new phone installation request; no push or tooling installation.
+
+## 2026-11-17 upstream pull and phase/R reconciliation (docs/tools only)
+Fetched origin: main 21f7879..7bde305, new branch origin/phase/R. Merged origin/main as 33e14ad (clean): docs/ROADMAP.md, docs/DEEPSEEK_WORKFLOW.md, docs/DS_QUICKSTART.md, tools/ds_bridge.py, tools/ds/MASTER_PROMPT.txt, tools/ds.bat.
+ROADMAP.md is a new owner proposal (phases R, 1, 2A-2F, 3, 4; decisions DR-000..004, open OD-1..OD-7). Its section 3.2 predates our delivered Phase 1: it reports no Room/WorkManager/queue code and no 56c15c4, matching the older zip it was written from.
+origin/phase/R = 7bde305 + 6 queue commits. Merge test produced 7 conflicts (app/build.gradle.kts, MainActivity.kt, YtdlpApplication.kt, download/TaskRepository.kt, feature/home/HomeController.kt, download/TaskRepositoryTest.kt, gradle/libs.versions.toml) plus duplicate TaskEntity/TaskRepository and a second @Database (AppDatabase) beside our TaskDatabase.
+Phase/R queue is the weaker parallel design: stores raw url, autoincrement Long id, no revision fencing, no process recovery, no publication-uncertainty state, no source-privacy filtering. Merge aborted; only its _ds/ and .ds_backup/ gitignore lines kept. main remains 16 ahead of origin/main; nothing pushed.
