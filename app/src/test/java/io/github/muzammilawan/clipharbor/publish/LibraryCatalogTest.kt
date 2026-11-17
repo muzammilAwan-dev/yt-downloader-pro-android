@@ -1,0 +1,42 @@
+package io.github.muzammilawan.clipharbor.publish
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class LibraryCatalogTest {
+    private fun item(name: String, mime: String, addedAt: Long, bytes: Long = 10) =
+        LibraryItem("content://media/$name", name, mime, bytes, addedAt, "Download/YTDLP")
+
+    @Test fun classifiesByMimeTypeOnly() {
+        assertEquals(LibraryKind.VIDEO, LibraryCatalog.kindOf("video/mp4"))
+        assertEquals(LibraryKind.AUDIO, LibraryCatalog.kindOf("audio/opus"))
+        assertEquals(LibraryKind.IMAGE, LibraryCatalog.kindOf("image/jpeg"))
+        assertEquals(LibraryKind.OTHER, LibraryCatalog.kindOf("application/octet-stream"))
+    }
+
+    @Test fun filtersByNameAndKindThenSortsNewestFirst() {
+        val items = listOf(
+            item("holiday.mp4", "video/mp4", 10),
+            item("Holiday Song.opus", "audio/opus", 30),
+            item("notes.mp4", "video/mp4", 20),
+        )
+        assertEquals(listOf("Holiday Song.opus", "holiday.mp4"),
+            LibraryCatalog.visible(items, "holiday", null).map { it.name })
+        assertEquals(listOf("notes.mp4", "holiday.mp4"),
+            LibraryCatalog.visible(items, "", LibraryKind.VIDEO).map { it.name })
+        assertEquals(listOf("Holiday Song.opus"),
+            LibraryCatalog.visible(items, "song", LibraryKind.AUDIO).map { it.name })
+    }
+
+    @Test fun blankQueryAndNullKindShowEverything() {
+        val items = listOf(item("b.mp4", "video/mp4", 1), item("a.opus", "audio/opus", 2))
+        assertEquals(listOf("a.opus", "b.mp4"), LibraryCatalog.visible(items, "   ", null).map { it.name })
+    }
+
+    @Test fun totalIgnoresNegativeSizes() {
+        val items = listOf(item("a", "video/mp4", 1, 5), item("b", "video/mp4", 1, -3))
+        assertEquals(5L, LibraryCatalog.totalBytes(items))
+        assertTrue(LibraryCatalog.visible(emptyList(), "x", null).isEmpty())
+    }
+}
