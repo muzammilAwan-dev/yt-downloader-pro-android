@@ -142,8 +142,11 @@ private fun LibraryCard(
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(item.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text("${label(kind)} · ${LibraryCatalog.formatBytes(item.sizeBytes)}",
-                        style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        listOfNotNull(label(kind), LibraryCatalog.formatBytes(item.sizeBytes),
+                            LibraryCatalog.formatDuration(item.durationMs)).joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     Text(item.location, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }

@@ -23,6 +23,7 @@ import io.github.muzammilawan.clipharbor.feature.home.TaskQueue
 fun DownloadsScreen(
     tasks: List<TaskRecord>,
     enabled: Boolean,
+    progress: Int?,
     onReview: (String, Boolean) -> Unit,
     onRemove: (String) -> Unit,
     onOpen: (PublishedMedia) -> Unit,
@@ -35,7 +36,7 @@ fun DownloadsScreen(
         Text("Downloads", Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall)
         Text("Active work first, then queued and failed links. Queued links survive restarts; interrupted attempts stay paused until review.",
             style = MaterialTheme.typography.bodyMedium)
-        TaskQueue(tasks, enabled, onReview, onRemove, onOpen)
+        TaskQueue(tasks, enabled, progress, onReview, onRemove, onOpen)
         Text("Cancel works while downloading, not while saving. Forgetting a record never deletes a saved file.",
             style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth())
     }

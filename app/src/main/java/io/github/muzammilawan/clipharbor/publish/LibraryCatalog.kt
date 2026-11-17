@@ -8,6 +8,7 @@ data class LibraryItem(
     val sizeBytes: Long,
     val addedAt: Long,
     val location: String,
+    val durationMs: Long? = null,
 ) {
     override fun toString(): String = "LibraryItem(name=$name, kind=${LibraryCatalog.kindOf(mimeType)})"
 }
@@ -38,6 +39,10 @@ object LibraryCatalog {
 
     fun totalBytes(items: List<LibraryItem>): Long = items.sumOf { it.sizeBytes.coerceAtLeast(0) }
 
+    /** Newest [limit] entries for the Home preview; never a second sort order. */
+    fun recent(items: List<LibraryItem>, limit: Int): List<LibraryItem> =
+        if (limit <= 0) emptyList() else visible(items, "", null).take(limit)
+
     /** Human-readable base-1024 size; negative sizes read as zero rather than as a negative file. */
     fun formatBytes(bytes: Long): String {
         val value = bytes.coerceAtLeast(0)
@@ -50,5 +55,16 @@ object LibraryCatalog {
             unit++
         }
         return String.format(java.util.Locale.ROOT, "%.1f %s", size, units[unit])
+    }
+
+    /** `m:ss` or `h:mm:ss`; unknown or non-positive durations are omitted rather than guessed. */
+    fun formatDuration(durationMs: Long?): String? {
+        val total = durationMs ?: return null
+        if (total <= 0) return null
+        val seconds = total / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        return if (hours > 0) String.format(java.util.Locale.ROOT, "%d:%02d:%02d", hours, minutes % 60, seconds % 60)
+        else String.format(java.util.Locale.ROOT, "%d:%02d", minutes, seconds % 60)
     }
 }

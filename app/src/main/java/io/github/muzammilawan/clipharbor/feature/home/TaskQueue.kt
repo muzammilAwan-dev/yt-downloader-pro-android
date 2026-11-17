@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -30,7 +31,8 @@ import io.github.muzammilawan.clipharbor.core.ErrorCode
 import io.github.muzammilawan.clipharbor.core.ErrorRecovery
 
 @Composable
-internal fun TaskQueue(rows: List<TaskRecord>, enabled: Boolean, onReview: (String, Boolean) -> Unit,
+internal fun TaskQueue(rows: List<TaskRecord>, enabled: Boolean, progress: Int?,
+    onReview: (String, Boolean) -> Unit,
     onRemove: (String) -> Unit, onOpen: (PublishedMedia) -> Unit) {
     var all by remember { mutableStateOf(false) }
     var publicationRetry by remember { mutableStateOf<String?>(null) }
@@ -46,6 +48,12 @@ internal fun TaskQueue(rows: List<TaskRecord>, enabled: Boolean, onReview: (Stri
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(row.title ?: row.savedName ?: "Queued media link", style = MaterialTheme.typography.titleSmall)
                         Text(row.phase.name.lowercase().replace('_', ' '), style = MaterialTheme.typography.bodySmall)
+                        if (row.phase == TaskPhase.DOWNLOADING && progress != null) {
+                            LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
+                            Text("$progress% · merging and saving follow", style = MaterialTheme.typography.bodySmall)
+                        } else if (row.phase in setOf(TaskPhase.RESOLVING, TaskPhase.DOWNLOADING, TaskPhase.PUBLISHING)) {
+                            LinearProgressIndicator(Modifier.fillMaxWidth())
+                        }
                         row.selection.videoHeight?.let { Text("Requested ceiling: ${it}p", style = MaterialTheme.typography.bodySmall) }
                         row.selection.audioFormatId?.let { Text("Original audio · format $it", style = MaterialTheme.typography.bodySmall) }
                         row.selection.videoFormatId?.let { Text("Exact video · format $it", style = MaterialTheme.typography.bodySmall) }

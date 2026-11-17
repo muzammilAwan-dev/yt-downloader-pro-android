@@ -50,6 +50,7 @@ import io.github.muzammilawan.clipharbor.feature.shell.AppDestination
 import io.github.muzammilawan.clipharbor.feature.shell.AppShell
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
 import io.github.muzammilawan.clipharbor.log.UserAction
+import io.github.muzammilawan.clipharbor.publish.LibraryCatalog
 import io.github.muzammilawan.clipharbor.publish.LibraryItem
 import io.github.muzammilawan.clipharbor.publish.LibraryKind
 import io.github.muzammilawan.clipharbor.publish.MediaStoreLibrary
@@ -108,7 +109,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshNotificationAccess()
-        if (destination == AppDestination.LIBRARY && !showDiagnostics) refreshLibrary()
+        if (!showDiagnostics) refreshLibrary()
         if (::attachment.isInitialized) logger.action(UserAction.ACTIVITY_RESUME, home.state.value.phase.name)
     }
 
@@ -241,6 +242,14 @@ class MainActivity : ComponentActivity() {
                         home.usePendingLink()
                     }, onOpenFile = ::openSaved,
                     onDiagnostics = ::openDiagnostics,
+                    recent = LibraryCatalog.recent(libraryItems, 3),
+                    onOpenRecent = { item ->
+                        openSaved(PublishedMedia(item.uri, item.name, item.location, item.mimeType))
+                    },
+                    onSeeAllLibrary = {
+                        destination = AppDestination.LIBRARY
+                        refreshLibrary()
+                    },
                     durableQueue = home.hasDurableQueue,
                     onStageLink = { if (!state.busy) home.stageCurrentLink() },
                     onSelectExactVideo = { id -> if (!state.busy) home.selectExactVideo(id) },
@@ -250,6 +259,7 @@ class MainActivity : ComponentActivity() {
                 DownloadsScreen(
                     tasks = tasks,
                     enabled = !state.busy,
+                    progress = if (ui.phase == HomePhase.DOWNLOADING) ui.progress else null,
                     onReview = { id, accepted -> if (!state.busy) home.reviewTask(id, accepted) },
                     onRemove = { id -> if (!state.busy) home.removeTask(id) },
                     onOpen = ::openSaved,

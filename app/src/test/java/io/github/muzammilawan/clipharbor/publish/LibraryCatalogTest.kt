@@ -34,6 +34,12 @@ class LibraryCatalogTest {
         assertEquals(listOf("a.opus", "b.mp4"), LibraryCatalog.visible(items, "   ", null).map { it.name })
     }
 
+    @Test fun recentPreviewIsTheNewestSliceOfTheSameOrder() {
+        val items = listOf(item("old.mp4", "video/mp4", 1), item("new.opus", "audio/opus", 3), item("mid.mp4", "video/mp4", 2))
+        assertEquals(listOf("new.opus", "mid.mp4"), LibraryCatalog.recent(items, 2).map { it.name })
+        assertTrue(LibraryCatalog.recent(items, 0).isEmpty())
+    }
+
     @Test fun sizesStayReadableAndLocaleIndependent() {
         assertEquals("0 B", LibraryCatalog.formatBytes(0))
         assertEquals("0 B", LibraryCatalog.formatBytes(-5))
@@ -42,6 +48,15 @@ class LibraryCatalogTest {
         assertEquals("1.5 KB", LibraryCatalog.formatBytes(1536))
         assertEquals("1.4 MB", LibraryCatalog.formatBytes(1_500_000))
         assertEquals("103.4 MB", LibraryCatalog.formatBytes(108_448_544))
+    }
+
+    @Test fun durationsAreShownOnlyWhenKnown() {
+        assertEquals("0:59", LibraryCatalog.formatDuration(59_999))
+        assertEquals("1:05", LibraryCatalog.formatDuration(65_000))
+        assertEquals("1:02:05", LibraryCatalog.formatDuration(3_725_000))
+        assertEquals(null, LibraryCatalog.formatDuration(null))
+        assertEquals(null, LibraryCatalog.formatDuration(0))
+        assertEquals(null, LibraryCatalog.formatDuration(-1000))
     }
 
     @Test fun totalIgnoresNegativeSizes() {

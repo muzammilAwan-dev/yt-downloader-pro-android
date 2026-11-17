@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.muzammilawan.clipharbor.AppInfo
 import io.github.muzammilawan.clipharbor.R
@@ -50,6 +51,8 @@ import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.core.ErrorRecovery
 import io.github.muzammilawan.clipharbor.core.SiteShortcut
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
+import io.github.muzammilawan.clipharbor.publish.LibraryCatalog
+import io.github.muzammilawan.clipharbor.publish.LibraryItem
 
 @Composable
 fun YtdlpTheme(content: @Composable () -> Unit) {
@@ -78,6 +81,9 @@ fun HomeScreen(
     onPendingLink: () -> Unit,
     onOpenFile: (PublishedMedia) -> Unit,
     onDiagnostics: () -> Unit,
+    recent: List<LibraryItem> = emptyList(),
+    onOpenRecent: (LibraryItem) -> Unit = {},
+    onSeeAllLibrary: () -> Unit = {},
     durableQueue: Boolean = false,
     onStageLink: () -> Unit = {},
     onSelectExactVideo: (String) -> Unit = {},
@@ -191,6 +197,20 @@ fun HomeScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Another shared link is waiting. Your current attempt was not replaced.")
                         OutlinedButton(onClick = onPendingLink, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text("Review waiting link") }
+                    }
+                }
+            }
+            if (recent.isNotEmpty()) {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Recent saves", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
+                        recent.forEach { item ->
+                            OutlinedButton(onClick = { onOpenRecent(item) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("${item.name} · ${LibraryCatalog.formatBytes(item.sizeBytes)}",
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                        TextButton(onClick = onSeeAllLibrary, modifier = Modifier.fillMaxWidth()) { Text("Open Library") }
                     }
                 }
             }

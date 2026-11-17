@@ -45,6 +45,7 @@ class MediaStoreLibrary(private val context: Context) {
             MediaStore.MediaColumns.SIZE,
             MediaStore.MediaColumns.DATE_ADDED,
             MediaStore.MediaColumns.RELATIVE_PATH,
+            MediaStore.MediaColumns.DURATION,
         )
         val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
         val arguments = arrayOf("${MediaStorePublisher.RELATIVE_PATH}%")
@@ -58,6 +59,7 @@ class MediaStoreLibrary(private val context: Context) {
             val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
             val addedColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
             val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.RELATIVE_PATH)
+            val durationColumn = cursor.getColumnIndex(MediaStore.MediaColumns.DURATION)
             buildList {
                 while (cursor.moveToNext()) {
                     val uri = ContentUris.withAppendedId(
@@ -70,6 +72,7 @@ class MediaStoreLibrary(private val context: Context) {
                         sizeBytes = cursor.getLong(sizeColumn),
                         addedAt = cursor.getLong(addedColumn),
                         location = cursor.getString(pathColumn) ?: MediaStorePublisher.RELATIVE_PATH,
+                        durationMs = durationColumn.takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getLong),
                     ))
                 }
             }
