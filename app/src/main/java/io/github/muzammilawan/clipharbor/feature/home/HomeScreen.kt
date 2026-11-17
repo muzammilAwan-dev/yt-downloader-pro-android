@@ -75,6 +75,7 @@ fun HomeScreen(
     onRetryEngine: () -> Unit,
     onPendingLink: () -> Unit,
     onOpenFile: (PublishedMedia) -> Unit,
+    onViewQueue: () -> Unit,
     onDiagnostics: () -> Unit,
 ) {
     val enabled = !state.busy && !externalBusy
@@ -223,7 +224,10 @@ fun HomeScreen(
             }
             Text("Phase 1 preview · Foreground downloads and notification controls are not phone-verified yet. No durable queue or process-death recovery.",
                 style = MaterialTheme.typography.bodySmall)
-            OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Diagnostics & local logs") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = onViewQueue, modifier = Modifier.weight(1f)) { Text("View queue") }
+                OutlinedButton(onClick = onDiagnostics, modifier = Modifier.weight(1f)) { Text("Diagnostics") }
+            }
             Text("Unofficial · Free and open source · ${AppInfo.ENGINE_CREDIT}", style = MaterialTheme.typography.bodySmall)
         }
     }

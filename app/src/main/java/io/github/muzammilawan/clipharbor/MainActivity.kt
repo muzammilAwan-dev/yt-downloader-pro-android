@@ -43,6 +43,8 @@ import io.github.muzammilawan.clipharbor.feature.home.HomePhase
 import io.github.muzammilawan.clipharbor.feature.home.HomeScreen
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
 import io.github.muzammilawan.clipharbor.feature.home.YtdlpTheme
+import io.github.muzammilawan.clipharbor.feature.queue.QueueScreen
+import io.github.muzammilawan.clipharbor.feature.queue.QueueViewModel
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
 import io.github.muzammilawan.clipharbor.log.UserAction
 import kotlinx.coroutines.CancellationException
@@ -51,8 +53,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Single activity: Phase 1 link review/quality picker with separately accessible local diagnostics.
- * Attaches to the shared task/service session; no process-death recovery or durable queue.
+ * Single activity: Phase 1 link review/quality picker with a read-only durable queue and local diagnostics.
+ * Attaches to the shared task/service session; no process-death recovery of an in-flight task yet.
  */
 class MainActivity : ComponentActivity() {
     private lateinit var attachment: SharedSessionOwner.Attachment<DownloadSession>
@@ -62,7 +64,9 @@ class MainActivity : ComponentActivity() {
     private val storage get() = session.storage
     private val home get() = session.home
     private val diagnostics get() = session.diagnostics
+    private lateinit var queueViewModel: QueueViewModel
     private var showDiagnostics by mutableStateOf(false)
+    private var showQueue by mutableStateOf(false)
     private var notificationVisibility by mutableStateOf(NotificationAccess.DISABLED)
     private var notificationRequestPending by mutableStateOf(false)
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -75,6 +79,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         attachment = (application as YtdlpApplication).sessions.attach()
+        queueViewModel = QueueViewModel(attachment.scope, session.taskRepository)
         logger.action(UserAction.ACTIVITY_CREATE, home.state.value.phase.name)
         // Do not replay the original share over a retained task; fresh process/session still prefills it.
         if (savedInstanceState == null || home.state.value.url.isEmpty()) receiveShare(intent)
@@ -134,9 +139,20 @@ class MainActivity : ComponentActivity() {
     private fun AppRoute() {
         val ui by home.state.collectAsState()
         val state = diagnostics
-        BackHandler(enabled = showDiagnostics) {
+        val queue by queueViewModel.tasks.collectAsState()
+        BackHandler(enabled = showDiagnostics || showQueue) {
             logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
-            showDiagnostics = false
+            when {
+                showQueue -> showQueue = false
+                showDiagnostics -> showDiagnostics = false
+            }
+        }
+        if (showQueue) {
+            QueueScreen(tasks = queue, onBack = {
+                logger.action(UserAction.BACK_TO_DOWNLOADS, ui.phase.name)
+                showQueue = false
+            })
+            return
         }
         if (!showDiagnostics) {
             HomeScreen(state = ui, externalBusy = state.busy, onUrlChange = {
@@ -173,6 +189,10 @@ class MainActivity : ComponentActivity() {
                     logger.action(UserAction.USE_PENDING_LINK, ui.phase.name)
                     home.usePendingLink()
                 }, onOpenFile = ::openSaved,
+                onViewQueue = {
+                    logger.event('I', "open_queue", stage = "UI")
+                    showQueue = true
+                },
                 onDiagnostics = {
                     logger.action(UserAction.OPEN_DIAGNOSTICS, ui.phase.name)
                     state.engineLine = "engine: " + engine.info().headerLine()
@@ -232,6 +252,7 @@ class MainActivity : ComponentActivity() {
         if (intent?.action != Intent.ACTION_SEND) return
         logger.action(UserAction.SHARE_LINK_RECEIVED, home.state.value.phase.name)
         showDiagnostics = false
+        showQueue = false
         val text = if (intent.type == "text/plain") runCatching {
             intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
         }.getOrNull() else null

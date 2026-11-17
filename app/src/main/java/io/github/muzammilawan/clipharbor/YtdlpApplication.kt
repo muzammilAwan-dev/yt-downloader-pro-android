@@ -85,7 +85,7 @@ class DownloadSession(
     val storage: StorageProbe,
     private val network: NetworkProbe,
     foreground: DownloadForeground,
-    taskRepository: TaskRepository,
+    val taskRepository: TaskRepository,
 ) {
     private val appContext = context.applicationContext
     private val publisher = MediaStorePublisher(appContext)
