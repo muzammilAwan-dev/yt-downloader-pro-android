@@ -91,6 +91,71 @@ class TaskRepositoryTest {
         assertThrows(IllegalArgumentException::class.java) { TaskSelection(audioFormatId = "bad']+b") }
         assertThrows(IllegalArgumentException::class.java) { TaskSelection(videoHeight = 720, audioFormatId = "140") }
     }
+
+    @Test fun cancellingTheQueueKeepsTheRunningAttemptAndFinishedHistory() = runTest {
+        repository.stage("waiting1", "https://example.invalid/a")
+        repository.stage("waiting2", "https://example.invalid/a")
+        repository.stage("running", "https://example.invalid/a")
+        repository.transition("running", TaskPhase.RESOLVING)
+        repository.transition("running", TaskPhase.CHOOSING)
+        repository.transition("running", TaskPhase.DOWNLOADING)
+        repository.stage("saved", "https://example.invalid/a")
+        repository.transition("saved", TaskPhase.RESOLVING)
+        repository.transition("saved", TaskPhase.FAILED, reason = "HTTP_403_ON_MEDIA")
+
+        assertEquals(2, repository.cancelQueued())
+        val byId = store.rows.value.associateBy { it.id }
+        assertEquals(TaskPhase.CANCELED, byId.getValue("waiting1").phase)
+        assertEquals("QUEUE_CANCELED", byId.getValue("waiting2").reason)
+        assertEquals(TaskPhase.DOWNLOADING, byId.getValue("running").phase)
+        assertEquals(TaskPhase.FAILED, byId.getValue("saved").phase)
+        assertEquals(0, repository.cancelQueued())
+    }
+
+    @Test fun clearingFinishedRecordsKeepsQueuedPausedAndActiveWork() = runTest {
+        repository.stage("waiting", "https://example.invalid/a")
+        repository.stage("paused", "https://example.invalid/a")
+        repository.transition("paused", TaskPhase.RESOLVING)
+        repository.transition("paused", TaskPhase.PAUSED, reason = "USER_PAUSED")
+        repository.stage("running", "https://example.invalid/a")
+        repository.transition("running", TaskPhase.RESOLVING)
+        repository.transition("running", TaskPhase.CHOOSING)
+        repository.stage("failed", "https://example.invalid/a")
+        repository.transition("failed", TaskPhase.RESOLVING)
+        repository.transition("failed", TaskPhase.FAILED, reason = "UNAVAILABLE")
+        repository.stage("done", "https://example.invalid/a")
+        repository.transition("done", TaskPhase.RESOLVING)
+        repository.transition("done", TaskPhase.CHOOSING)
+        repository.transition("done", TaskPhase.DOWNLOADING)
+        repository.transition("done", TaskPhase.PUBLISHING)
+        repository.transition("done", TaskPhase.DONE, savedUri = "content://test/1")
+
+        assertEquals(2, repository.clearFinished())
+        assertEquals(setOf("waiting", "paused", "running"), store.rows.value.map { it.id }.toSet())
+        assertEquals(0, repository.clearFinished())
+    }
+
+    @Test fun batchActionsReReadEachRowSoAChangedRevisionIsSkippedNotOverwritten() = runTest {
+        repository.stage("one", "https://example.invalid/a")
+        repository.stage("two", "https://example.invalid/a")
+        val stale = MemoryTaskStore().apply {
+            rows.value = store.rows.value
+        }
+        // A listing that claims both links are still waiting while the real store moved one on.
+        val staler = object : TaskStore {
+            override val rows = store.rows
+            override suspend fun all() = stale.rows.value
+            override suspend fun get(id: String) = store.get(id)
+            override suspend fun insert(record: TaskRecord) = store.insert(record)
+            override suspend fun replace(record: TaskRecord, expectedRevision: Long) = store.replace(record, expectedRevision)
+            override suspend fun delete(id: String, expectedRevision: Long) = store.delete(id, expectedRevision)
+        }
+        repository.transition("two", TaskPhase.RESOLVING)
+        val fenced = TaskRepository(staler)
+        assertEquals(1, fenced.cancelQueued())
+        assertEquals(TaskPhase.CANCELED, store.rows.value.first { it.id == "one" }.phase)
+        assertEquals(TaskPhase.RESOLVING, store.rows.value.first { it.id == "two" }.phase)
+    }
 }
 
 class MemoryTaskStore : TaskStore {

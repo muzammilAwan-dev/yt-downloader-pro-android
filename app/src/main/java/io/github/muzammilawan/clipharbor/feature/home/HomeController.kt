@@ -625,6 +625,28 @@ class HomeController(
         }
     }
 
+    /** Batch action: forget finished records. Saved files stay on disk; nothing is deleted from Downloads. */
+    fun clearFinished() {
+        val repository = queue ?: return
+        if (closed || state.value.busy || job?.isActive == true) return
+        scope.launch {
+            try { observer.event(null, "QUEUE", "cleared", mapOf("count" to repository.clearFinished().toString())) }
+            catch (canceled: CancellationException) { throw canceled }
+            catch (error: Exception) { observer.event(null, "QUEUE", "write_failed") }
+        }
+    }
+
+    /** Batch action: cancel links that are waiting to start; a running attempt keeps its own explicit Cancel. */
+    fun cancelQueued() {
+        val repository = queue ?: return
+        if (closed || state.value.busy || job?.isActive == true) return
+        scope.launch {
+            try { observer.event(null, "QUEUE", "queue_canceled", mapOf("count" to repository.cancelQueued().toString())) }
+            catch (canceled: CancellationException) { throw canceled }
+            catch (error: Exception) { observer.event(null, "QUEUE", "write_failed") }
+        }
+    }
+
     private suspend fun persistPhase(recordId: String?, phase: TaskPhase, selection: TaskSelection? = null,
         title: String? = null, saved: PublishedMedia? = null): TaskRecord? {
         if (queue == null || recordId == null) return null

@@ -270,6 +270,8 @@ class MainActivity : ComponentActivity() {
                         wifiOnly = enabled
                         transferPreferences.setWifiOnly(enabled)
                     },
+                    onCancelQueued = { logger.action(UserAction.CANCEL_QUEUED, ui.phase.name); home.cancelQueued() },
+                    onClearFinished = { logger.action(UserAction.CLEAR_FINISHED, ui.phase.name); home.clearFinished() },
                     onReview = { id, accepted -> if (!state.busy) home.reviewTask(id, accepted) },
                     onRemove = { id -> if (!state.busy) home.removeTask(id) },
                     onOpen = ::openSaved,

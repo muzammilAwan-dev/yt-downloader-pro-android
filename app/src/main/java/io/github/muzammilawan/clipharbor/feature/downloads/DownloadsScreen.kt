@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import io.github.muzammilawan.clipharbor.download.QueuePresentation
 import io.github.muzammilawan.clipharbor.download.TaskRecord
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
 import io.github.muzammilawan.clipharbor.feature.home.TaskQueue
@@ -30,6 +32,8 @@ fun DownloadsScreen(
     progress: Int?,
     wifiOnly: Boolean,
     onWifiOnlyChange: (Boolean) -> Unit,
+    onCancelQueued: () -> Unit,
+    onClearFinished: () -> Unit,
     onReview: (String, Boolean) -> Unit,
     onRemove: (String) -> Unit,
     onOpen: (PublishedMedia) -> Unit,
@@ -60,7 +64,31 @@ fun DownloadsScreen(
             }
         }
         TaskQueue(tasks, enabled, progress, onReview, onRemove, onOpen)
+        QueueActions(tasks, enabled, onCancelQueued, onClearFinished)
         Text("Cancel works while downloading, not while saving. Forgetting a record never deletes a saved file.",
             style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/** Batch actions (Phase 2B). Both are limited to records no process is working on. */
+@Composable
+private fun QueueActions(tasks: List<TaskRecord>, enabled: Boolean,
+    onCancelQueued: () -> Unit, onClearFinished: () -> Unit) {
+    val waiting = QueuePresentation.queuedCount(tasks)
+    val finished = QueuePresentation.finishedCount(tasks)
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Queue actions", style = MaterialTheme.typography.titleSmall)
+            Text("$waiting waiting · $finished finished. A running attempt keeps its own Cancel button.",
+                style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = onCancelQueued, enabled = enabled && waiting > 0, modifier = Modifier.fillMaxWidth()) {
+                Text("Cancel waiting links ($waiting)")
+            }
+            OutlinedButton(onClick = onClearFinished, enabled = enabled && finished > 0, modifier = Modifier.fillMaxWidth()) {
+                Text("Clear finished records ($finished)")
+            }
+            Text("Clearing only forgets queue rows. Saved files stay in Downloads, and paused records are kept for review.",
+                style = MaterialTheme.typography.bodySmall)
+        }
     }
 }

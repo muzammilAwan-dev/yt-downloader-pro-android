@@ -207,6 +207,18 @@ class HomeQueueTest {
         home.close()
     }
 
+    @Test fun batchQueueActionsReachTheRepositoryAndKeepFinishedFiles() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.stageCurrentLink(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/b"); home.stageCurrentLink(); advanceUntilIdle()
+        home.cancelQueued(); advanceUntilIdle()
+        assertTrue(store.rows.value.all { it.phase == TaskPhase.CANCELED && it.reason == "QUEUE_CANCELED" })
+        home.clearFinished(); advanceUntilIdle()
+        assertTrue(store.rows.value.isEmpty())
+        home.close()
+    }
+
     @Test fun stageSeveralLinksWithoutEngineWorkAndExplicitReviewPersistsBeforeResolveDownloadSave() = runTest {
         val home = home(this)
         home.initialize(); advanceUntilIdle()

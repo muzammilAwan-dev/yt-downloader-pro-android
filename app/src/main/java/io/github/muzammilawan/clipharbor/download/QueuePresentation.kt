@@ -16,4 +16,8 @@ object QueuePresentation {
         runCatching { ErrorRecovery.forCode(ErrorCode.valueOf(row.reason.orEmpty())).freshResolve }.getOrDefault(false)
         else row.phase in setOf(TaskPhase.STAGED, TaskPhase.PAUSED, TaskPhase.CANCELED, TaskPhase.CHOOSING)
     fun removable(row: TaskRecord): Boolean = row.phase !in TaskRepository.activePhases
+    /** Links waiting to start; batch cancel applies to these only. */
+    fun queuedCount(rows: List<TaskRecord>): Int = rows.count { it.phase == TaskPhase.STAGED }
+    /** Records a batch "clear finished" may forget; saved files stay on disk. */
+    fun finishedCount(rows: List<TaskRecord>): Int = rows.count { it.phase in TaskRepository.finishedPhases }
 }

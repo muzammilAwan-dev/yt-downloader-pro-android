@@ -116,6 +116,38 @@ class TaskRepository(private val store: TaskStore, private val clockMs: () -> Lo
         store.delete(id, previous.revision)
     }
 
+    /**
+     * Batch action: cancel every link that is still waiting to start. The one running task is deliberately excluded —
+     * it keeps the explicit, cleanup-fenced Cancel in the task card. Each row is re-read and written with its own
+     * revision, so a row that another owner advanced between the listing and this call is skipped, not overwritten.
+     */
+    suspend fun cancelQueued(reason: String = "QUEUE_CANCELED"): Int = lock.withLock {
+        require(Regex("[A-Z0-9_]{1,64}").matches(reason))
+        var changed = 0
+        store.all().filter { it.phase == TaskPhase.STAGED }.forEach { listed ->
+            val previous = store.get(listed.id) ?: return@forEach
+            if (previous.phase != TaskPhase.STAGED) return@forEach
+            val canceled = previous.copy(phase = TaskPhase.CANCELED, reason = reason,
+                updatedAt = clockMs(), revision = previous.revision + 1)
+            if (store.replace(canceled, previous.revision)) changed++
+        }
+        changed
+    }
+
+    /**
+     * Batch action: forget finished records only (saved, failed or canceled). Queued, paused and active work is kept —
+     * a paused record may still point at staging that a user needs to review. Saved files on disk are never touched.
+     */
+    suspend fun clearFinished(): Int = lock.withLock {
+        var removed = 0
+        store.all().filter { it.phase in finishedPhases }.forEach { listed ->
+            val previous = store.get(listed.id) ?: return@forEach
+            if (previous.phase !in finishedPhases) return@forEach
+            if (store.delete(previous.id, previous.revision)) removed++
+        }
+        removed
+    }
+
     private fun allowed(from: TaskPhase, to: TaskPhase): Boolean = when (from) {
         TaskPhase.STAGED, TaskPhase.PAUSED, TaskPhase.FAILED, TaskPhase.CANCELED -> to in setOf(TaskPhase.RESOLVING, TaskPhase.CANCELED)
         TaskPhase.RESOLVING -> to in setOf(TaskPhase.CHOOSING, TaskPhase.PAUSED, TaskPhase.FAILED, TaskPhase.CANCELED)
@@ -128,5 +160,6 @@ class TaskRepository(private val store: TaskStore, private val clockMs: () -> Lo
     companion object {
         const val MAX_RECORDS = 200
         val activePhases = setOf(TaskPhase.RESOLVING, TaskPhase.CHOOSING, TaskPhase.DOWNLOADING, TaskPhase.PUBLISHING)
+        val finishedPhases = setOf(TaskPhase.DONE, TaskPhase.FAILED, TaskPhase.CANCELED)
     }
 }

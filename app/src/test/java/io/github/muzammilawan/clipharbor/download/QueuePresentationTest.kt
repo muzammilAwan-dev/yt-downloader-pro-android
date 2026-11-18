@@ -24,4 +24,14 @@ class QueuePresentationTest {
         assertTrue(QueuePresentation.reviewable(row("paused", TaskPhase.PAUSED)))
         assertTrue(QueuePresentation.removable(row("done", TaskPhase.DONE)))
     }
+
+    @Test fun batchCountsCoverOnlyWaitingLinksAndFinishedRecords() {
+        val rows = listOf(row("queued1", TaskPhase.STAGED), row("queued2", TaskPhase.STAGED),
+            row("active", TaskPhase.DOWNLOADING), row("paused", TaskPhase.PAUSED), row("chooser", TaskPhase.CHOOSING),
+            row("done", TaskPhase.DONE), row("failed", TaskPhase.FAILED), row("canceled", TaskPhase.CANCELED))
+        assertEquals(2, QueuePresentation.queuedCount(rows))
+        assertEquals(3, QueuePresentation.finishedCount(rows))
+        assertEquals(0, QueuePresentation.queuedCount(emptyList()))
+        assertEquals(0, QueuePresentation.finishedCount(emptyList()))
+    }
 }
