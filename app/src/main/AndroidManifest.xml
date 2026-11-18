@@ -4,6 +4,8 @@
     <!-- Task-only dataSync service; permissions stay within AGENTS.md's budget. -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Phase 2B Wi-Fi-only constraint; already inside the AGENTS.md permission budget. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

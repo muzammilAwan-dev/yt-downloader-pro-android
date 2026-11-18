@@ -75,7 +75,7 @@ fun HomeScreen(
     onResolve: () -> Unit,
     onSelectQuality: (VideoQuality) -> Unit,
     onSelectAudio: (String) -> Unit,
-    onDownload: () -> Unit,
+    onDownload: (Boolean) -> Unit,
     onCancel: () -> Unit,
     onRetryEngine: () -> Unit,
     onPendingLink: () -> Unit,
@@ -147,7 +147,7 @@ fun HomeScreen(
                             NotificationAccess.DISABLED -> Text("Download notifications are turned off in Android settings. Use Home for progress and Cancel.",
                                 style = MaterialTheme.typography.bodySmall)
                         }
-                        Button(onClick = onDownload, enabled = enabled && state.canDownload,
+                        Button(onClick = { onDownload(false) }, enabled = enabled && state.canDownload,
                             modifier = Modifier.fillMaxWidth()) { Text(state.downloadLabel) }
                         OutlinedButton(onClick = onCancel, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text("Dismiss selection") }
                     }
@@ -163,6 +163,10 @@ fun HomeScreen(
                         if (ErrorRecovery.forCode(code).freshResolve && !state.publicationReviewRequired) OutlinedButton(onClick = findFormats, enabled = enabled,
                             modifier = Modifier.fillMaxWidth()) { Text("Review fresh formats · confirm download again") }
                         else OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Read local diagnostics") }
+                    }
+                    if (state.transferBlocked != null) {
+                        OutlinedButton(onClick = { onDownload(true) }, enabled = enabled && state.canDownload,
+                            modifier = Modifier.fillMaxWidth()) { Text("Use mobile data for this download") }
                     }
                     state.storageReport?.let { Text(it.summary, style = MaterialTheme.typography.bodySmall) }
                     if (notificationAccess != NotificationAccess.ENABLED && state.phase in setOf(HomePhase.DOWNLOADING, HomePhase.PUBLISHING)) {

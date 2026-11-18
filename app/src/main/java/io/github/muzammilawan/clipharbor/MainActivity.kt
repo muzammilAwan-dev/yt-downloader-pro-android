@@ -39,6 +39,7 @@ import io.github.muzammilawan.clipharbor.diagnostics.DiagnosticsState
 import io.github.muzammilawan.clipharbor.diagnostics.ReportContextFactory
 import io.github.muzammilawan.clipharbor.download.DownloadService
 import io.github.muzammilawan.clipharbor.download.NotificationAccess
+import io.github.muzammilawan.clipharbor.download.TransferPreferences
 import io.github.muzammilawan.clipharbor.download.notificationAccess
 import io.github.muzammilawan.clipharbor.feature.downloads.DownloadsScreen
 import io.github.muzammilawan.clipharbor.feature.home.HomePhase
@@ -72,8 +73,10 @@ class MainActivity : ComponentActivity() {
     private val home get() = session.home
     private val diagnostics get() = session.diagnostics
     private val library by lazy { MediaStoreLibrary(this) }
+    private val transferPreferences by lazy { TransferPreferences(this) }
     private var showDiagnostics by mutableStateOf(false)
     private var destination by mutableStateOf(AppDestination.HOME)
+    private var wifiOnly by mutableStateOf(false)
     private var libraryItems by mutableStateOf<List<LibraryItem>>(emptyList())
     private var libraryLoading by mutableStateOf(false)
     private var libraryError by mutableStateOf<String?>(null)
@@ -96,6 +99,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null || home.state.value.url.isEmpty()) receiveShare(intent)
         home.initialize()
         refreshNotificationAccess()
+        wifiOnly = transferPreferences.constraints().wifiOnly
 
         setContent {
             YtdlpTheme {
@@ -228,9 +232,9 @@ class MainActivity : ComponentActivity() {
                     }, onSelectAudio = {
                         logger.action(UserAction.SELECT_AUDIO, ui.phase.name)
                         home.selectAudio(it)
-                    }, onDownload = {
+                    }, onDownload = { forceMobile ->
                         logger.action(UserAction.DOWNLOAD, ui.phase.name, qualityPixels = ui.selectedQuality?.pixels)
-                        if (!state.busy) home.download()
+                        if (!state.busy) home.download(forceMobile)
                     }, onCancel = {
                         logger.action(UserAction.CANCEL, ui.phase.name)
                         home.cancel()
@@ -260,6 +264,12 @@ class MainActivity : ComponentActivity() {
                     tasks = tasks,
                     enabled = !state.busy,
                     progress = if (ui.phase == HomePhase.DOWNLOADING) ui.progress else null,
+                    wifiOnly = wifiOnly,
+                    onWifiOnlyChange = { enabled ->
+                        logger.action(UserAction.SET_WIFI_ONLY, ui.phase.name, enabled = enabled)
+                        wifiOnly = enabled
+                        transferPreferences.setWifiOnly(enabled)
+                    },
                     onReview = { id, accepted -> if (!state.busy) home.reviewTask(id, accepted) },
                     onRemove = { id -> if (!state.busy) home.removeTask(id) },
                     onOpen = ::openSaved,

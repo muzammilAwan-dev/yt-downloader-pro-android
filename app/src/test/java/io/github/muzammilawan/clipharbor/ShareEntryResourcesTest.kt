@@ -40,8 +40,9 @@ class ShareEntryResourcesTest {
 
     @Test fun foregroundServiceIsPrivateAndPermissionsStayWithinTheTaskOnlyBudget() {
         val permissions = manifest.getElementsByTagName("uses-permission")
-        assertEquals(4, permissions.length)
-        assertEquals(setOf("android.permission.INTERNET", "android.permission.FOREGROUND_SERVICE",
+        assertEquals(5, permissions.length)
+        assertEquals(setOf("android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.FOREGROUND_SERVICE",
             "android.permission.FOREGROUND_SERVICE_DATA_SYNC", "android.permission.POST_NOTIFICATIONS"),
             (0 until permissions.length).map { (permissions.item(it) as Element).getAttributeNS(android, "name") }.toSet())
         val services = manifest.getElementsByTagName("service")

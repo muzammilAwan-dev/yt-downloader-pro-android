@@ -21,9 +21,11 @@ import io.github.muzammilawan.clipharbor.diagnostics.StorageProbe
 import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
 import io.github.muzammilawan.clipharbor.download.DownloadService
 import io.github.muzammilawan.clipharbor.download.ForegroundAdmission
+import io.github.muzammilawan.clipharbor.download.NetworkStateReader
 import io.github.muzammilawan.clipharbor.download.RoomTaskStore
 import io.github.muzammilawan.clipharbor.download.TaskDatabase
 import io.github.muzammilawan.clipharbor.download.TaskRepository
+import io.github.muzammilawan.clipharbor.download.TransferPreferences
 import androidx.room.Room
 import io.github.muzammilawan.clipharbor.feature.home.HomeController
 import io.github.muzammilawan.clipharbor.feature.home.HomeObserver
@@ -94,6 +96,8 @@ class DownloadSession(
 ) {
     private val appContext = context.applicationContext
     private val publisher = MediaStorePublisher(appContext)
+    private val transfer = TransferPreferences(appContext)
+    private val networkState = NetworkStateReader(appContext)
     val diagnostics = DiagnosticsState()
     @Volatile private var closed = false
 
@@ -114,7 +118,8 @@ class DownloadSession(
                 " V task=$task stage=$stage event=ytdlp " + line)
         }
     }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) }, queue = queue,
-        storageSpace = AndroidStorageSpace(appContext)::read)
+        storageSpace = AndroidStorageSpace(appContext)::read,
+        constraints = transfer::constraints, networkState = networkState::read)
 
     init { logger.event('I', "session_start", stage = "APP") }
 

@@ -31,6 +31,9 @@ class HomeQueueTest {
     private var space: StorageSpace? = null
     private var spaceAfterTransfer: StorageSpace? = null
     private var badExactEvidence = false
+    private var wifiOnly = false
+    private var connected = true
+    private var metered = false
     private var lastRequest: DownloadRequest? = null
     private val phasesAtWork = mutableListOf<TaskPhase>()
     private val engine = object : Engine by fake {
@@ -63,6 +66,8 @@ class HomeQueueTest {
             if (holdPublish) publishGate.await()
             PublishedMedia("content://test/1", file.name, "Downloads/YTDLP", "video/mp4")
         }, newTaskId = { "task-${++serial}" }, queue = repository, clockMs = { now },
+            constraints = { TransferConstraints(wifiOnly = wifiOnly) },
+            networkState = { NetworkState(connected = connected, metered = metered) },
             storageSpace = { space ?: StorageSpace(Long.MAX_VALUE, Long.MAX_VALUE) })
 
     @Test fun storagePreflightBlocksTransferAndRechecksActualPublicationBytes() = runTest {
@@ -81,6 +86,32 @@ class HomeQueueTest {
         assertEquals(1, downloads)
         assertEquals(1, publishes)
         assertTrue(home.state.value.storageReport!!.allowed)
+        home.close()
+    }
+
+    @Test fun meteredNetworkBlocksDownloadUntilExplicitMobileConfirmation() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        wifiOnly = true; metered = true
+        home.download(); advanceUntilIdle()
+        assertEquals(0, downloads)
+        assertNotNull(home.state.value.transferBlocked)
+        assertTrue(home.state.value.status.contains("metered"))
+        home.download(forceMobile = true); advanceUntilIdle()
+        assertEquals(1, downloads)
+        assertNull(home.state.value.transferBlocked)
+        home.close()
+    }
+
+    @Test fun offlineDownloadIsRefusedBeforeAnyEngineWork() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        connected = false
+        home.download(); advanceUntilIdle()
+        assertEquals(0, downloads)
+        assertTrue(home.state.value.transferBlocked!!.contains("No network"))
         home.close()
     }
 

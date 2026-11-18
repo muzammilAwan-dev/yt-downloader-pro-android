@@ -22,6 +22,8 @@ import io.github.muzammilawan.clipharbor.core.Stage
 import io.github.muzammilawan.clipharbor.core.StorageBudget
 import io.github.muzammilawan.clipharbor.core.StorageSpace
 import io.github.muzammilawan.clipharbor.core.StorageReport
+import io.github.muzammilawan.clipharbor.core.NetworkState
+import io.github.muzammilawan.clipharbor.core.TransferConstraints
 import io.github.muzammilawan.clipharbor.engine.EngineFailure
 import io.github.muzammilawan.clipharbor.download.TaskPhase
 import io.github.muzammilawan.clipharbor.download.TaskRecord
@@ -67,6 +69,8 @@ data class HomeState(
     val storageReport: StorageReport? = null,
     val failureCode: ErrorCode? = null,
     val publicationReviewRequired: Boolean = false,
+    /** Set only when the deliberate Download tap was refused by the transfer preference. */
+    val transferBlocked: String? = null,
 ) {
     val canDownload: Boolean get() = phase == HomePhase.CHOOSING && engineReady && !publicationReviewRequired &&
         listOf(selectedQuality, selectedAudioFormatId, selectedExactVideoId).count { it != null } == 1 &&
@@ -101,6 +105,8 @@ class HomeController(
     private val publishAudio: suspend (File, String) -> PublishedMedia = { _, _ -> error("Audio publisher is not configured") },
     private val queue: TaskRepository? = null,
     private val storageSpace: (suspend () -> StorageSpace)? = null,
+    private val constraints: () -> TransferConstraints = { TransferConstraints() },
+    private val networkState: () -> NetworkState = { NetworkState.UNKNOWN },
 ) {
     private val mutable = MutableStateFlow(HomeState())
     val state = mutable.asStateFlow()
@@ -148,7 +154,7 @@ class HomeController(
         discardPrepared()
         mutable.update { it.copy(url = text.take(MediaEntry.MAX_INPUT_CHARS + 1), inputError = null,
             title = null, qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null,
-            exactVideoChoices = emptyList(), selectedExactVideoId = null, saved = null,
+            exactVideoChoices = emptyList(), selectedExactVideoId = null, saved = null, transferBlocked = null,
             phase = HomePhase.READY, pauseReason = null, storageReport = null, failureCode = null, publicationReviewRequired = false,
             status = "Review the link, then find formats.") }
     }
@@ -170,7 +176,7 @@ class HomeController(
                     mutable.update { it.copy(url = input.url, inputError = null, title = null,
                         qualities = emptyList(), selectedQuality = null, audioChoices = emptyList(), selectedAudioFormatId = null,
                         exactVideoChoices = emptyList(), selectedExactVideoId = null, saved = null, pauseReason = null, failureCode = null,
-                        storageReport = null, publicationReviewRequired = false,
+                        storageReport = null, publicationReviewRequired = false, transferBlocked = null,
                         phase = if (it.engineReady) HomePhase.READY else it.phase,
                         status = "Shared link ready. Review it before finding formats.") }
                 }
@@ -303,8 +309,17 @@ class HomeController(
         }
     }
 
-    fun download() {
+    fun download(forceMobile: Boolean = false) {
         if (closed || job?.isActive == true || !state.value.canDownload) return
+        val transfer = constraints()
+        val route = networkState()
+        val blocked = if (forceMobile) null else transfer.blockReason(route)
+        if (blocked != null) {
+            observer.event(prepared?.task, Stage.DOWNLOADING.name, "network_blocked",
+                mapOf("wifiOnly" to transfer.wifiOnly.toString(), "metered" to route.metered.toString()))
+            mutable.update { it.copy(status = blocked, transferBlocked = blocked) }
+            return
+        }
         val input = prepared ?: return
         val plan = state.value.selectedQuality?.let(input.plans::get)
         val audio = state.value.selectedAudioFormatId?.let(input.audioPlans::get)
@@ -319,7 +334,7 @@ class HomeController(
         }
         prepared = null
         activeTask = input.task
-        mutable.update { it.copy(phase = HomePhase.DOWNLOADING, progress = null,
+        mutable.update { it.copy(phase = HomePhase.DOWNLOADING, progress = null, transferBlocked = null,
             status = if (audio != null) "Downloading original audio…" else "Downloading video and audio…") }
         // Enter the cleanup block before returning to the caller, even if the owner scope is canceled.
         // Android admission starts from this explicit user action; engine work still dispatches to IO.
