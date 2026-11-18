@@ -34,6 +34,7 @@ import io.github.muzammilawan.clipharbor.log.AppLogger
 import io.github.muzammilawan.clipharbor.log.DiagnosticReport
 import io.github.muzammilawan.clipharbor.log.RotatingLog
 import io.github.muzammilawan.clipharbor.publish.MediaStorePublisher
+import io.github.muzammilawan.clipharbor.publish.MediaStoreSweep
 import io.github.muzammilawan.clipharbor.publish.AndroidStorageSpace
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -81,6 +82,18 @@ class YtdlpApplication : Application() {
     }
 
     internal fun foregroundEvent(event: String) { logger.event('I', event, stage = "FGS") }
+
+    override fun onCreate() {
+        super.onCreate()
+        // One process-wide sweep before any task can publish; failures are logged, never retried in a loop.
+        Thread({
+            val result = runCatching { MediaStoreSweep(this).sweep() }.getOrNull()
+            if (result != null) logger.event('I', "startup_sweep", stage = "PUB", fields = mapOf(
+                "removedRows" to result.removedRows.toString(),
+                "removedStagingDirs" to result.removedStagingDirectories.toString(),
+                "failed" to result.failed.toString()))
+        }, "ytdlp-startup-sweep").apply { isDaemon = true; start() }
+    }
 }
 
 /** Home, diagnostics and publication share a session scope without retaining an Activity. */
