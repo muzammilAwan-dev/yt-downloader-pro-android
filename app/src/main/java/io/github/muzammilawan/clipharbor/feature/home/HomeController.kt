@@ -19,6 +19,7 @@ import io.github.muzammilawan.clipharbor.core.VideoQualities
 import io.github.muzammilawan.clipharbor.core.VideoQuality
 import io.github.muzammilawan.clipharbor.core.VideoQualityPlan
 import io.github.muzammilawan.clipharbor.core.ResolvedSnapshot
+import io.github.muzammilawan.clipharbor.core.RetryPolicy
 import io.github.muzammilawan.clipharbor.core.Stage
 import io.github.muzammilawan.clipharbor.core.StorageBudget
 import io.github.muzammilawan.clipharbor.core.StorageSpace
@@ -119,7 +120,9 @@ class HomeController(
     private var prepared: Prepared? = null
     private var currentRecord: String? = null
     private var reviewedRecord: TaskRecord? = null
-    private var retryAfterMs = 0L
+    /** Consecutive explicit failures per task record (or "unspecified"), used only by [RetryPolicy]. */
+    private val failures = mutableMapOf<String, Int>()
+    private var retryGateAtMs = 0L
     @Volatile private var activeTask: String? = null
     @Volatile private var timeoutTask: String? = null
     @Volatile private var closed = false
@@ -201,9 +204,12 @@ class HomeController(
         }
         state.value.failureCode?.let { code ->
             val recovery = ErrorRecovery.forCode(code)
-            if (!recovery.freshResolve || clockMs() < retryAfterMs) {
+            val attempts = failures[streamKey()] ?: 0
+            if (!RetryPolicy.permits(code) || retryGateAtMs > clockMs()) {
                 mutable.update { it.copy(status = recovery.explanation) }; return
             }
+            observer.event(activeTask, Stage.RESOLVING.name, "retry_confirmed",
+                mapOf("code" to code.name, "attempt" to attempts.toString()))
         }
         val input = MediaEntry.pasted(state.value.url)
         if (input is MediaEntry.Input.Invalid) {
@@ -413,6 +419,8 @@ class HomeController(
                 val saved = if (audio != null) publishAudio(file, audio.mimeType) else publish(file)
                 mutable.update { it.copy(saved = saved, status = "File published; recording the result…") }
                 persistPhase(input.recordId, TaskPhase.DONE, saved = saved)
+                failures.remove(input.recordId ?: "unspecified")
+                retryGateAtMs = 0L
                 observer.event(input.task, Stage.PUBLISHING.name, "ok", mapOf("uri" to saved.uri,
                     "bytes" to file.length().toString(), "mime" to saved.mimeType,
                     "ms" to (clockMs() - publicationStarted).coerceAtLeast(0).toString()))
@@ -509,6 +517,9 @@ class HomeController(
         prepared = null
     }
 
+    /** Failures are counted per durable record when one exists, otherwise for the current ad-hoc attempt. */
+    private fun streamKey(): String = currentRecord ?: "unspecified"
+
     private fun reusable(url: String): Boolean {
         val input = prepared ?: return false
         return state.value.phase == HomePhase.CHOOSING && input.url == url &&
@@ -536,9 +547,13 @@ class HomeController(
         observer.failure(task, error)
         discardPrepared()
         val recovery = ErrorRecovery.forCode(error.code)
-        retryAfterMs = clockMs() + recovery.waitMs
+        val key = streamKey()
+        val count = (failures[key] ?: 0) + 1
+        failures[key] = count
+        retryGateAtMs = clockMs() + RetryPolicy.waitMs(error.code, count)
         observer.event(task, stage.name, "recovery", mapOf("code" to error.code.name, "contractAction" to recovery.contractAction,
-            "freshResolveAvailable" to recovery.freshResolve.toString(), "automatic" to "false"))
+            "freshResolveAvailable" to recovery.freshResolve.toString(), "automatic" to "false",
+            "attempt" to count.toString(), "waitMs" to RetryPolicy.waitMs(error.code, count).toString()))
         mutable.update { it.copy(phase = HomePhase.FAILED, progress = null, audioChoices = emptyList(), selectedAudioFormatId = null,
             failureCode = error.code, status = recovery.explanation + if (it.publicationReviewRequired)
                 " Saving may already have produced a file. Check Downloads before explicit interrupted-save review in the queue." else "") }
@@ -587,11 +602,11 @@ class HomeController(
                 }
                 if (row.phase == TaskPhase.FAILED) {
                     val code = runCatching { ErrorCode.valueOf(row.reason.orEmpty()) }.getOrNull()
-                    if (code == null || !ErrorRecovery.forCode(code).freshResolve) {
+                    if (code == null || !RetryPolicy.permits(code)) {
                         mutable.update { it.copy(phase = HomePhase.READY, status = code?.let { ErrorRecovery.forCode(it).explanation }
                             ?: "This failure has no supported retry. Check Diagnostics.") }; return@launch
                     }
-                    if (code == ErrorCode.NETWORK_TIMEOUT && currentRecord == row.id && clockMs() < retryAfterMs) {
+                    if (currentRecord == row.id && clockMs() < retryGateAtMs) {
                         mutable.update { it.copy(phase = HomePhase.READY, status = ErrorRecovery.forCode(code).explanation) }; return@launch
                     }
                 }

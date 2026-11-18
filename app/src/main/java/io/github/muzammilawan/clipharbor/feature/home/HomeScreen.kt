@@ -160,9 +160,12 @@ fun HomeScreen(
                     Text(state.status, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium)
                     state.failureCode?.let { code ->
                         Text("${code.name} · ${ErrorRecovery.forCode(code).contractAction}", style = MaterialTheme.typography.bodySmall)
-                        if (ErrorRecovery.forCode(code).freshResolve && !state.publicationReviewRequired) OutlinedButton(onClick = findFormats, enabled = enabled,
-                            modifier = Modifier.fillMaxWidth()) { Text("Review fresh formats · confirm download again") }
-                        else OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Read local diagnostics") }
+                        if (ErrorRecovery.forCode(code).freshResolve && !state.publicationReviewRequired) {
+                            Text("A retry is a new attempt from the beginning; partial files from the failed attempt are not reused.",
+                                style = MaterialTheme.typography.bodySmall)
+                            OutlinedButton(onClick = findFormats, enabled = enabled,
+                                modifier = Modifier.fillMaxWidth()) { Text("Review fresh formats · confirm download again") }
+                        } else OutlinedButton(onClick = onDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("Read local diagnostics") }
                     }
                     if (state.transferBlocked != null) {
                         OutlinedButton(onClick = { onDownload(true) }, enabled = enabled && state.canDownload,

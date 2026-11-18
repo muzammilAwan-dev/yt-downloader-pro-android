@@ -209,6 +209,27 @@ class HomeQueueTest {
         home.close()
     }
 
+    @Test fun repeatedTimeoutFailuresRequireGrowingBackoffBeforeTheExplicitRetry() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        failDownload = true; failureCode = ErrorCode.NETWORK_TIMEOUT
+        home.download(); advanceUntilIdle()
+        assertEquals(1, downloads)
+        now = 5_000
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        home.download(); advanceUntilIdle()
+        assertEquals(2, downloads)
+        now = 5_000 + 9_999
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals(2, fake.resolveCalls)
+        now = 5_000 + 10_000
+        home.reviewTask("task-1"); advanceUntilIdle()
+        assertEquals(3, fake.resolveCalls)
+        home.close()
+    }
+
     @Test fun fragmentParallelismSettingReachesTheEngineRequestWithinBounds() = runTest {
         val home = home(this)
         home.initialize(); advanceUntilIdle()
