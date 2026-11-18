@@ -104,6 +104,8 @@ data class DownloadRequest(
     val audioPlan: AudioPlan? = null,
     /** Advanced exact video source; mutually exclusive with the other app-owned plans. */
     val exactVideoPlan: ExactVideoPlan? = null,
+    /** Resolved `-N` value (1..8) from [FragmentPolicy]; the engine never accepts anything else. */
+    val concurrentFragments: Int = FragmentPolicy.DEFAULT,
 )
 
 data class DownloadOutcome(

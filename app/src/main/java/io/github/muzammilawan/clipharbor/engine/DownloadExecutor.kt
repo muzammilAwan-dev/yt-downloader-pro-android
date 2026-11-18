@@ -49,6 +49,7 @@ internal class DownloadExecutor(
             val exact = request.exactVideoPlan
             require(listOf(plan, audio, exact).count { it != null } <= 1) { "App-owned plans are mutually exclusive" }
             require(plan == null || request.maxHeight == plan.quality.pixels) { "Quality ceiling does not match plan" }
+            require(request.concurrentFragments in 1..8) { "Unsupported fragment parallelism" }
             val selector = audio?.let(AudioFormats::selector) ?: exact?.let(ExactVideoFormats::selector)
                 ?: plan?.let(FormatPlanner::selector) ?: FormatPlanner.selector(request.maxHeight)
             return execution.run(request.processId) { internalId ->
@@ -63,7 +64,7 @@ internal class DownloadExecutor(
                         add("-P" to directory.absolutePath)
                         add("-o" to (if (audio != null) AudioFormats.outputTemplate()
                             else exact?.let(ExactVideoFormats::outputTemplate) ?: plan?.let { FormatPlanner.outputTemplate(it.quality) } ?: FormatPlanner.outputTemplate()))
-                        add("-N" to CONCURRENT_FRAGMENTS.toString())
+                        add("-N" to request.concurrentFragments.toString())
                         listOf("--windows-filenames", "--no-playlist", "--no-mtime", "--newline", "--progress", "--no-simulate", "--clean-info-json")
                             .forEach { add(it to null) }
                         add("--print" to DownloadEvidence.SELECTION_PRINT)
@@ -155,7 +156,6 @@ internal class DownloadExecutor(
         if (lines.any { it.startsWith("[Merger]") }) Stage.MERGING else Stage.DOWNLOADING
 
     companion object {
-        const val CONCURRENT_FRAGMENTS = 4
         private const val TAIL_LINES = 200
         private const val MAX_LINE_CHARS = 8192
     }

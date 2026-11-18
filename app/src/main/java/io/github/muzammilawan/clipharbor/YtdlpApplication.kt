@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import io.github.muzammilawan.clipharbor.core.DownloadError
 import io.github.muzammilawan.clipharbor.core.DownloadForeground
 import io.github.muzammilawan.clipharbor.core.Engine
+import io.github.muzammilawan.clipharbor.core.FragmentPolicy
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.SharedSessionOwner
 import io.github.muzammilawan.clipharbor.diagnostics.AndroidNetworkProbe
@@ -22,6 +23,7 @@ import io.github.muzammilawan.clipharbor.engine.YoutubeDlEngine
 import io.github.muzammilawan.clipharbor.download.DownloadService
 import io.github.muzammilawan.clipharbor.download.ForegroundAdmission
 import io.github.muzammilawan.clipharbor.download.NetworkStateReader
+import io.github.muzammilawan.clipharbor.download.PowerStateReader
 import io.github.muzammilawan.clipharbor.download.RoomTaskStore
 import io.github.muzammilawan.clipharbor.download.TaskDatabase
 import io.github.muzammilawan.clipharbor.download.TaskRepository
@@ -111,6 +113,7 @@ class DownloadSession(
     private val publisher = MediaStorePublisher(appContext)
     private val transfer = TransferPreferences(appContext)
     private val networkState = NetworkStateReader(appContext)
+    private val power = PowerStateReader(appContext)
     val diagnostics = DiagnosticsState()
     @Volatile private var closed = false
 
@@ -132,7 +135,11 @@ class DownloadSession(
         }
     }, foreground = foreground, publishAudio = { file, mime -> publishMedia(file, mime) }, queue = queue,
         storageSpace = AndroidStorageSpace(appContext)::read,
-        constraints = transfer::constraints, networkState = networkState::read)
+        constraints = transfer::constraints, networkState = networkState::read,
+        fragments = {
+            val powerState = power.read()
+            FragmentPolicy.resolve(transfer.fragments(), powerState.powerSave, powerState.batteryPercent)
+        })
 
     init { logger.event('I', "session_start", stage = "APP") }
 

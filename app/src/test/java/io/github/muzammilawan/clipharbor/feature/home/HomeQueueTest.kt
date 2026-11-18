@@ -34,6 +34,7 @@ class HomeQueueTest {
     private var wifiOnly = false
     private var connected = true
     private var metered = false
+    private var parallel = FragmentPolicy.DEFAULT
     private var lastRequest: DownloadRequest? = null
     private val phasesAtWork = mutableListOf<TaskPhase>()
     private val engine = object : Engine by fake {
@@ -68,6 +69,7 @@ class HomeQueueTest {
         }, newTaskId = { "task-${++serial}" }, queue = repository, clockMs = { now },
             constraints = { TransferConstraints(wifiOnly = wifiOnly) },
             networkState = { NetworkState(connected = connected, metered = metered) },
+            fragments = { parallel },
             storageSpace = { space ?: StorageSpace(Long.MAX_VALUE, Long.MAX_VALUE) })
 
     @Test fun storagePreflightBlocksTransferAndRechecksActualPublicationBytes() = runTest {
@@ -204,6 +206,20 @@ class HomeQueueTest {
         assertEquals(2, fake.resolveCalls)
         assertEquals(2, downloads)
         assertTrue(home.state.value.status.contains("not available"))
+        home.close()
+    }
+
+    @Test fun fragmentParallelismSettingReachesTheEngineRequestWithinBounds() = runTest {
+        val home = home(this)
+        home.initialize(); advanceUntilIdle()
+        home.editUrl("https://example.invalid/a"); home.resolve(); advanceUntilIdle()
+        parallel = 1
+        home.download(); advanceUntilIdle()
+        assertEquals(1, lastRequest!!.concurrentFragments)
+        home.editUrl("https://example.invalid/b"); home.resolve(); advanceUntilIdle()
+        parallel = 99
+        home.download(); advanceUntilIdle()
+        assertEquals(8, lastRequest!!.concurrentFragments)
         home.close()
     }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import io.github.muzammilawan.clipharbor.core.FragmentPolicy
 import io.github.muzammilawan.clipharbor.download.QueuePresentation
 import io.github.muzammilawan.clipharbor.download.TaskRecord
 import io.github.muzammilawan.clipharbor.feature.home.PublishedMedia
@@ -31,7 +33,9 @@ fun DownloadsScreen(
     enabled: Boolean,
     progress: Int?,
     wifiOnly: Boolean,
+    fragments: Int,
     onWifiOnlyChange: (Boolean) -> Unit,
+    onFragmentsChange: (Int) -> Unit,
     onCancelQueued: () -> Unit,
     onClearFinished: () -> Unit,
     onReview: (String, Boolean) -> Unit,
@@ -63,6 +67,7 @@ fun DownloadsScreen(
                 Switch(checked = wifiOnly, onCheckedChange = onWifiOnlyChange)
             }
         }
+        FragmentsCard(fragments, enabled, onFragmentsChange)
         TaskQueue(tasks, enabled, progress, onReview, onRemove, onOpen)
         QueueActions(tasks, enabled, onCancelQueued, onClearFinished)
         Text("Cancel works while downloading, not while saving. Forgetting a record never deletes a saved file.",
@@ -88,6 +93,29 @@ private fun QueueActions(tasks: List<TaskRecord>, enabled: Boolean,
                 Text("Clear finished records ($finished)")
             }
             Text("Clearing only forgets queue rows. Saved files stay in Downloads, and paused records are kept for review.",
+                style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+/** `-N` setting (Phase 2B): Auto by default, with an explicit override and the reason spelled out. */
+@Composable
+private fun FragmentsCard(fragments: Int, enabled: Boolean, onFragmentsChange: (Int) -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Parallel connections", style = MaterialTheme.typography.titleSmall)
+            Text(FragmentPolicy.explanation(fragments), style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FragmentPolicy.choices.forEach { choice ->
+                    FilterChip(
+                        selected = FragmentPolicy.sanitize(fragments) == choice,
+                        onClick = { if (enabled) onFragmentsChange(choice) },
+                        enabled = enabled,
+                        label = { Text(FragmentPolicy.label(choice)) },
+                    )
+                }
+            }
+            Text("More connections can be faster on Wi-Fi and slower on mobile data; no device measurement has favored more yet.",
                 style = MaterialTheme.typography.bodySmall)
         }
     }

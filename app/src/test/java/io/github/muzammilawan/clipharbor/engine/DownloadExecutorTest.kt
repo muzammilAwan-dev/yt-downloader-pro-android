@@ -227,6 +227,25 @@ class DownloadExecutorTest {
     }
 
     @Test
+    fun fragmentParallelismComesFromTheRequestAndOutOfRangeValuesNeverReachTheRunner() = runBlocking {
+        val runner = Runner()
+        var seen: String? = null
+        runner.action = { command, _, _ ->
+            seen = command.options.single { it.first == "-N" }.second
+            success(command.options.first { it.first == "-P" }.second!!.let(::File))
+        }
+        val executor = DownloadExecutor(runner, EngineExecution(runner::destroy), temporary.newFolder())
+        assertEquals(0, executor.download(request(temporary.newFolder()).copy(concurrentFragments = 1), {}, {}).getOrThrow().exitCode)
+        assertEquals("1", seen)
+        listOf(0, -1, 9).forEach { value ->
+            val rejectRunner = Runner()
+            val reject = DownloadExecutor(rejectRunner, EngineExecution(rejectRunner::destroy), temporary.newFolder())
+            assertTrue(reject.download(request(temporary.newFolder()).copy(concurrentFragments = value), {}, {}).isFailure)
+            assertTrue(rejectRunner.commands.isEmpty())
+        }
+    }
+
+    @Test
     fun taskCancellationInterruptsWorkerDeletesSnapshotAndDoesNotReturnSuccess() = runBlocking {
         val directory = temporary.newFolder()
         val inputs = temporary.newFolder()

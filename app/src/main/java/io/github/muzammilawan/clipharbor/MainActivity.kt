@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import io.github.muzammilawan.clipharbor.core.FragmentPolicy
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.SharedSessionOwner
 import io.github.muzammilawan.clipharbor.core.SiteShortcut
@@ -77,6 +79,7 @@ class MainActivity : ComponentActivity() {
     private var showDiagnostics by mutableStateOf(false)
     private var destination by mutableStateOf(AppDestination.HOME)
     private var wifiOnly by mutableStateOf(false)
+    private var fragments by mutableIntStateOf(FragmentPolicy.AUTO)
     private var libraryItems by mutableStateOf<List<LibraryItem>>(emptyList())
     private var libraryLoading by mutableStateOf(false)
     private var libraryError by mutableStateOf<String?>(null)
@@ -100,6 +103,7 @@ class MainActivity : ComponentActivity() {
         home.initialize()
         refreshNotificationAccess()
         wifiOnly = transferPreferences.constraints().wifiOnly
+        fragments = transferPreferences.fragments()
 
         setContent {
             YtdlpTheme {
@@ -265,10 +269,16 @@ class MainActivity : ComponentActivity() {
                     enabled = !state.busy,
                     progress = if (ui.phase == HomePhase.DOWNLOADING) ui.progress else null,
                     wifiOnly = wifiOnly,
+                    fragments = fragments,
                     onWifiOnlyChange = { enabled ->
                         logger.action(UserAction.SET_WIFI_ONLY, ui.phase.name, enabled = enabled)
                         wifiOnly = enabled
                         transferPreferences.setWifiOnly(enabled)
+                    },
+                    onFragmentsChange = { choice ->
+                        logger.action(UserAction.SET_FRAGMENTS, ui.phase.name, enabled = choice > 0)
+                        fragments = FragmentPolicy.sanitize(choice)
+                        transferPreferences.setFragments(fragments)
                     },
                     onCancelQueued = { logger.action(UserAction.CANCEL_QUEUED, ui.phase.name); home.cancelQueued() },
                     onClearFinished = { logger.action(UserAction.CLEAR_FINISHED, ui.phase.name); home.clearFinished() },

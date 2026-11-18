@@ -12,6 +12,7 @@ import io.github.muzammilawan.clipharbor.core.ErrorRecovery
 import io.github.muzammilawan.clipharbor.core.ExactVideoChoice
 import io.github.muzammilawan.clipharbor.core.ExactVideoFormats
 import io.github.muzammilawan.clipharbor.core.ExactVideoPlan
+import io.github.muzammilawan.clipharbor.core.FragmentPolicy
 import io.github.muzammilawan.clipharbor.core.MediaEntry
 import io.github.muzammilawan.clipharbor.core.QualityChoice
 import io.github.muzammilawan.clipharbor.core.VideoQualities
@@ -107,6 +108,8 @@ class HomeController(
     private val storageSpace: (suspend () -> StorageSpace)? = null,
     private val constraints: () -> TransferConstraints = { TransferConstraints() },
     private val networkState: () -> NetworkState = { NetworkState.UNKNOWN },
+    /** Resolved `-N` value; the Android owner combines the stored setting with power state. */
+    private val fragments: () -> Int = { FragmentPolicy.DEFAULT },
 ) {
     private val mutable = MutableStateFlow(HomeState())
     val state = mutable.asStateFlow()
@@ -350,17 +353,19 @@ class HomeController(
                 persistPhase(input.recordId, TaskPhase.DOWNLOADING, selection = if (audio != null)
                     TaskSelection(audioFormatId = audio.formatId) else if (exact != null) TaskSelection(videoFormatId = exact.choice.formatId)
                     else TaskSelection(videoHeight = plan?.quality?.pixels))
+                val parallel = fragments().coerceIn(FragmentPolicy.MIN, FragmentPolicy.MAX)
                 val admitted = foreground.acquire(input.task)
                 lease = admitted
                 currentCoroutineContext().ensureActive()
                 observer.event(input.task, Stage.DOWNLOADING.name, "start", mapOf(
                     "mediaMode" to mode, "requestedResolution" to (plan?.quality?.pixels?.toString() ?: "none"), "qualityAxis" to "shortEdge",
                     "resolveReuse" to (input.snapshot != null).toString(),
-                    "concurrentFragments" to "4"))
+                    "concurrentFragments" to parallel.toString()))
                 val lastLoggedProgress = AtomicInteger(-1)
                 val outcome = engine.download(DownloadRequest(input.url, plan?.quality?.pixels ?: 1080, directory, input.task,
                     mergeContainer = if ((plan?.quality?.pixels ?: 0) >= 1440) "mkv" else "mp4/mkv",
-                    resolvedSnapshot = input.snapshot, qualityPlan = plan, audioPlan = audio, exactVideoPlan = exact), onProgress = { event ->
+                    resolvedSnapshot = input.snapshot, qualityPlan = plan, audioPlan = audio, exactVideoPlan = exact,
+                    concurrentFragments = parallel), onProgress = { event ->
                     event.percent?.takeIf { it.isFinite() && it in 0f..100f }?.toInt()?.let { percent ->
                         if (!closed && activeTask == input.task && state.value.phase == HomePhase.DOWNLOADING) {
                             mutable.update {
