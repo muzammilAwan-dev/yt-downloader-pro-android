@@ -1,6 +1,6 @@
 [versions]
 # Toolchain (verified 2026-11-14, docs/RESEARCH-LOG.md R1-R11)
-agp = "9.5.1"
+agp = "9.5.2"
 # Kotlin: AGP 9.5.1 bundles KGP 2.2.10 (its POM). The Compose compiler plugin must use the same version.
 kotlin = "2.2.10"
 # SDK levels: Android 17 = API 37 (stable since 2026-06-16)
