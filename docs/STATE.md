@@ -17,12 +17,24 @@ anything not re-run since is marked untested. Run `git log -5 --oneline` for the
   (own MediaStore rows, search, kind filter, duration, open/share/confirmed delete); share links canonicalised per recognised host
   (unknown hosts and signed URLs untouched); `FULL_NAME` removed. No browser/login/playlist/new post-processing, no new permission.
   Report: `docs/evidence/phase2a-delivery.md`. **STOP for the owner's `next` before Phase 2B.**
+- **Phase 2B (download-manager hardening): in progress, host checks green, NOT PASSED.** Delivered in pushed increments:
+  Wi-Fi-only constraint with `ACCESS_NETWORK_STATE` (5th permission) and an explicit one-off "use mobile data";
+  startup sweep of abandoned `IS_PENDING` rows and stale staging dirs (1 h row / 24 h staging grace, own folder only);
+  batch "cancel waiting links" and "clear finished records" with per-row revision fencing; `-N` parallelism as a bounded
+  setting (Auto/1/2/4, Auto drops to 1 in battery saver or ≤15%); per-record capped backoff (5→60 s) with an honest
+  "starts from the beginning" retry label and no retry for bot gates/geo/login/unavailable. Not device-tested; measurement
+  table (extraction time, transfer speed, battery, peak disk) still owner-only.
 - **17 Nov: upstream merged** (`origin/main` 7bde305, merge `33e14ad`): new owner roadmap `docs/ROADMAP.md` (phases R, 1, 2A-2F, 3, 4),
   DeepSeek build workflow `docs/DEEPSEEK_WORKFLOW.md` + `docs/DS_QUICKSTART.md`, `tools/ds_bridge.py`, `tools/ds/MASTER_PROMPT.txt`, `tools/ds.bat`.
   `docs/ROADMAP.md` §3.2 predates our Phase 1 delivery (it still calls Room/queue absent); its own Phase R says to correct that.
-- `origin/phase/R` **NOT merged**: tested, 7 conflicts. It re-implements the queue from that stale snapshot (raw URL, autoincrement id,
-  no revision fencing/recovery/privacy filter) and duplicates `TaskEntity`/`TaskRepository`/a second `@Database` in the same package.
-  Only its `_ds/` gitignore hunk was kept. `main` stays ahead; nothing pushed.
+- **28 Nov: branch consolidation (owner request).** `main` is the only branch on the remote; the local tree has one branch and
+  no worktrees. Deleted `origin/phase/R` (head `4501008`) — its 6 commits re-implement the queue from a stale snapshot
+  (raw URL, autoincrement id, no revision fencing/recovery/privacy filter) and duplicate `TaskEntity`/`TaskRepository`/a second
+  `@Database` in the same package; every capability it added exists on `main` (Room queue, preflight, queue UI). Its only kept
+  hunk, the `_ds/` gitignore entry, is already on `main`. Also deleted 7 unmerged Dependabot branches: GitHub-Actions bumps
+  (`checkout@v7`, `setup-java@v6`, `upload-artifact@v7`, `gradle/actions@v6`), `composeBom 2026.09.00 -> 2026.11.01`,
+  `agp 9.5.1 -> 9.5.2`, and the Gradle wrapper `9.6.0 -> 9.9.1`. Reasons: `AGENTS.md` limits workflow edits, and no bump was
+  built/tested here; `main` stays on the verified pinned toolchain. Heads recorded in `docs/PROGRESS.md`; Dependabot may re-propose.
 - **17 Nov owner decisions (plan-level, no feature code):** foreground service stays (DR-005); name YTDLP only, no expansion (DR-006);
   sandboxed WebView allowed after a written threat model (DR-007); engine APK-bundled only, plus an app APK self-update check against
   this repo's Releases (DR-008) with `REQUEST_INSTALL_PACKAGES` scoped to the updater (DR-009); ABI and developer verification deferred;
@@ -168,9 +180,20 @@ Passing CLI checks is not phone verification. Existing phone checks remain defer
 - [ ] OWNER/device: Library contents after reinstall, thumbnail (glyph fallback now), gallery visibility, share targets, large text/TalkBack.
 - [x] Stamped APK + phase report: `docs/evidence/phase2a-delivery.md`. STOP for the owner's `next` before Phase 2B.
 
+## Phase 2B checklist (in progress; device gates deferred)
+- [x] Wi-Fi-only transfer constraint (pure `TransferConstraints` + `NetworkStateReader`), `ACCESS_NETWORK_STATE`, one-off mobile override.
+- [x] Startup sweep for abandoned `IS_PENDING` rows (own `Download/YTDLP` folder, 1 h grace) and stale `files/staging` dirs (24 h grace);
+      delete re-checks `IS_PENDING=1`; logged as `startup_sweep`.
+- [x] Queue batch actions: cancel waiting links / clear finished records, per-row revision re-read, saved files untouched.
+- [x] `-N` as a bounded setting (Auto/1/2/4) with a battery-aware Auto default (1 in battery saver or ≤15%).
+- [x] Capped per-record retry backoff (5→60 s) for transient codes only, no retry for bot gates/geo/login/unavailable, honest restart label.
+- [ ] OWNER/device: measurement table (extraction time, transfer speed, battery, peak disk on Android 10 + one Android 14+ device).
+- [ ] Stamped Phase 2B APK + phase report (not built yet; `main` itself is host-verified only).
+
 ## Open owner checks (cannot be automated)
 Gallery/Files visibility of `Download/YTDLP`; other native share targets; cancel cleanup on a real phone; light theme; large text/TalkBack; MKV playback.
 Phase 2A: three-tab shell layout, Library search/filter/delete, Home recent saves, Downloads percentage.
+Phase 2B: Wi-Fi-only switch and its one-off override, batch queue buttons, parallel-connection chips, startup sweep, growing retry wait.
 
 ## Risks to keep visible
 - **Engine freshness:** owner-installed `f96194e` runs bundled 2026.10.26; previous `6bb477b` used 2025.11.12. YouTube

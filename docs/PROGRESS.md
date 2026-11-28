@@ -1495,3 +1495,8 @@ Fresh testDebugUnitTest+lintDebug: BUILD SUCCESSFUL in 36s, 353 tests / 0 failur
 Stamped dist/app-debug.apk 70,747,776 bytes, full-DEX stamp 91054d2, SHA-256 B2D0CC9E6F7AE8E8304456FB6F220E93E62405E16448AD6051595270FB91AF9C (matches dist/SHA256SUMS.txt); V2 CN=Android Debug; permissions unchanged.
 No Compose UI tests, no device run, no screenshots: three-tab layout, Library search/filter/open/share/delete, gallery visibility, thumbnails and durations are deferred, NOT passed.
 Report docs/evidence/phase2a-delivery.md; STOP for the owner's next before Phase 2B.
+
+## 2026-11-28 Phase 2B increments and branch consolidation (host checks only)
+Pushed Phase 2B increments: 74e3482 Wi-Fi-only + ACCESS_NETWORK_STATE; 41393bb startup sweep of pending rows/staging; 1ca02f2 batch queue actions; e2bf6c0 bounded battery-aware -N setting; 751189f capped per-record retry backoff + honest restart label.
+Owner asked for one clean tree. Deleted origin/phase/R (head 4501008; superseded parallel queue, 6 commits) and 7 unmerged Dependabot branches: checkout-7 a3671c0, setup-java-6 33746cb, upload-artifact-7 4608160, gradle/actions-6 e35f66a, androidx-97adeb7b4b 264adf6, com.android.application-9.5.2 78bcaf5, gradle-wrapper-9.9.1 9f115e9.
+Nothing was force-pushed or rewritten; main is the only branch locally and on origin, with no worktrees. Toolchain stays AGP 9.5.1 / Gradle 9.6.0 / Compose BOM 2026.09.00 because no bump was built or tested.
